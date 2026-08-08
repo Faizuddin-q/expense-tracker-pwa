@@ -1,0 +1,41 @@
+'use client';
+
+import { useApp } from '@/lib/app-context';
+import { Home } from '@/components/views/Home';
+
+export default function HomePage() {
+  const {
+    amount,
+    note,
+    setNote,
+    parseAmount,
+    addExpense,
+    expenses,
+    showAll,
+    setShowAll,
+    handleDeleteExpense,
+    undo,
+    setUndo,
+    allCategories,
+    setCategoryDialog,
+    today,
+  } = useApp();
+
+  return (
+    <Home
+      amount={amount}
+      note={note}
+      setNote={setNote}
+      parseAmount={parseAmount}
+      addExpense={addExpense}
+      displayed={showAll ? expenses : today}
+      showAll={showAll}
+      setShowAll={setShowAll}
+      remove={handleDeleteExpense}
+      undo={undo}
+      setUndo={setUndo}
+      categories={allCategories}
+      onAddCategory={() => setCategoryDialog(true)}
+    />
+  );
+}

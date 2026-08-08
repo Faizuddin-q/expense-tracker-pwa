@@ -1,24 +1,29 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { LucideIcon } from 'lucide-react';
 
 interface NavButtonProps {
   id: string;
   label: string;
   icon: LucideIcon;
-  active: boolean;
-  onClick: () => void;
+  href: string;
   mobile?: boolean;
 }
 
 export const NavButton = ({
   label,
   icon: Icon,
-  active,
-  onClick,
+  href,
   mobile,
 }: NavButtonProps) => {
+  const pathname = usePathname();
+  const active = pathname === href;
+
   return (
-    <button
-      onClick={onClick}
+    <Link
+      href={href}
       className={`group relative flex cursor-pointer items-center transition-all duration-200 active:scale-[0.96] ${
         active
           ? 'bg-primary text-primary-foreground shadow-2xs'
@@ -35,6 +40,6 @@ export const NavButton = ({
         } ${active ? 'scale-105' : 'group-hover:scale-110'}`}
       />
       <span className={mobile ? 'text-[10px] leading-tight' : ''}>{label}</span>
-    </button>
+    </Link>
   );
 };

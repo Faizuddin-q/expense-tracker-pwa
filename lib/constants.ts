@@ -22,10 +22,15 @@ export const builtInCategories: Category[] = [
 ];
 
 export const navItems = [
-  { id: 'home', label: 'Quick add', icon: Plus },
-  { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
-  { id: 'expenses', label: 'Expenses', icon: Receipt },
-  { id: 'settings', label: 'Settings', icon: SettingsIcon },
+  { id: 'home', label: 'Quick add', icon: Plus, href: '/' },
+  {
+    id: 'dashboard',
+    label: 'Overview',
+    icon: LayoutDashboard,
+    href: '/dashboard',
+  },
+  { id: 'expenses', label: 'Expenses', icon: Receipt, href: '/expenses' },
+  { id: 'settings', label: 'Settings', icon: SettingsIcon, href: '/settings' },
 ] as const;
 
 export const quickRelogItems = [
