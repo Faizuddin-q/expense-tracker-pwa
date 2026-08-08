@@ -233,8 +233,9 @@ export const Dashboard = ({
 
   return (
     <section className="mx-auto max-w-6xl">
-      {/* Time Range Filter Selector Bar */}
-      <div className="flex overflow-x-auto pb-1 sm:pb-0 sm:flex-wrap items-center gap-2">
+      {/* Time Range Filter Selector Bar — always horizontal scroll */}
+      <div className="flex overflow-x-auto scrollbar-none gap-2 pb-1">
+        <div className="flex shrink-0 items-center gap-2">
         <button
           onClick={() => setTimeRange('month')}
           className={`flex cursor-pointer items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
@@ -305,12 +306,13 @@ export const Dashboard = ({
         >
           Custom Range
         </button>
+        </div>
       </div>
 
       {/* Modern By Month Navigation Bar */}
       {timeRange === 'month' && (
-        <div className="mt-3.5 flex flex-col gap-3 rounded-2xl border border-border/80 bg-card p-4 shadow-2xs ring-1 ring-border/40">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="mt-3 flex flex-col gap-2.5 rounded-2xl border border-border/80 bg-card p-3.5 shadow-2xs sm:p-4">
+          <div className="flex items-center justify-between gap-2">
             {/* Stepper Controls */}
             <div className="flex items-center gap-2">
               <button
@@ -324,7 +326,7 @@ export const Dashboard = ({
               >
                 <ChevronLeft className="size-4" />
               </button>
-              <span className="font-mono-numbers px-1 text-sm font-bold text-foreground">
+              <span className="font-mono-numbers min-w-[90px] text-center text-sm font-bold text-foreground">
                 {availableMonths.find((m) => m.key === activeMonthKey)?.label ??
                   'Select Month'}
               </span>
@@ -342,35 +344,30 @@ export const Dashboard = ({
             </div>
 
             {/* Direct Jump Dropdown */}
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Jump to:
-              </label>
-              <select
-                value={activeMonthKey}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="cursor-pointer rounded-xl border border-input bg-background px-3 py-1.5 text-xs font-semibold text-foreground outline-none focus:ring-2 focus:ring-ring"
-              >
-                {availableMonths.map(({ key, label }) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <select
+              value={activeMonthKey}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="cursor-pointer rounded-xl border border-input bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground outline-none focus:ring-2 focus:ring-ring"
+            >
+              {availableMonths.map(({ key, label }) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Horizontal Scrollable Month Pills */}
-          <div className="flex gap-2 overflow-x-auto pt-1">
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
             {availableMonths.map(({ key, label }) => {
               const isActive = activeMonthKey === key;
               return (
                 <button
                   key={key}
                   onClick={() => setSelectedMonth(key)}
-                  className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all duration-150 active:scale-95 ${
+                  className={`shrink-0 cursor-pointer rounded-lg px-3 py-1.5 text-xs font-bold transition-all duration-150 active:scale-95 ${
                     isActive
-                      ? 'bg-primary text-primary-foreground shadow-2xs ring-2 ring-primary/40'
+                      ? 'bg-primary text-primary-foreground shadow-2xs'
                       : 'border border-border/60 bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
                   }`}
                 >
@@ -384,53 +381,49 @@ export const Dashboard = ({
 
       {/* Custom Date Range Pickers */}
       {timeRange === 'custom' && (
-        <div className="mt-3 flex flex-wrap items-center gap-3.5 rounded-2xl border border-border/80 bg-card p-3.5 shadow-2xs">
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-muted-foreground">
-              From:
-            </label>
+        <div className="mt-3 grid grid-cols-2 gap-2.5 rounded-2xl border border-border/80 bg-card p-3.5 shadow-2xs sm:flex sm:flex-wrap sm:items-center sm:gap-3.5">
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">From</label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="cursor-pointer rounded-xl border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring"
+              className="w-full cursor-pointer rounded-xl border border-input bg-background px-2.5 py-2 text-xs font-semibold text-foreground outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-muted-foreground">
-              To:
-            </label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">To</label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="cursor-pointer rounded-xl border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring"
+              className="w-full cursor-pointer rounded-xl border border-input bg-background px-2.5 py-2 text-xs font-semibold text-foreground outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
         </div>
       )}
 
       {/* Overview Hero Cards */}
-      <div className="mt-5 grid gap-5 lg:grid-cols-[1.2fr_.8fr]">
-        <div className="rounded-3xl bg-card p-7 shadow-sm ring-1 ring-border sm:p-8">
+      <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_.8fr]">
+        <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border sm:rounded-3xl sm:p-7 md:p-8">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
                 {periodLabel}
               </p>
-              <h2 className="mt-1.5 text-3xl font-bold tracking-tight text-foreground">
+              <h2 className="mt-1.5 text-xl font-bold tracking-tight text-foreground sm:text-2xl md:text-3xl">
                 You&apos;re doing well.
               </h2>
             </div>
-            <div className="rounded-2xl bg-accent p-3 text-primary shadow-2xs">
-              <BarChart3 className="size-5" />
+            <div className="rounded-2xl bg-accent p-2.5 text-primary shadow-2xs sm:p-3">
+              <BarChart3 className="size-4.5 sm:size-5" />
             </div>
           </div>
 
-          <div className="mt-8 flex flex-col items-center gap-8 sm:flex-row">
+          <div className="mt-5 flex flex-col items-center gap-5 sm:mt-8 sm:flex-row sm:gap-8">
             {/* Interactive SVG Donut Chart */}
             <div
-              className="relative flex size-44 shrink-0 items-center justify-center"
+              className="relative flex size-36 shrink-0 items-center justify-center sm:size-44"
               onMouseLeave={handleMouseLeave}
             >
               <svg
@@ -533,13 +526,13 @@ export const Dashboard = ({
             </div>
 
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
                 Spent in this period
               </p>
-              <p className="font-mono-numbers mt-1 text-3xl font-extrabold tracking-tight text-foreground">
+              <p className="font-mono-numbers mt-1 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
                 {money(activeSpend)}
               </p>
-              <p className="mt-2 text-sm font-medium text-muted-foreground">
+              <p className="mt-1.5 text-xs font-medium text-muted-foreground sm:mt-2 sm:text-sm">
                 of{' '}
                 <span className="font-mono-numbers font-semibold">
                   {money(income)}
@@ -553,9 +546,9 @@ export const Dashboard = ({
           </div>
         </div>
 
-        <div className="rounded-3xl bg-accent/70 p-7 shadow-2xs ring-1 ring-border/50 sm:p-8">
+        <div className="rounded-2xl bg-accent/70 p-5 shadow-2xs ring-1 ring-border/50 sm:rounded-3xl sm:p-7 md:p-8">
           <Sparkles className="size-5 text-primary" />
-          <h3 className="mt-4 text-xl font-bold tracking-tight text-foreground">
+          <h3 className="mt-3 text-base font-bold tracking-tight text-foreground sm:mt-4 sm:text-xl">
             A gentle insight
           </h3>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -581,7 +574,7 @@ export const Dashboard = ({
       </div>
 
       {/* Category Breakdown Table */}
-      <div className="mt-8 rounded-3xl bg-card p-7 ring-1 ring-border">
+      <div className="mt-4 rounded-2xl bg-card p-4 ring-1 ring-border sm:mt-8 sm:rounded-3xl sm:p-7">
         <div className="flex items-center justify-between">
           <h3 className="font-bold tracking-tight text-foreground">
             Category breakdown ({activeByCategory.length})
@@ -616,7 +609,7 @@ export const Dashboard = ({
                 >
                   <IconComponent className="size-4 text-white" />
                 </div>
-                <span className="w-28 text-sm font-semibold text-foreground">
+                <span className="w-20 shrink-0 text-xs font-semibold text-foreground sm:w-28 sm:text-sm">
                   {c.label}
                 </span>
                 <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
@@ -628,7 +621,7 @@ export const Dashboard = ({
                     }}
                   />
                 </div>
-                <span className="font-mono-numbers w-24 text-right text-sm font-bold text-foreground">
+                <span className="font-mono-numbers w-20 shrink-0 text-right text-xs font-bold text-foreground sm:w-24 sm:text-sm">
                   {money(c.total)}
                 </span>
               </div>
