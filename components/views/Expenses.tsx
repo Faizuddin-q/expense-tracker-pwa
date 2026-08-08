@@ -183,15 +183,15 @@ export const Expenses = ({
   return (
     <section className="mx-auto max-w-6xl">
       {/* Top Controls: Search Bar & Export CSV */}
-      <div className="flex flex-wrap items-center gap-3.5">
-        <div className="flex flex-1 items-center gap-3 rounded-2xl border border-input bg-card px-4 py-3 transition focus-within:ring-2 focus-within:ring-ring">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3.5">
+        <div className="flex flex-1 items-center gap-3 rounded-xl sm:rounded-2xl border border-input bg-card px-3.5 py-2.5 sm:px-4 sm:py-3 transition focus-within:ring-2 focus-within:ring-ring">
           <SlidersHorizontal className="size-4 shrink-0 text-muted-foreground" />
           <input
             aria-label="Search expenses"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search expenses by note or category..."
-            className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-muted-foreground/60"
+            className="w-full bg-transparent text-xs font-semibold text-foreground outline-none placeholder:text-muted-foreground/60 sm:text-sm"
           />
           {query && (
             <button
@@ -204,9 +204,9 @@ export const Expenses = ({
         </div>
         <button
           onClick={() => downloadCsv(filtered, categories)}
-          className="flex cursor-pointer items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-2xs transition-all hover:opacity-90 active:scale-[0.98]"
+          className="flex cursor-pointer items-center justify-center gap-2 rounded-xl sm:rounded-2xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground shadow-2xs transition-all hover:opacity-90 active:scale-[0.98] sm:px-5 sm:py-3 sm:text-sm"
         >
-          <Download className="size-4" /> Export CSV ({filtered.length})
+          <Download className="size-3.5 sm:size-4" /> Export CSV ({filtered.length})
         </button>
       </div>
 

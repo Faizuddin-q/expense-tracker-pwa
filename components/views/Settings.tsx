@@ -46,121 +46,114 @@ export const Settings = ({
 
   return (
     <section className="mx-auto max-w-3xl">
-      <div className="rounded-3xl bg-card p-7 shadow-sm ring-1 ring-border sm:p-9">
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">
+      <div className="rounded-2xl border border-border/90 bg-card p-5 shadow-xs sm:rounded-3xl sm:p-8 md:p-9">
+        <h2 className="text-base font-bold tracking-tight text-foreground sm:text-lg">
           Your money profile
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
           Your mobile number identifies your private expense space.
         </p>
 
         {/* Theme / Appearance Selection */}
-        <div className="mt-8 flex flex-col gap-2">
-          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="mt-6 sm:mt-8 flex flex-col gap-2">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
             Appearance & Theme
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3">
             <button
               onClick={() => setTheme('dark')}
-              className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-4 text-sm font-semibold transition-all active:scale-[0.97] ${
+              className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-3.5 text-xs font-bold transition-all active:scale-[0.97] sm:p-4 sm:text-sm ${
                 theme === 'dark'
                   ? 'border-primary bg-primary/15 text-primary shadow-xs ring-1 ring-primary/40'
                   : 'border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
-              <Moon className="size-4" /> Dark Mode (Default)
+              <Moon className="size-4 shrink-0" /> Dark Mode (Default)
             </button>
             <button
               onClick={() => setTheme('light')}
-              className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-4 text-sm font-semibold transition-all active:scale-[0.97] ${
+              className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-3.5 text-xs font-bold transition-all active:scale-[0.97] sm:p-4 sm:text-sm ${
                 theme === 'light'
                   ? 'border-primary bg-primary/15 text-primary shadow-xs ring-1 ring-primary/40'
                   : 'border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
-              <Sun className="size-4" /> Warm Light Mode
+              <Sun className="size-4 shrink-0" /> Warm Light Mode
             </button>
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col gap-2">
-          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="mt-6 sm:mt-8 flex flex-col gap-2">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
             Mobile account ID
           </label>
           <input
             readOnly
             value={userId}
-            className="h-12 w-full cursor-not-allowed rounded-xl border border-input bg-muted/60 px-4 text-sm font-medium text-foreground outline-none"
+            className="h-11 w-full cursor-not-allowed rounded-xl border border-input bg-muted/60 px-4 text-xs font-semibold text-foreground outline-none sm:h-12 sm:text-sm"
           />
         </div>
 
-        <div className="mt-4 flex gap-3">
+        <div className="mt-3.5 flex flex-wrap gap-2.5 sm:mt-4 sm:gap-3">
           <button
             onClick={() => sync()}
-            className="h-11 cursor-pointer rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-2xs transition-all hover:opacity-90 active:scale-[0.98]"
+            className="h-10.5 cursor-pointer rounded-xl bg-primary px-4.5 text-xs font-bold text-primary-foreground shadow-2xs transition-all hover:opacity-90 active:scale-[0.98] sm:h-11 sm:px-5 sm:text-sm"
           >
             Sync data
           </button>
           <button
             onClick={onChangeIdentity}
-            className="h-11 cursor-pointer rounded-xl border border-border/80 bg-card px-5 text-sm font-semibold text-foreground transition hover:bg-muted active:scale-[0.98]"
+            className="h-10.5 cursor-pointer rounded-xl border border-border/80 bg-card px-4.5 text-xs font-bold text-foreground transition hover:bg-muted active:scale-[0.98] sm:h-11 sm:px-5 sm:text-sm"
           >
             Change number
           </button>
         </div>
 
-        <div className="mt-8 flex flex-col gap-2">
-          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="mt-6 sm:mt-8 flex flex-col gap-2">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
             Monthly income
           </label>
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 flex-1 items-center rounded-xl border border-input bg-background px-4 focus-within:ring-2 focus-within:ring-ring">
-              <span className="text-sm font-semibold text-muted-foreground">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
+            <div className="flex h-11 flex-1 items-center rounded-xl border border-input bg-background px-4 focus-within:ring-2 focus-within:ring-ring sm:h-12">
+              <span className="text-xs font-bold text-muted-foreground sm:text-sm">
                 ₹
               </span>
               <input
+                aria-label="Monthly income"
                 inputMode="decimal"
                 value={incomeDraft}
                 onChange={(e) =>
-                  setIncomeDraft(
-                    formatIndianNumber(parseRawNumber(e.target.value))
-                  )
+                  setIncomeDraft(formatIndianNumber(e.target.value))
                 }
-                onBlur={handleSaveIncome}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSaveIncome();
-                }}
-                className="font-mono-numbers w-full bg-transparent px-2 text-sm font-bold text-foreground outline-none"
+                placeholder="e.g. 50,000"
+                className="font-mono-numbers w-full bg-transparent px-3 text-xs font-bold text-foreground outline-none placeholder:text-muted-foreground/60 sm:text-sm"
               />
             </div>
             <button
               onClick={handleSaveIncome}
-              className="h-12 cursor-pointer rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-2xs transition-all hover:opacity-90 active:scale-[0.98]"
+              className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground shadow-2xs transition-all hover:opacity-90 active:scale-[0.98] sm:h-12 sm:text-sm"
             >
-              Update
+              <Check className="size-4" /> Save Income
             </button>
           </div>
         </div>
 
-        <div className="mt-8 flex items-center justify-between rounded-2xl bg-accent/60 p-4.5 ring-1 ring-border/50">
-          <div>
-            <p className="text-sm font-semibold text-foreground">
-              Offline-first storage
-            </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {expenses.length} expenses stored locally for this account.
-            </p>
-          </div>
-          <Check className="size-5 shrink-0 text-primary" />
+        {/* Export Data */}
+        <div className="mt-6 border-t border-border/60 pt-6 sm:mt-8 sm:pt-8">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm">
+            Export Data
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Download your full expense history as a CSV file.
+          </p>
+          <button
+            onClick={() => downloadCsv(expenses, categories)}
+            className="mt-3.5 flex h-10.5 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border/80 bg-card px-4.5 text-xs font-bold text-foreground transition-all hover:bg-muted active:scale-[0.98] sm:h-11 sm:px-5 sm:text-sm"
+          >
+            <Download className="size-4" /> Download CSV ({expenses.length})
+          </button>
         </div>
       </div>
-
-      <button
-        onClick={() => downloadCsv(expenses, categories)}
-        className="mt-6 flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-border/80 bg-card px-5 text-sm font-semibold text-foreground shadow-2xs transition-all hover:bg-muted active:scale-[0.98]"
-      >
-        <Download className="size-4" /> Export all expenses
-      </button>
     </section>
   );
 };
