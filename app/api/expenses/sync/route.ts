@@ -10,7 +10,7 @@ async function db() {
   return client.db('pocket');
 }
 
-export async function POST(request: Request) {
+export const POST = async (request: Request) => {
   try {
     const { userId, expenses, monthlyIncome, categories } =
       await request.json();
@@ -26,20 +26,24 @@ export async function POST(request: Request) {
     const profiles = database.collection('profiles');
     if (expenses.length)
       await collection.bulkWrite(
-        expenses.map((expense) => ({
-          updateOne: {
-            filter: { userId, localId: expense.id },
-            update: {
-              $set: {
-                ...expense,
-                userId,
-                localId: expense.id,
-                updatedAt: new Date(expense.updatedAt ?? Date.now()),
+        expenses.map((expense) => {
+          const { _id, ...rest } = expense;
+          const localId = expense.localId || expense.id;
+          return {
+            updateOne: {
+              filter: { userId, localId },
+              update: {
+                $set: {
+                  ...rest,
+                  userId,
+                  localId,
+                  updatedAt: new Date(expense.updatedAt ?? Date.now()),
+                },
               },
+              upsert: true,
             },
-            upsert: true,
-          },
-        }))
+          };
+        })
       );
     const profileUpdate: Record<string, unknown> = {
       userId,
@@ -84,6 +88,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('[v0] expense sync failed', error);
-    return NextResponse.json({ error: 'Sync unavailable' }, { status: 503 });
+    const message = error instanceof Error ? error.message : 'Sync unavailable';
+    return NextResponse.json({ error: message }, { status: 503 });
   }
-}
+};
