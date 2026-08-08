@@ -234,7 +234,7 @@ export const Dashboard = ({
   return (
     <section className="mx-auto max-w-6xl">
       {/* Time Range Filter Selector Bar */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex overflow-x-auto pb-1 sm:pb-0 sm:flex-wrap items-center gap-2">
         <button
           onClick={() => setTimeRange('month')}
           className={`flex cursor-pointer items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${

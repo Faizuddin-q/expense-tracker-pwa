@@ -211,7 +211,7 @@ export const Expenses = ({
       </div>
 
       {/* Date & Time Range Filter Pills */}
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      <div className="mt-4 flex overflow-x-auto pb-1 sm:pb-0 sm:flex-wrap items-center gap-2">
         <button
           onClick={() => setTimeRange('all')}
           className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition-all active:scale-[0.97] ${

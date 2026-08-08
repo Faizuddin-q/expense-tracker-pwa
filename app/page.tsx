@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { get, set } from 'idb-keyval';
 import {
   Check,
-  Menu,
   Moon,
   Plus,
   Sparkles,
@@ -434,17 +433,17 @@ const Page = () => {
           </p>
         </div>
       </aside>
-      <main className="pb-24 lg:ml-64 lg:pb-8">
-        <header className="flex items-center justify-between px-6 py-6 sm:px-10 lg:px-12 lg:py-8">
+      <main className="pb-28 sm:pb-24 lg:ml-64 lg:pb-8">
+        <header className="flex items-center justify-between px-4 py-4 sm:px-8 sm:py-6 lg:px-12 lg:py-8">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
               {new Intl.DateTimeFormat('en-IN', {
                 weekday: 'long',
                 month: 'short',
                 day: 'numeric',
               }).format(new Date())}
             </p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            <h1 className="mt-0.5 text-xl font-extrabold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
               {view === 'home'
                 ? 'Good morning, there.'
                 : view === 'dashboard'
@@ -454,11 +453,11 @@ const Page = () => {
                     : 'Settings'}
             </h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-              className="flex cursor-pointer items-center gap-1.5 rounded-full border border-border/80 bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-2xs transition hover:bg-muted active:scale-95"
+              className="flex cursor-pointer items-center gap-1.5 rounded-full border border-border/80 bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-2xs transition hover:bg-muted active:scale-95 sm:px-3.5"
             >
               {theme === 'dark' ? (
                 <Sun className="size-3.5 text-amber-400" />
@@ -478,15 +477,9 @@ const Page = () => {
               )}
               {syncing ? 'Syncing' : online ? 'Synced' : 'Offline mode'}
             </span>
-            <button
-              aria-label="Menu"
-              className="rounded-xl border border-border/60 bg-card p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground lg:hidden"
-            >
-              <Menu className="size-5" />
-            </button>
           </div>
         </header>
-        <div className="px-6 sm:px-10 lg:px-12">
+        <div className="px-4 sm:px-8 lg:px-12">
           {view === 'home' && (
             <Home
               amount={amount}
@@ -544,7 +537,7 @@ const Page = () => {
           )}
         </div>
       </main>
-      <nav className="fixed inset-x-0 bottom-0 z-10 flex justify-around border-t border-border bg-card/95 px-3 py-3 backdrop-blur lg:hidden">
+      <nav className="fixed bottom-3 inset-x-4 z-50 mx-auto flex max-w-md justify-around rounded-2xl border border-border/80 bg-card/90 px-2 py-1.5 shadow-xl backdrop-blur-md lg:hidden">
         {navItems.map((item) => (
           <NavButton
             key={item.id}

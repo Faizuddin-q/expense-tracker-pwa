@@ -42,15 +42,15 @@ export const CategoryDialog = ({
   const previewColor = getCategoryColor(selectedTone);
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/25 p-5 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-foreground/30 p-0 sm:p-5 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in">
       <div
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-md rounded-3xl bg-card p-7 shadow-2xl ring-1 ring-border duration-200 animate-in zoom-in-95"
+        className="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-card p-5 sm:p-7 shadow-2xl ring-1 ring-border duration-200 animate-in slide-in-from-bottom-5 sm:zoom-in-95"
       >
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold tracking-tight text-foreground">
+            <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
               Categories & Icons
             </h2>
             <p className="mt-0.5 text-xs font-medium text-muted-foreground">
@@ -67,10 +67,10 @@ export const CategoryDialog = ({
         </div>
 
         {/* Tab Selector */}
-        <div className="mt-5 flex rounded-xl bg-muted/80 p-1 text-xs font-bold">
+        <div className="mt-4 sm:mt-5 flex rounded-xl bg-muted/80 p-1 text-xs font-bold">
           <button
             onClick={() => setActiveTab('manage')}
-            className={`flex-1 cursor-pointer rounded-lg py-2.5 transition-all duration-200 active:scale-95 ${
+            className={`flex-1 cursor-pointer rounded-lg py-2 transition-all duration-200 active:scale-95 sm:py-2.5 ${
               activeTab === 'manage'
                 ? 'bg-card text-foreground shadow-2xs'
                 : 'text-muted-foreground hover:text-foreground'
@@ -80,7 +80,7 @@ export const CategoryDialog = ({
           </button>
           <button
             onClick={() => setActiveTab('add')}
-            className={`flex-1 cursor-pointer rounded-lg py-2.5 transition-all duration-200 active:scale-95 ${
+            className={`flex-1 cursor-pointer rounded-lg py-2 transition-all duration-200 active:scale-95 sm:py-2.5 ${
               activeTab === 'add'
                 ? 'bg-card text-foreground shadow-2xs'
                 : 'text-muted-foreground hover:text-foreground'
@@ -91,7 +91,7 @@ export const CategoryDialog = ({
         </div>
 
         {/* Standardized Viewport Container */}
-        <div className="mt-5 h-[500px] max-h-[75vh] overflow-hidden">
+        <div className="mt-4 sm:mt-5 h-[420px] sm:h-[500px] max-h-[68vh] sm:max-h-[75vh] overflow-hidden">
           {/* Tab 1: Manage Colors for existing categories */}
           {activeTab === 'manage' && (
             <div className="flex h-full flex-col gap-3.5 overflow-y-auto pr-1.5">
