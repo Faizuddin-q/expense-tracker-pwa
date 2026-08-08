@@ -446,15 +446,14 @@ const Page = () => {
             <Dashboard
               expenses={expenses}
               income={income}
-              monthSpend={monthSpend}
-              byCategory={byCategory}
+              categories={allCategories}
             />
           )}
           {view === 'expenses' && (
             <Expenses
               expenses={expenses}
               remove={remove}
-              categories={customCategories}
+              categories={allCategories}
             />
           )}
           {view === 'settings' && (

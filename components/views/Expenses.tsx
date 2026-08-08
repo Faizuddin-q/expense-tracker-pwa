@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Download, SlidersHorizontal } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Calendar, Download, SlidersHorizontal, X } from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
-import { categoryFor, downloadCsv } from '@/lib/utils';
+import { categoryFor, downloadCsv, money } from '@/lib/utils';
 import { ExpenseRow } from '@/components/ExpenseRow';
 
 interface ExpensesProps {
@@ -10,19 +10,156 @@ interface ExpensesProps {
   categories?: Category[];
 }
 
+type TimeRangeOption = 'all' | '1d' | '7d' | '14d' | '30d' | 'month' | 'custom';
+
 export const Expenses = ({
   expenses,
   remove,
   categories = [],
 }: ExpensesProps) => {
   const [query, setQuery] = useState('');
-  const filtered = expenses.filter((e) =>
-    `${e.note} ${categoryFor(e.category, categories).label}`
-      .toLowerCase()
-      .includes(query.toLowerCase())
+  const [timeRange, setTimeRange] = useState<TimeRangeOption>('all');
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+
+  // Extract available months from expenses
+  const availableMonths = useMemo(() => {
+    const monthMap = new Map<string, string>();
+    expenses.forEach((e) => {
+      const d = new Date(e.date);
+      if (!isNaN(d.getTime())) {
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const label = d.toLocaleDateString('en-IN', {
+          month: 'long',
+          year: 'numeric',
+        });
+        monthMap.set(key, label);
+      }
+    });
+
+    // Fallback: standard 12 months for current year if no data
+    const currentYear = new Date().getFullYear();
+    const currentMonthKey = `${currentYear}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+
+    if (monthMap.size === 0) {
+      for (let m = 0; m < 12; m++) {
+        const d = new Date(currentYear, m, 1);
+        const key = `${currentYear}-${String(m + 1).padStart(2, '0')}`;
+        const label = d.toLocaleDateString('en-IN', {
+          month: 'long',
+          year: 'numeric',
+        });
+        monthMap.set(key, label);
+      }
+    }
+
+    return Array.from(monthMap.entries()).map(([key, label]) => ({
+      key,
+      label,
+      isCurrent: key === currentMonthKey,
+    }));
+  }, [expenses]);
+
+  // Set default selected month if empty
+  const currentMonthKey = useMemo(() => {
+    if (selectedMonth) return selectedMonth;
+    if (availableMonths.length > 0) return availableMonths[0].key;
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }, [availableMonths, selectedMonth]);
+
+  // Filtered expense list
+  const filtered = useMemo(() => {
+    const now = new Date();
+
+    return expenses.filter((e) => {
+      // 1. Text Search Query Filter
+      const matchesQuery =
+        !query.trim() ||
+        `${e.note ?? ''} ${categoryFor(e.category, categories).label}`
+          .toLowerCase()
+          .includes(query.toLowerCase());
+
+      if (!matchesQuery) return false;
+
+      // 2. Date Range Filter
+      const eDate = new Date(e.date);
+      if (isNaN(eDate.getTime())) return true;
+
+      if (timeRange === '1d') {
+        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        return eDate >= oneDayAgo;
+      }
+
+      if (timeRange === '7d') {
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return eDate >= sevenDaysAgo;
+      }
+
+      if (timeRange === '14d') {
+        const fourteenDaysAgo = new Date(
+          now.getTime() - 14 * 24 * 60 * 60 * 1000
+        );
+        return eDate >= fourteenDaysAgo;
+      }
+
+      if (timeRange === '30d') {
+        const thirtyDaysAgo = new Date(
+          now.getTime() - 30 * 24 * 60 * 60 * 1000
+        );
+        return eDate >= thirtyDaysAgo;
+      }
+
+      if (timeRange === 'month') {
+        const targetMonth = selectedMonth || currentMonthKey;
+        const yearMonth = `${eDate.getFullYear()}-${String(eDate.getMonth() + 1).padStart(2, '0')}`;
+        return yearMonth === targetMonth;
+      }
+
+      if (timeRange === 'custom') {
+        if (startDate) {
+          const start = new Date(startDate);
+          start.setHours(0, 0, 0, 0);
+          if (eDate < start) return false;
+        }
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          if (eDate > end) return false;
+        }
+        return true;
+      }
+
+      return true; // 'all'
+    });
+  }, [
+    expenses,
+    query,
+    timeRange,
+    selectedMonth,
+    currentMonthKey,
+    startDate,
+    endDate,
+    categories,
+  ]);
+
+  const filteredTotal = useMemo(
+    () => filtered.reduce((sum, e) => sum + e.amount, 0),
+    [filtered]
   );
+
+  const resetFilters = () => {
+    setQuery('');
+    setTimeRange('all');
+    setSelectedMonth('');
+    setStartDate('');
+    setEndDate('');
+  };
+
   return (
     <section className="mx-auto max-w-6xl">
+      {/* Top Controls: Search Bar & Export CSV */}
       <div className="flex flex-wrap items-center gap-3.5">
         <div className="flex flex-1 items-center gap-3 rounded-2xl border border-input bg-card px-4 py-3 transition focus-within:ring-2 focus-within:ring-ring">
           <SlidersHorizontal className="size-4 shrink-0 text-muted-foreground" />
@@ -33,15 +170,170 @@ export const Expenses = ({
             placeholder="Search expenses by note or category..."
             className="w-full bg-transparent text-sm font-medium outline-none placeholder:text-muted-foreground/60"
           />
+          {query && (
+            <button
+              onClick={() => setQuery('')}
+              className="cursor-pointer text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-4" />
+            </button>
+          )}
         </div>
         <button
           onClick={() => downloadCsv(filtered, categories)}
           className="flex cursor-pointer items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-2xs transition-all hover:opacity-90 active:scale-[0.98]"
         >
-          <Download className="size-4" /> Export CSV
+          <Download className="size-4" /> Export CSV ({filtered.length})
         </button>
       </div>
-      <div className="mt-6 flex flex-col gap-3">
+
+      {/* Date & Time Range Filter Pills */}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => setTimeRange('all')}
+          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+            timeRange === 'all'
+              ? 'bg-primary text-primary-foreground shadow-2xs'
+              : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+          }`}
+        >
+          All Time
+        </button>
+        <button
+          onClick={() => setTimeRange('1d')}
+          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+            timeRange === '1d'
+              ? 'bg-primary text-primary-foreground shadow-2xs'
+              : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+          }`}
+        >
+          Last 24h
+        </button>
+        <button
+          onClick={() => setTimeRange('7d')}
+          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+            timeRange === '7d'
+              ? 'bg-primary text-primary-foreground shadow-2xs'
+              : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+          }`}
+        >
+          Last 7 Days
+        </button>
+        <button
+          onClick={() => setTimeRange('14d')}
+          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+            timeRange === '14d'
+              ? 'bg-primary text-primary-foreground shadow-2xs'
+              : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+          }`}
+        >
+          Last 14 Days
+        </button>
+        <button
+          onClick={() => setTimeRange('30d')}
+          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+            timeRange === '30d'
+              ? 'bg-primary text-primary-foreground shadow-2xs'
+              : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+          }`}
+        >
+          Last 30 Days
+        </button>
+        <button
+          onClick={() => setTimeRange('month')}
+          className={`flex cursor-pointer items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+            timeRange === 'month'
+              ? 'bg-primary text-primary-foreground shadow-2xs'
+              : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+          }`}
+        >
+          <Calendar className="size-3.5" /> By Month
+        </button>
+        <button
+          onClick={() => setTimeRange('custom')}
+          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+            timeRange === 'custom'
+              ? 'bg-primary text-primary-foreground shadow-2xs'
+              : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+          }`}
+        >
+          Custom Range
+        </button>
+
+        {(timeRange !== 'all' || query || startDate || endDate) && (
+          <button
+            onClick={resetFilters}
+            className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-destructive hover:underline"
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+
+      {/* Month Picker Secondary Bar (When 'month' is selected) */}
+      {timeRange === 'month' && (
+        <div className="mt-3 flex items-center gap-3 rounded-2xl border border-border/80 bg-card p-3 shadow-2xs">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Select Month:
+          </label>
+          <select
+            value={selectedMonth || currentMonthKey}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="cursor-pointer rounded-xl border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring"
+          >
+            {availableMonths.map(({ key, label }) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Custom Date Range Pickers (When 'custom' is selected) */}
+      {timeRange === 'custom' && (
+        <div className="mt-3 flex flex-wrap items-center gap-3.5 rounded-2xl border border-border/80 bg-card p-3.5 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-muted-foreground">
+              From:
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="cursor-pointer rounded-xl border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-muted-foreground">
+              To:
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="cursor-pointer rounded-xl border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Summary Header */}
+      <div className="mt-5 flex items-center justify-between px-1">
+        <p className="text-xs font-medium text-muted-foreground">
+          Showing{' '}
+          <span className="font-semibold text-foreground">
+            {filtered.length}
+          </span>{' '}
+          of {expenses.length} expenses
+        </p>
+        <p className="text-sm font-semibold tracking-tight text-foreground">
+          Total: <span className="text-primary">{money(filteredTotal)}</span>
+        </p>
+      </div>
+
+      {/* Expense List */}
+      <div className="mt-4 flex flex-col gap-3">
         {filtered.map((e) => (
           <ExpenseRow
             key={e.id}
@@ -52,7 +344,7 @@ export const Expenses = ({
         ))}
         {!filtered.length && (
           <div className="rounded-3xl border border-dashed border-border/80 p-10 text-center text-sm font-medium text-muted-foreground">
-            No expenses found matching &quot;{query}&quot;.
+            No expenses found matching the selected filters.
           </div>
         )}
       </div>
