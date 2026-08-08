@@ -236,76 +236,76 @@ export const Dashboard = ({
       {/* Time Range Filter Selector Bar — always horizontal scroll */}
       <div className="flex overflow-x-auto scrollbar-none gap-2 pb-1">
         <div className="flex shrink-0 items-center gap-2">
-        <button
-          onClick={() => setTimeRange('month')}
-          className={`flex cursor-pointer items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
-            timeRange === 'month'
-              ? 'bg-primary text-primary-foreground shadow-2xs'
-              : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
-          }`}
-        >
-          <Calendar className="size-3.5" /> By Month
-        </button>
-        <button
-          onClick={() => setTimeRange('1d')}
-          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
-            timeRange === '1d'
-              ? 'bg-primary text-primary-foreground shadow-2xs'
-              : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
-          }`}
-        >
-          Last 24h
-        </button>
-        <button
-          onClick={() => setTimeRange('7d')}
-          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
-            timeRange === '7d'
-              ? 'bg-primary text-primary-foreground shadow-2xs'
-              : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
-          }`}
-        >
-          Last 7 Days
-        </button>
-        <button
-          onClick={() => setTimeRange('14d')}
-          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
-            timeRange === '14d'
-              ? 'bg-primary text-primary-foreground shadow-2xs'
-              : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
-          }`}
-        >
-          Last 14 Days
-        </button>
-        <button
-          onClick={() => setTimeRange('30d')}
-          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
-            timeRange === '30d'
-              ? 'bg-primary text-primary-foreground shadow-2xs'
-              : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
-          }`}
-        >
-          Last 30 Days
-        </button>
-        <button
-          onClick={() => setTimeRange('all')}
-          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
-            timeRange === 'all'
-              ? 'bg-primary text-primary-foreground shadow-2xs'
-              : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
-          }`}
-        >
-          All Time
-        </button>
-        <button
-          onClick={() => setTimeRange('custom')}
-          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
-            timeRange === 'custom'
-              ? 'bg-primary text-primary-foreground shadow-2xs'
-              : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
-          }`}
-        >
-          Custom Range
-        </button>
+          <button
+            onClick={() => setTimeRange('month')}
+            className={`flex cursor-pointer items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+              timeRange === 'month'
+                ? 'bg-primary text-primary-foreground shadow-2xs'
+                : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <Calendar className="size-3.5" /> By Month
+          </button>
+          <button
+            onClick={() => setTimeRange('1d')}
+            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+              timeRange === '1d'
+                ? 'bg-primary text-primary-foreground shadow-2xs'
+                : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            Last 24h
+          </button>
+          <button
+            onClick={() => setTimeRange('7d')}
+            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+              timeRange === '7d'
+                ? 'bg-primary text-primary-foreground shadow-2xs'
+                : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            Last 7 Days
+          </button>
+          <button
+            onClick={() => setTimeRange('14d')}
+            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+              timeRange === '14d'
+                ? 'bg-primary text-primary-foreground shadow-2xs'
+                : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            Last 14 Days
+          </button>
+          <button
+            onClick={() => setTimeRange('30d')}
+            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+              timeRange === '30d'
+                ? 'bg-primary text-primary-foreground shadow-2xs'
+                : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            Last 30 Days
+          </button>
+          <button
+            onClick={() => setTimeRange('all')}
+            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+              timeRange === 'all'
+                ? 'bg-primary text-primary-foreground shadow-2xs'
+                : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            All Time
+          </button>
+          <button
+            onClick={() => setTimeRange('custom')}
+            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+              timeRange === 'custom'
+                ? 'bg-primary text-primary-foreground shadow-2xs'
+                : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            Custom Range
+          </button>
         </div>
       </div>
 
@@ -383,7 +383,9 @@ export const Dashboard = ({
       {timeRange === 'custom' && (
         <div className="mt-3 grid grid-cols-2 gap-2.5 rounded-2xl border border-border/80 bg-card p-3.5 shadow-2xs sm:flex sm:flex-wrap sm:items-center sm:gap-3.5">
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">From</label>
+            <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              From
+            </label>
             <input
               type="date"
               value={startDate}
@@ -392,7 +394,9 @@ export const Dashboard = ({
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">To</label>
+            <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              To
+            </label>
             <input
               type="date"
               value={endDate}
