@@ -12,7 +12,7 @@ async function db() {
 
 export const POST = async (request: Request) => {
   try {
-    const { userId, expenses, monthlyIncome, categories } =
+    const { userId, expenses, monthlyIncome, categories, deletedIds } =
       await request.json();
     if (
       typeof userId !== 'string' ||
@@ -24,6 +24,15 @@ export const POST = async (request: Request) => {
     const database = await db();
     const collection = database.collection('expenses');
     const profiles = database.collection('profiles');
+
+    // Handle permanent deletion of deleted expense IDs
+    if (Array.isArray(deletedIds) && deletedIds.length > 0) {
+      await collection.deleteMany({
+        userId,
+        $or: [{ localId: { $in: deletedIds } }, { id: { $in: deletedIds } }],
+      });
+    }
+
     if (expenses.length)
       await collection.bulkWrite(
         expenses.map((expense) => {

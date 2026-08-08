@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, Download } from 'lucide-react';
+import { Check, Download, Moon, Sun } from 'lucide-react';
 import { set } from 'idb-keyval';
 import { Category, Expense } from '@/types/expense';
 import { downloadCsv, formatIndianNumber, parseRawNumber } from '@/lib/utils';
@@ -12,6 +12,8 @@ interface SettingsProps {
   sync: (profileIncome?: number) => void;
   onChangeIdentity: () => void;
   categories?: Category[];
+  theme: 'dark' | 'light';
+  setTheme: (t: 'dark' | 'light') => void;
 }
 
 export const Settings = ({
@@ -22,6 +24,8 @@ export const Settings = ({
   sync,
   onChangeIdentity,
   categories = [],
+  theme,
+  setTheme,
 }: SettingsProps) => {
   const [incomeDraft, setIncomeDraft] = useState(
     formatIndianNumber(income || '')
@@ -50,6 +54,35 @@ export const Settings = ({
           Your mobile number identifies your private expense space.
         </p>
 
+        {/* Theme / Appearance Selection */}
+        <div className="mt-8 flex flex-col gap-2">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Appearance & Theme
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => setTheme('dark')}
+              className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-4 text-sm font-semibold transition-all active:scale-[0.97] ${
+                theme === 'dark'
+                  ? 'border-primary bg-primary/15 text-primary shadow-xs ring-1 ring-primary/40'
+                  : 'border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              <Moon className="size-4" /> Dark Mode (Default)
+            </button>
+            <button
+              onClick={() => setTheme('light')}
+              className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-4 text-sm font-semibold transition-all active:scale-[0.97] ${
+                theme === 'light'
+                  ? 'border-primary bg-primary/15 text-primary shadow-xs ring-1 ring-primary/40'
+                  : 'border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              <Sun className="size-4" /> Warm Light Mode
+            </button>
+          </div>
+        </div>
+
         <div className="mt-8 flex flex-col gap-2">
           <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Mobile account ID
@@ -57,7 +90,7 @@ export const Settings = ({
           <input
             readOnly
             value={userId}
-            className="h-12 w-full rounded-xl border border-input bg-muted/60 px-4 text-sm font-medium text-foreground outline-none cursor-not-allowed"
+            className="h-12 w-full cursor-not-allowed rounded-xl border border-input bg-muted/60 px-4 text-sm font-medium text-foreground outline-none"
           />
         </div>
 
@@ -97,7 +130,7 @@ export const Settings = ({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSaveIncome();
                 }}
-                className="w-full bg-transparent px-2 text-sm font-semibold outline-none"
+                className="font-mono-numbers w-full bg-transparent px-2 text-sm font-bold text-foreground outline-none"
               />
             </div>
             <button
@@ -118,7 +151,7 @@ export const Settings = ({
               {expenses.length} expenses stored locally for this account.
             </p>
           </div>
-          <Check className="size-5 text-primary shrink-0" />
+          <Check className="size-5 shrink-0 text-primary" />
         </div>
       </div>
 

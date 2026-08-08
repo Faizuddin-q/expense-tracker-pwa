@@ -1,5 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Calendar, Download, SlidersHorizontal, X } from 'lucide-react';
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  SlidersHorizontal,
+  X,
+} from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
 import { categoryFor, downloadCsv, money } from '@/lib/utils';
 import { ExpenseRow } from '@/components/ExpenseRow';
@@ -38,7 +45,6 @@ export const Expenses = ({
       }
     });
 
-    // Fallback: standard 12 months for current year if no data
     const currentYear = new Date().getFullYear();
     const currentMonthKey = `${currentYear}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
 
@@ -61,13 +67,32 @@ export const Expenses = ({
     }));
   }, [expenses]);
 
-  // Set default selected month if empty
   const currentMonthKey = useMemo(() => {
     if (selectedMonth) return selectedMonth;
     if (availableMonths.length > 0) return availableMonths[0].key;
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   }, [availableMonths, selectedMonth]);
+
+  const activeMonthKey = selectedMonth || currentMonthKey;
+
+  const handlePrevMonth = () => {
+    const currentIndex = availableMonths.findIndex(
+      (m) => m.key === activeMonthKey
+    );
+    if (currentIndex < availableMonths.length - 1) {
+      setSelectedMonth(availableMonths[currentIndex + 1].key);
+    }
+  };
+
+  const handleNextMonth = () => {
+    const currentIndex = availableMonths.findIndex(
+      (m) => m.key === activeMonthKey
+    );
+    if (currentIndex > 0) {
+      setSelectedMonth(availableMonths[currentIndex - 1].key);
+    }
+  };
 
   // Filtered expense list
   const filtered = useMemo(() => {
@@ -112,9 +137,8 @@ export const Expenses = ({
       }
 
       if (timeRange === 'month') {
-        const targetMonth = selectedMonth || currentMonthKey;
         const yearMonth = `${eDate.getFullYear()}-${String(eDate.getMonth() + 1).padStart(2, '0')}`;
-        return yearMonth === targetMonth;
+        return yearMonth === activeMonthKey;
       }
 
       if (timeRange === 'custom') {
@@ -137,8 +161,7 @@ export const Expenses = ({
     expenses,
     query,
     timeRange,
-    selectedMonth,
-    currentMonthKey,
+    activeMonthKey,
     startDate,
     endDate,
     categories,
@@ -168,12 +191,12 @@ export const Expenses = ({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search expenses by note or category..."
-            className="w-full bg-transparent text-sm font-medium outline-none placeholder:text-muted-foreground/60"
+            className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-muted-foreground/60"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="cursor-pointer text-muted-foreground hover:text-foreground"
+              className="cursor-pointer text-muted-foreground hover:text-foreground active:scale-95"
             >
               <X className="size-4" />
             </button>
@@ -191,7 +214,7 @@ export const Expenses = ({
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <button
           onClick={() => setTimeRange('all')}
-          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition-all active:scale-[0.97] ${
             timeRange === 'all'
               ? 'bg-primary text-primary-foreground shadow-2xs'
               : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -201,7 +224,7 @@ export const Expenses = ({
         </button>
         <button
           onClick={() => setTimeRange('1d')}
-          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition-all active:scale-[0.97] ${
             timeRange === '1d'
               ? 'bg-primary text-primary-foreground shadow-2xs'
               : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -211,7 +234,7 @@ export const Expenses = ({
         </button>
         <button
           onClick={() => setTimeRange('7d')}
-          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition-all active:scale-[0.97] ${
             timeRange === '7d'
               ? 'bg-primary text-primary-foreground shadow-2xs'
               : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -221,7 +244,7 @@ export const Expenses = ({
         </button>
         <button
           onClick={() => setTimeRange('14d')}
-          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition-all active:scale-[0.97] ${
             timeRange === '14d'
               ? 'bg-primary text-primary-foreground shadow-2xs'
               : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -231,7 +254,7 @@ export const Expenses = ({
         </button>
         <button
           onClick={() => setTimeRange('30d')}
-          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition-all active:scale-[0.97] ${
             timeRange === '30d'
               ? 'bg-primary text-primary-foreground shadow-2xs'
               : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -241,7 +264,7 @@ export const Expenses = ({
         </button>
         <button
           onClick={() => setTimeRange('month')}
-          className={`flex cursor-pointer items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+          className={`flex cursor-pointer items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all active:scale-[0.97] ${
             timeRange === 'month'
               ? 'bg-primary text-primary-foreground shadow-2xs'
               : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -251,7 +274,7 @@ export const Expenses = ({
         </button>
         <button
           onClick={() => setTimeRange('custom')}
-          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+          className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition-all active:scale-[0.97] ${
             timeRange === 'custom'
               ? 'bg-primary text-primary-foreground shadow-2xs'
               : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -263,34 +286,89 @@ export const Expenses = ({
         {(timeRange !== 'all' || query || startDate || endDate) && (
           <button
             onClick={resetFilters}
-            className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-destructive hover:underline"
+            className="cursor-pointer text-xs font-bold text-muted-foreground hover:text-destructive hover:underline"
           >
             Clear filters
           </button>
         )}
       </div>
 
-      {/* Month Picker Secondary Bar (When 'month' is selected) */}
+      {/* Modern By Month Navigation Bar */}
       {timeRange === 'month' && (
-        <div className="mt-3 flex items-center gap-3 rounded-2xl border border-border/80 bg-card p-3 shadow-2xs">
-          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Select Month:
-          </label>
-          <select
-            value={selectedMonth || currentMonthKey}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="cursor-pointer rounded-xl border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring"
-          >
-            {availableMonths.map(({ key, label }) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
-          </select>
+        <div className="mt-3.5 flex flex-col gap-3 rounded-2xl border border-border/80 bg-card p-4 shadow-2xs ring-1 ring-border/40">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Stepper Controls */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePrevMonth}
+                disabled={
+                  availableMonths.findIndex((m) => m.key === activeMonthKey) >=
+                  availableMonths.length - 1
+                }
+                className="flex size-8 cursor-pointer items-center justify-center rounded-xl border border-border/80 bg-background text-foreground transition hover:bg-muted active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                title="Previous Month"
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+              <span className="font-mono-numbers px-1 text-sm font-bold text-foreground">
+                {availableMonths.find((m) => m.key === activeMonthKey)?.label ??
+                  'Select Month'}
+              </span>
+              <button
+                onClick={handleNextMonth}
+                disabled={
+                  availableMonths.findIndex((m) => m.key === activeMonthKey) <=
+                  0
+                }
+                className="flex size-8 cursor-pointer items-center justify-center rounded-xl border border-border/80 bg-background text-foreground transition hover:bg-muted active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                title="Next Month"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            </div>
+
+            {/* Direct Jump Dropdown */}
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Jump to:
+              </label>
+              <select
+                value={activeMonthKey}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="cursor-pointer rounded-xl border border-input bg-background px-3 py-1.5 text-xs font-semibold text-foreground outline-none focus:ring-2 focus:ring-ring"
+              >
+                {availableMonths.map(({ key, label }) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Horizontal Scrollable Month Pills */}
+          <div className="flex gap-2 overflow-x-auto pt-1">
+            {availableMonths.map(({ key, label }) => {
+              const isActive = activeMonthKey === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setSelectedMonth(key)}
+                  className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all duration-150 active:scale-95 ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground shadow-2xs ring-2 ring-primary/40'
+                      : 'border border-border/60 bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* Custom Date Range Pickers (When 'custom' is selected) */}
+      {/* Custom Date Range Pickers */}
       {timeRange === 'custom' && (
         <div className="mt-3 flex flex-wrap items-center gap-3.5 rounded-2xl border border-border/80 bg-card p-3.5 shadow-2xs">
           <div className="flex items-center gap-2">
@@ -320,15 +398,16 @@ export const Expenses = ({
 
       {/* Summary Header */}
       <div className="mt-5 flex items-center justify-between px-1">
-        <p className="text-xs font-medium text-muted-foreground">
+        <p className="text-xs font-semibold text-muted-foreground">
           Showing{' '}
-          <span className="font-semibold text-foreground">
-            {filtered.length}
-          </span>{' '}
+          <span className="font-bold text-foreground">{filtered.length}</span>{' '}
           of {expenses.length} expenses
         </p>
         <p className="text-sm font-semibold tracking-tight text-foreground">
-          Total: <span className="text-primary">{money(filteredTotal)}</span>
+          Total:{' '}
+          <span className="font-mono-numbers font-bold text-primary">
+            {money(filteredTotal)}
+          </span>
         </p>
       </div>
 

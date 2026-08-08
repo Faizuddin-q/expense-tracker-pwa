@@ -19,18 +19,22 @@ export const NavButton = ({
   return (
     <button
       onClick={onClick}
-      className={`flex cursor-pointer items-center gap-3 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.98] ${
+      className={`group relative flex cursor-pointer items-center gap-3 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-[0.97] ${
         active
-          ? 'bg-primary text-primary-foreground shadow-xs'
+          ? 'bg-primary text-primary-foreground shadow-2xs'
           : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'
       } ${
         mobile
-          ? 'flex-col gap-1 px-4 py-1.5 text-[11px]'
-          : 'w-full px-3.5 py-3 text-left'
+          ? 'flex-col gap-1 px-4 py-2 text-[11px]'
+          : 'w-full px-4 py-3 text-left'
       }`}
     >
-      <Icon className="size-4 shrink-0" />
-      {label}
+      <Icon
+        className={`size-4.5 shrink-0 transition-transform duration-200 ${
+          active ? 'scale-105' : 'group-hover:scale-110'
+        }`}
+      />
+      <span>{label}</span>
     </button>
   );
 };

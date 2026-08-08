@@ -1,5 +1,12 @@
 import { useMemo, useState } from 'react';
-import { BarChart3, Calendar, Plus, Sparkles } from 'lucide-react';
+import {
+  BarChart3,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Sparkles,
+} from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
 import { builtInCategories } from '@/lib/constants';
 import { getCategoryColor, money } from '@/lib/utils';
@@ -76,6 +83,26 @@ export const Dashboard = ({
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   }, [availableMonths, selectedMonth]);
 
+  const activeMonthKey = selectedMonth || currentMonthKey;
+
+  const handlePrevMonth = () => {
+    const currentIndex = availableMonths.findIndex(
+      (m) => m.key === activeMonthKey
+    );
+    if (currentIndex < availableMonths.length - 1) {
+      setSelectedMonth(availableMonths[currentIndex + 1].key);
+    }
+  };
+
+  const handleNextMonth = () => {
+    const currentIndex = availableMonths.findIndex(
+      (m) => m.key === activeMonthKey
+    );
+    if (currentIndex > 0) {
+      setSelectedMonth(availableMonths[currentIndex - 1].key);
+    }
+  };
+
   // Filter expenses by selected time range
   const filteredExpenses = useMemo(() => {
     const now = new Date();
@@ -108,9 +135,8 @@ export const Dashboard = ({
       }
 
       if (timeRange === 'month') {
-        const targetMonth = selectedMonth || currentMonthKey;
         const yearMonth = `${eDate.getFullYear()}-${String(eDate.getMonth() + 1).padStart(2, '0')}`;
-        return yearMonth === targetMonth;
+        return yearMonth === activeMonthKey;
       }
 
       if (timeRange === 'custom') {
@@ -129,7 +155,7 @@ export const Dashboard = ({
 
       return true; // 'all'
     });
-  }, [expenses, timeRange, selectedMonth, currentMonthKey, startDate, endDate]);
+  }, [expenses, timeRange, activeMonthKey, startDate, endDate]);
 
   const activeSpend = useMemo(
     () => filteredExpenses.reduce((sum, e) => sum + e.amount, 0),
@@ -198,14 +224,12 @@ export const Dashboard = ({
     if (timeRange === '14d') return 'Last 14 Days';
     if (timeRange === '30d') return 'Last 30 Days';
     if (timeRange === 'month') {
-      const match = availableMonths.find(
-        (m) => m.key === (selectedMonth || currentMonthKey)
-      );
+      const match = availableMonths.find((m) => m.key === activeMonthKey);
       return match ? match.label : 'This Month';
     }
     if (timeRange === 'custom') return 'Custom Date Range';
     return 'All Time Overview';
-  }, [timeRange, selectedMonth, currentMonthKey, availableMonths]);
+  }, [timeRange, activeMonthKey, availableMonths]);
 
   return (
     <section className="mx-auto max-w-6xl">
@@ -283,23 +307,78 @@ export const Dashboard = ({
         </button>
       </div>
 
-      {/* Month Dropdown Bar */}
+      {/* Modern By Month Navigation Bar */}
       {timeRange === 'month' && (
-        <div className="mt-3 flex items-center gap-3 rounded-2xl border border-border/80 bg-card p-3 shadow-2xs">
-          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Select Month:
-          </label>
-          <select
-            value={selectedMonth || currentMonthKey}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="cursor-pointer rounded-xl border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring"
-          >
-            {availableMonths.map(({ key, label }) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
-          </select>
+        <div className="mt-3.5 flex flex-col gap-3 rounded-2xl border border-border/80 bg-card p-4 shadow-2xs ring-1 ring-border/40">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Stepper Controls */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePrevMonth}
+                disabled={
+                  availableMonths.findIndex((m) => m.key === activeMonthKey) >=
+                  availableMonths.length - 1
+                }
+                className="flex size-8 cursor-pointer items-center justify-center rounded-xl border border-border/80 bg-background text-foreground transition hover:bg-muted active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                title="Previous Month"
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+              <span className="font-mono-numbers px-1 text-sm font-bold text-foreground">
+                {availableMonths.find((m) => m.key === activeMonthKey)?.label ??
+                  'Select Month'}
+              </span>
+              <button
+                onClick={handleNextMonth}
+                disabled={
+                  availableMonths.findIndex((m) => m.key === activeMonthKey) <=
+                  0
+                }
+                className="flex size-8 cursor-pointer items-center justify-center rounded-xl border border-border/80 bg-background text-foreground transition hover:bg-muted active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                title="Next Month"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            </div>
+
+            {/* Direct Jump Dropdown */}
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Jump to:
+              </label>
+              <select
+                value={activeMonthKey}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="cursor-pointer rounded-xl border border-input bg-background px-3 py-1.5 text-xs font-semibold text-foreground outline-none focus:ring-2 focus:ring-ring"
+              >
+                {availableMonths.map(({ key, label }) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Horizontal Scrollable Month Pills */}
+          <div className="flex gap-2 overflow-x-auto pt-1">
+            {availableMonths.map(({ key, label }) => {
+              const isActive = activeMonthKey === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setSelectedMonth(key)}
+                  className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all duration-150 active:scale-95 ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground shadow-2xs ring-2 ring-primary/40'
+                      : 'border border-border/60 bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -336,7 +415,7 @@ export const Dashboard = ({
         <div className="rounded-3xl bg-card p-7 shadow-sm ring-1 ring-border sm:p-8">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 {periodLabel}
               </p>
               <h2 className="mt-1.5 text-3xl font-bold tracking-tight text-foreground">
@@ -400,7 +479,7 @@ export const Dashboard = ({
                     <span className="max-w-[90px] truncate text-xs font-semibold text-muted-foreground">
                       {hoveredCategory.label}
                     </span>
-                    <span className="text-lg font-bold tracking-tight text-foreground">
+                    <span className="font-mono-numbers text-lg font-bold tracking-tight text-foreground">
                       {money(hoveredCategory.total)}
                     </span>
                     <span className="text-[11px] font-semibold text-primary">
@@ -412,7 +491,7 @@ export const Dashboard = ({
                   </>
                 ) : (
                   <>
-                    <span className="text-2xl font-bold tracking-tight text-foreground">
+                    <span className="font-mono-numbers text-2xl font-bold tracking-tight text-foreground">
                       {percent}%
                     </span>
                     <span className="text-[11px] font-medium text-muted-foreground">
@@ -440,7 +519,7 @@ export const Dashboard = ({
                     />
                     <span>{hoveredCategory.label}</span>
                   </div>
-                  <div className="mt-0.5 text-sm font-bold">
+                  <div className="font-mono-numbers mt-0.5 text-sm font-bold">
                     {money(hoveredCategory.total)}
                   </div>
                   <div className="text-[10px] opacity-80">
@@ -454,15 +533,19 @@ export const Dashboard = ({
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Spent in this period
               </p>
-              <p className="mt-1 text-3xl font-bold tracking-tight text-foreground">
+              <p className="font-mono-numbers mt-1 text-3xl font-extrabold tracking-tight text-foreground">
                 {money(activeSpend)}
               </p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                of {money(income)} income ·{' '}
-                <span className="font-semibold text-primary">
+              <p className="mt-2 text-sm font-medium text-muted-foreground">
+                of{' '}
+                <span className="font-mono-numbers font-semibold">
+                  {money(income)}
+                </span>{' '}
+                income ·{' '}
+                <span className="font-mono-numbers font-semibold text-primary">
                   {money(Math.max(0, income - activeSpend))} left
                 </span>
               </p>
@@ -477,7 +560,10 @@ export const Dashboard = ({
           </h3>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             {activeByCategory[0]?.label ?? 'Your first'} is your top spending
-            category for this period ({money(activeByCategory[0]?.total ?? 0)}
+            category for this period (
+            <span className="font-mono-numbers font-semibold text-foreground">
+              {money(activeByCategory[0]?.total ?? 0)}
+            </span>
             ). Mindful choices keep your pace comfortable.
           </p>
           <div className="mt-6 h-2.5 overflow-hidden rounded-full bg-card">
@@ -542,7 +628,7 @@ export const Dashboard = ({
                     }}
                   />
                 </div>
-                <span className="w-24 text-right text-sm font-bold text-foreground">
+                <span className="font-mono-numbers w-24 text-right text-sm font-bold text-foreground">
                   {money(c.total)}
                 </span>
               </div>

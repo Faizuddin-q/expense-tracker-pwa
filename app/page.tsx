@@ -2,7 +2,17 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { get, set } from 'idb-keyval';
-import { Menu, Plus, Sparkles, Wifi, WifiOff } from 'lucide-react';
+import {
+  Check,
+  Menu,
+  Moon,
+  Plus,
+  Sparkles,
+  Sun,
+  Trash2,
+  Wifi,
+  WifiOff,
+} from 'lucide-react';
 import { Category, CategoryId, Expense } from '@/types/expense';
 import { builtInCategories, navItems } from '@/lib/constants';
 import {
@@ -42,6 +52,29 @@ const Page = () => {
   const [showAll, setShowAll] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState('');
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('pocket-theme') as
+      'dark' | 'light' | null;
+    if (saved === 'light' || saved === 'dark') {
+      setTheme(saved);
+    } else {
+      setTheme('dark');
+    }
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'light') {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    } else {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    }
+    localStorage.setItem('pocket-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     get<string>('pocket-user-id').then((saved) => saved && setUserId(saved));
@@ -85,11 +118,14 @@ const Page = () => {
     if (hydrated && userId) set(`pocket-expenses-${userId}`, expenses);
   }, [expenses, hydrated, userId]);
 
+  const [pendingDeletedIds, setPendingDeletedIds] = useState<string[]>([]);
+
   const sync = async (
     id = userId,
     local = expenses,
     profileIncome = income,
-    profileCategories = customCategories
+    profileCategories = customCategories,
+    deletedIds = pendingDeletedIds
   ) => {
     if (!id) return;
     setSyncing(true);
@@ -111,18 +147,28 @@ const Page = () => {
               custom,
             })
           ),
+          deletedIds,
         }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
-      if (Array.isArray(data.expenses))
-        hydrate(
-          data.expenses.map((e: Expense) => ({
+
+      if (deletedIds.length > 0) {
+        setPendingDeletedIds((prev) =>
+          prev.filter((item) => !deletedIds.includes(item))
+        );
+      }
+
+      if (Array.isArray(data.expenses)) {
+        const activeExpenses = data.expenses
+          .map((e: Expense) => ({
             ...e,
             id: e.localId ?? e.id,
-            syncStatus: 'synced',
+            syncStatus: 'synced' as const,
           }))
-        );
+          .filter((e: Expense) => !deletedIds.includes(e.id));
+        hydrate(activeExpenses);
+      }
       if (data.profile?.monthlyIncome > 0) {
         setIncome(data.profile.monthlyIncome);
         setIncomeDraft(String(data.profile.monthlyIncome));
@@ -148,6 +194,15 @@ const Page = () => {
     } finally {
       setSyncing(false);
     }
+  };
+
+  const handleDeleteExpense = (id: string) => {
+    remove(id);
+    if (undo?.id === id) setUndo(null);
+    const nextDeleted = Array.from(new Set([...pendingDeletedIds, id]));
+    setPendingDeletedIds(nextDeleted);
+    const updatedExpenses = expenses.filter((e) => e.id !== id);
+    sync(userId, updatedExpenses, income, customCategories, nextDeleted);
   };
 
   const continueWithPhone = async () => {
@@ -312,17 +367,9 @@ const Page = () => {
   };
 
   const parseAmount = (value: string) => {
-    const match = value.match(/^\s*([\d,.]+)(?:\s+(.*))?$/);
-    if (match) {
-      const rawNum = parseRawNumber(match[1]);
-      const formatted = formatIndianNumber(rawNum);
-      setAmount(formatted);
-      if (match[2] !== undefined) {
-        setNote(match[2]);
-      }
-    } else {
-      setAmount(value);
-    }
+    const rawNum = parseRawNumber(value);
+    const formatted = formatIndianNumber(rawNum);
+    setAmount(formatted);
   };
 
   if (!userId)
@@ -408,6 +455,21 @@ const Page = () => {
             </h1>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+              className="flex cursor-pointer items-center gap-1.5 rounded-full border border-border/80 bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-2xs transition hover:bg-muted active:scale-95"
+            >
+              {theme === 'dark' ? (
+                <Sun className="size-3.5 text-amber-400" />
+              ) : (
+                <Moon className="size-3.5 text-primary" />
+              )}
+              <span className="hidden sm:inline">
+                {theme === 'dark' ? 'Light' : 'Dark'}
+              </span>
+            </button>
+
             <span className="hidden items-center gap-2 rounded-full border border-border/80 bg-card px-3.5 py-1.5 text-xs font-medium text-muted-foreground shadow-2xs sm:flex">
               {online ? (
                 <Wifi className="size-3.5 text-primary" />
@@ -435,7 +497,7 @@ const Page = () => {
               displayed={showAll ? expenses : today}
               showAll={showAll}
               setShowAll={setShowAll}
-              remove={remove}
+              remove={handleDeleteExpense}
               undo={undo}
               setUndo={setUndo}
               categories={allCategories}
@@ -452,7 +514,7 @@ const Page = () => {
           {view === 'expenses' && (
             <Expenses
               expenses={expenses}
-              remove={remove}
+              remove={handleDeleteExpense}
               categories={allCategories}
             />
           )}
@@ -471,6 +533,8 @@ const Page = () => {
                 hydrate([]);
               }}
               categories={customCategories}
+              theme={theme}
+              setTheme={setTheme}
             />
           )}
           {error && (
