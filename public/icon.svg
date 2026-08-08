@@ -1,8 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
   <rect width="512" height="512" rx="128" fill="#090d16" />
-  <rect x="64" y="64" width="384" height="384" rx="96" fill="#10b981" />
-  <path d="M160 216C160 185.072 185.072 160 216 160H296C326.928 160 352 185.072 352 216V312C352 342.928 326.928 368 296 368H216C185.072 368 160 342.928 160 312V216Z" fill="#ffffff" fill-opacity="0.2" />
-  <circle cx="320" cy="264" r="28" fill="#ffffff" />
-  <path d="M192 216H320" stroke="#ffffff" stroke-width="24" stroke-linecap="round" />
-  <path d="M192 272H260" stroke="#ffffff" stroke-width="24" stroke-linecap="round" />
+  <path d="M140 100C140 86.7452 150.745 76 164 76H348C361.255 76 372 86.7452 372 100V412L340 392L308 412L276 392L244 412L212 392L180 412L140 392V100Z" fill="#10b981" />
+  <!-- Big Rupee Symbol (₹) -->
+  <path d="M200 160H312M200 196H312M200 160V232C236 232 272 232 272 196C272 160 200 160 200 160ZM200 232L280 336" stroke="#ffffff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" />
 </svg>
