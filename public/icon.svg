@@ -1,6 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Container Background -->
   <rect width="512" height="512" rx="128" fill="#090d16" />
-  <path d="M140 100C140 86.7452 150.745 76 164 76H348C361.255 76 372 86.7452 372 100V412L340 392L308 412L276 392L244 412L212 392L180 412L140 392V100Z" fill="#10b981" />
-  <!-- Big Rupee Symbol (₹) -->
-  <path d="M200 160H312M200 196H312M200 160V232C236 232 272 232 272 196C272 160 200 160 200 160ZM200 232L280 336" stroke="#ffffff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Clean 2D Minimalist Digital Wallet Outline & Fill -->
+  <rect x="96" y="128" width="320" height="256" rx="40" fill="#10b981" />
+  
+  <!-- Wallet Flap / Pocket Slot Accent -->
+  <path d="M96 192H416" stroke="#090d16" stroke-width="12" stroke-opacity="0.25" stroke-linecap="round" />
+
+  <!-- Wallet Clasp Accent -->
+  <path d="M360 216H416V296H360C337.909 296 320 278.091 320 256C320 233.909 337.909 216 360 216Z" fill="#059669" />
+  <circle cx="368" cy="256" r="14" fill="#ffffff" />
+
+  <!-- BIG Bold Official Indian Rupee Symbol (₹) in White -->
+  <path d="M 176 192 H 304 V 214 H 212 V 230 H 288 V 252 H 212 V 268 C 250 268 274 254 280 232 H 304 C 296 266 264 290 212 290 V 298 L 284 376 H 250 L 190 306 V 290 H 176 V 268 H 190 V 252 H 176 V 230 H 190 V 214 H 176 V 192 Z" fill="#ffffff" />
 </svg>
