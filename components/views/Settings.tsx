@@ -42,38 +42,49 @@ export const Settings = ({
 
   return (
     <section className="mx-auto max-w-3xl">
-      <div className="rounded-3xl bg-card p-6 ring-1 ring-border sm:p-8">
-        <h2 className="text-lg font-semibold">Your money profile</h2>
+      <div className="rounded-3xl bg-card p-7 shadow-sm ring-1 ring-border sm:p-9">
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">
+          Your money profile
+        </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Your mobile number identifies your private expense space.
         </p>
-        <label className="mt-8 flex flex-col gap-2 text-sm font-medium">
-          Mobile account ID
+
+        <div className="mt-8 flex flex-col gap-2">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Mobile account ID
+          </label>
           <input
             readOnly
             value={userId}
-            className="rounded-xl border border-input bg-muted px-4 py-3"
+            className="h-12 w-full rounded-xl border border-input bg-muted/60 px-4 text-sm font-medium text-foreground outline-none cursor-not-allowed"
           />
-        </label>
-        <div className="mt-3 flex gap-3">
+        </div>
+
+        <div className="mt-4 flex gap-3">
           <button
             onClick={() => sync()}
-            className="rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground"
+            className="h-11 cursor-pointer rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-2xs transition-all hover:opacity-90 active:scale-[0.98]"
           >
             Sync data
           </button>
           <button
             onClick={onChangeIdentity}
-            className="rounded-xl border border-border px-4 py-3 text-sm font-medium"
+            className="h-11 cursor-pointer rounded-xl border border-border/80 bg-card px-5 text-sm font-semibold text-foreground transition hover:bg-muted active:scale-[0.98]"
           >
             Change number
           </button>
         </div>
+
         <div className="mt-8 flex flex-col gap-2">
-          <label className="text-sm font-medium">Monthly income</label>
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Monthly income
+          </label>
           <div className="flex items-center gap-3">
-            <div className="flex flex-1 items-center rounded-xl border border-border px-4">
-              <span className="text-muted-foreground">₹</span>
+            <div className="flex h-12 flex-1 items-center rounded-xl border border-input bg-background px-4 focus-within:ring-2 focus-within:ring-ring">
+              <span className="text-sm font-semibold text-muted-foreground">
+                ₹
+              </span>
               <input
                 inputMode="decimal"
                 value={incomeDraft}
@@ -86,30 +97,34 @@ export const Settings = ({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSaveIncome();
                 }}
-                className="w-full bg-transparent p-3 outline-none"
+                className="w-full bg-transparent px-2 text-sm font-semibold outline-none"
               />
             </div>
             <button
               onClick={handleSaveIncome}
-              className="rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground"
+              className="h-12 cursor-pointer rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-2xs transition-all hover:opacity-90 active:scale-[0.98]"
             >
               Update
             </button>
           </div>
         </div>
-        <div className="mt-8 flex items-center justify-between rounded-2xl bg-accent p-4">
+
+        <div className="mt-8 flex items-center justify-between rounded-2xl bg-accent/60 p-4.5 ring-1 ring-border/50">
           <div>
-            <p className="text-sm font-medium">Offline-first storage</p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="text-sm font-semibold text-foreground">
+              Offline-first storage
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
               {expenses.length} expenses stored locally for this account.
             </p>
           </div>
-          <Check className="size-5 text-primary" />
+          <Check className="size-5 text-primary shrink-0" />
         </div>
       </div>
+
       <button
         onClick={() => downloadCsv(expenses, categories)}
-        className="mt-5 flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium"
+        className="mt-6 flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-border/80 bg-card px-5 text-sm font-semibold text-foreground shadow-2xs transition-all hover:bg-muted active:scale-[0.98]"
       >
         <Download className="size-4" /> Export all expenses
       </button>

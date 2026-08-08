@@ -7,6 +7,7 @@ import { Category, CategoryId, Expense } from '@/types/expense';
 import { builtInCategories, navItems } from '@/lib/constants';
 import {
   formatIndianNumber,
+  getCategoryIcon,
   normalizePhone,
   parseRawNumber,
 } from '@/lib/utils';
@@ -51,9 +52,17 @@ const Page = () => {
     get<Expense[]>(`pocket-expenses-${userId}`).then((saved) =>
       hydrate(saved ?? [])
     );
-    get<Category[]>(`pocket-categories-${userId}`).then((saved) =>
-      setCustomCategories(saved ?? [])
-    );
+    get<Category[]>(`pocket-categories-${userId}`).then((saved) => {
+      if (Array.isArray(saved)) {
+        setCustomCategories(
+          saved.map((c) => ({
+            ...c,
+            Icon: getCategoryIcon(c),
+            custom: true,
+          }))
+        );
+      }
+    });
     get<number>(`pocket-income-${userId}`).then((saved) => {
       if (typeof saved === 'number' && saved > 0) {
         setIncome(saved);
@@ -93,12 +102,15 @@ const Page = () => {
           userId: id,
           expenses: local,
           monthlyIncome: profileIncome,
-          categories: profileCategories.map(({ id, label, tone, custom }) => ({
-            id,
-            label,
-            tone,
-            custom,
-          })),
+          categories: profileCategories.map(
+            ({ id, label, tone, iconName, custom }) => ({
+              id,
+              label,
+              tone,
+              iconName,
+              custom,
+            })
+          ),
         }),
       });
       const data = await response.json();
@@ -121,7 +133,7 @@ const Page = () => {
         setCustomCategories(
           data.profile.categories.map((c: Category) => ({
             ...c,
-            Icon: Plus,
+            Icon: getCategoryIcon(c),
             custom: true,
           }))
         );
@@ -162,6 +174,7 @@ const Page = () => {
   };
 
   const [selectedTone, setSelectedTone] = useState('mint');
+  const [selectedIconName, setSelectedIconName] = useState('plus');
   const [categoryOverrides, setCategoryOverrides] = useState<
     Record<string, string>
   >({});
@@ -195,7 +208,13 @@ const Page = () => {
     setCustomCategories(next);
     await set(
       `pocket-categories-${userId}`,
-      next.map(({ id, label, tone, custom }) => ({ id, label, tone, custom }))
+      next.map(({ id, label, tone, iconName, custom }) => ({
+        id,
+        label,
+        tone,
+        iconName,
+        custom,
+      }))
     );
     sync(userId, expenses, income, next);
   };
@@ -207,14 +226,21 @@ const Page = () => {
       id: `custom-${crypto.randomUUID()}`,
       label,
       tone: selectedTone,
-      Icon: Plus,
+      iconName: selectedIconName,
+      Icon: getCategoryIcon({ iconName: selectedIconName }),
       custom: true,
     };
     const next = [...customCategories, custom];
     setCustomCategories(next);
     await set(
       `pocket-categories-${userId}`,
-      next.map(({ id, label, tone, custom }) => ({ id, label, tone, custom }))
+      next.map(({ id, label, tone, iconName, custom }) => ({
+        id,
+        label,
+        tone,
+        iconName,
+        custom,
+      }))
     );
     setCategoryName('');
     setCategoryDialog(false);
@@ -263,7 +289,8 @@ const Page = () => {
   );
 
   const addExpense = (category: CategoryId, preset?: Partial<Expense>) => {
-    const parsed = Number(amount.replace(/[^0-9.]/g, ''));
+    const rawNumber = parseRawNumber(amount);
+    const parsed = Number(rawNumber);
     if (!parsed && !preset?.amount) return;
     const now = new Date().toISOString();
     const expense: Expense = {
@@ -287,9 +314,15 @@ const Page = () => {
   const parseAmount = (value: string) => {
     const match = value.match(/^\s*([\d,.]+)(?:\s+(.*))?$/);
     if (match) {
-      setAmount(match[1].replace(/,/g, ''));
-      setNote(match[2] ?? '');
-    } else setAmount(value);
+      const rawNum = parseRawNumber(match[1]);
+      const formatted = formatIndianNumber(rawNum);
+      setAmount(formatted);
+      if (match[2] !== undefined) {
+        setNote(match[2]);
+      }
+    } else {
+      setAmount(value);
+    }
   };
 
   if (!userId)
@@ -321,6 +354,8 @@ const Page = () => {
           setName={setCategoryName}
           selectedTone={selectedTone}
           setSelectedTone={setSelectedTone}
+          selectedIconName={selectedIconName}
+          setSelectedIconName={setSelectedIconName}
           onAdd={addCategory}
           onUpdateCategoryColor={updateCategoryColor}
           onDeleteCategory={deleteCategory}
@@ -344,25 +379,25 @@ const Page = () => {
             />
           ))}
         </nav>
-        <div className="mt-auto rounded-2xl bg-accent p-4">
-          <Sparkles className="mb-3 size-5 text-primary" />
-          <p className="text-sm font-medium">Small steps add up.</p>
+        <div className="mt-auto rounded-2xl bg-accent/70 p-4.5 ring-1 ring-border/50">
+          <Sparkles className="mb-2.5 size-5 text-primary" />
+          <p className="text-sm font-semibold">Small steps add up.</p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
             Your money picture gets clearer with every entry.
           </p>
         </div>
       </aside>
-      <main className="pb-24 lg:ml-64 lg:pb-0">
-        <header className="flex items-center justify-between px-5 py-5 sm:px-8 lg:px-12 lg:py-8">
+      <main className="pb-24 lg:ml-64 lg:pb-8">
+        <header className="flex items-center justify-between px-6 py-6 sm:px-10 lg:px-12 lg:py-8">
           <div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               {new Intl.DateTimeFormat('en-IN', {
                 weekday: 'long',
                 month: 'short',
                 day: 'numeric',
               }).format(new Date())}
             </p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               {view === 'home'
                 ? 'Good morning, there.'
                 : view === 'dashboard'
@@ -373,7 +408,7 @@ const Page = () => {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            <span className="hidden items-center gap-2 rounded-full bg-muted px-3 py-2 text-xs text-muted-foreground sm:flex">
+            <span className="hidden items-center gap-2 rounded-full border border-border/80 bg-card px-3.5 py-1.5 text-xs font-medium text-muted-foreground shadow-2xs sm:flex">
               {online ? (
                 <Wifi className="size-3.5 text-primary" />
               ) : (
@@ -383,13 +418,13 @@ const Page = () => {
             </span>
             <button
               aria-label="Menu"
-              className="rounded-xl p-2 hover:bg-muted lg:hidden"
+              className="rounded-xl border border-border/60 bg-card p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground lg:hidden"
             >
               <Menu className="size-5" />
             </button>
           </div>
         </header>
-        <div className="px-5 sm:px-8 lg:px-12">
+        <div className="px-6 sm:px-10 lg:px-12">
           {view === 'home' && (
             <Home
               amount={amount}

@@ -52,28 +52,16 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, sans-serif;
-}
-.category-mint {
-  background: oklch(0.93 0.06 165);
-}
-.category-sky {
-  background: oklch(0.93 0.045 230);
-}
-.category-lavender {
-  background: oklch(0.94 0.04 300);
-}
-.category-peach {
-  background: oklch(0.94 0.055 55);
-}
-.category-blush {
-  background: oklch(0.94 0.045 20);
-}
-.category-butter {
-  background: oklch(0.95 0.06 90);
-}
-.category-gray {
-  background: oklch(0.94 0.01 170);
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 button,
 input {

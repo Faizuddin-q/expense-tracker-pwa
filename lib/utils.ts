@@ -1,3 +1,33 @@
+import {
+  Baby,
+  Briefcase,
+  Camera,
+  Car,
+  Coffee,
+  CreditCard,
+  Dog,
+  Dumbbell,
+  Film,
+  Gamepad2,
+  Gift,
+  GraduationCap,
+  HeartPulse,
+  Home,
+  LucideIcon,
+  Music,
+  Package,
+  Palette,
+  Plane,
+  Plus,
+  Receipt,
+  Shirt,
+  ShoppingBag,
+  Smartphone,
+  Sparkles,
+  Tv,
+  Utensils,
+  Wrench,
+} from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { Category, CategoryId, Expense } from '@/types/expense';
@@ -7,61 +37,133 @@ export const cn = (...inputs: ClassValue[]) => {
   return twMerge(clsx(inputs));
 };
 
-export const pastelPalette: string[] = [
-  '#34d399', // Mint
-  '#38bdf8', // Sky
-  '#c084fc', // Lavender
-  '#fb923c', // Peach
-  '#f472b6', // Blush
-  '#facc15', // Butter
-  '#94a3b8', // Gray
-  '#fda4af', // Rose
-  '#a7f3d0', // Sage
-  '#fca5a5', // Coral
-  '#a78bfa', // Violet
-  '#2dd4bf', // Teal
-  '#fde047', // Amber
-  '#67e8f9', // Cyan
-  '#4ade80', // Emerald
-  '#818cf8', // Indigo
-  '#e879f9', // Fuchsia
-  '#fed7aa', // Apricot
-  '#93c5fd', // Periwinkle
-  '#c4b5fd', // Lilac
-];
-
-export const categoryColorMap: Record<string, string> = {
-  mint: '#34d399',
-  sky: '#38bdf8',
-  lavender: '#c084fc',
-  peach: '#fb923c',
-  blush: '#f472b6',
-  butter: '#facc15',
-  gray: '#94a3b8',
-  rose: '#fda4af',
-  sage: '#a7f3d0',
-  coral: '#fca5a5',
-  violet: '#a78bfa',
-  teal: '#2dd4bf',
-  amber: '#fde047',
-  cyan: '#67e8f9',
-  emerald: '#4ade80',
-  indigo: '#818cf8',
-  fuchsia: '#e879f9',
-  apricot: '#fed7aa',
-  periwinkle: '#93c5fd',
-  lilac: '#c4b5fd',
+export const iconMap: Record<string, LucideIcon> = {
+  utensils: Utensils,
+  car: Car,
+  shopping: ShoppingBag,
+  receipt: Receipt,
+  health: HeartPulse,
+  film: Film,
+  plus: Plus,
+  coffee: Coffee,
+  sparkles: Sparkles,
+  plane: Plane,
+  home: Home,
+  phone: Smartphone,
+  gift: Gift,
+  education: GraduationCap,
+  fitness: Dumbbell,
+  music: Music,
+  gaming: Gamepad2,
+  work: Briefcase,
+  tools: Wrench,
+  pets: Dog,
+  baby: Baby,
+  art: Palette,
+  card: CreditCard,
+  camera: Camera,
+  tv: Tv,
+  clothing: Shirt,
+  package: Package,
 };
 
-export const categoryColorOptions = Object.entries(categoryColorMap).map(
-  ([key, color]) => ({
+export const availableCategoryIcons = Object.entries(iconMap).map(
+  ([key, Icon]) => ({
     key,
-    color,
-    label: key.charAt(0).toUpperCase() + key.slice(1),
+    Icon,
   })
 );
 
+export const getCategoryIcon = (category: Partial<Category>): LucideIcon => {
+  if (category.Icon) return category.Icon;
+  if (category.iconName && iconMap[category.iconName])
+    return iconMap[category.iconName];
+  return Plus;
+};
+
+export const pastelPalette: string[] = [
+  '#059669', // Mint Green
+  '#0d9488', // Deep Teal
+  '#0284c7', // Cyan Aqua
+  '#38bdf8', // Sky Blue
+  '#2563eb', // Electric Blue
+  '#4338ca', // Royal Indigo
+  '#1e3a8a', // Midnight Navy
+  '#a855f7', // Lavender
+  '#7e22ce', // Royal Purple
+  '#581c87', // Plum Violet
+  '#c026d3', // Electric Magenta
+  '#db2777', // Hot Pink
+  '#dc2626', // Crimson Red
+  '#f97316', // Coral Orange
+  '#ea580c', // Terracotta
+  '#d97706', // Sunset Gold
+  '#65a30d', // Lime Green
+  '#15803d', // Forest Sage
+  '#92400e', // Warm Copper
+  '#475569', // Cool Slate
+];
+
+export const categoryColorMap: Record<string, string> = {
+  mint: '#059669',
+  teal: '#0d9488',
+  cyan: '#0284c7',
+  sky: '#38bdf8',
+  blue: '#2563eb',
+  indigo: '#4338ca',
+  navy: '#1e3a8a',
+  lavender: '#a855f7',
+  purple: '#7e22ce',
+  plum: '#581c87',
+  magenta: '#c026d3',
+  pink: '#db2777',
+  rose: '#dc2626',
+  coral: '#f97316',
+  apricot: '#ea580c',
+  amber: '#d97706',
+  lime: '#65a30d',
+  sage: '#15803d',
+  bronze: '#92400e',
+  gray: '#475569',
+  // Backward compatibility alias keys for built-in categories
+  food: '#059669',
+  transport: '#0284c7',
+  shopping: '#a855f7',
+  bills: '#f97316',
+  health: '#db2777',
+  butter: '#d97706',
+  peach: '#ea580c',
+  blush: '#db2777',
+  violet: '#7e22ce',
+};
+
+export const categoryColorOptions = [
+  { key: 'mint', color: '#059669', label: 'Mint Green' },
+  { key: 'teal', color: '#0d9488', label: 'Deep Teal' },
+  { key: 'cyan', color: '#0284c7', label: 'Cyan Aqua' },
+  { key: 'sky', color: '#38bdf8', label: 'Sky Blue' },
+  { key: 'blue', color: '#2563eb', label: 'Electric Blue' },
+  { key: 'indigo', color: '#4338ca', label: 'Royal Indigo' },
+  { key: 'navy', color: '#1e3a8a', label: 'Midnight Navy' },
+  { key: 'lavender', color: '#a855f7', label: 'Lavender' },
+  { key: 'purple', color: '#7e22ce', label: 'Royal Purple' },
+  { key: 'plum', color: '#581c87', label: 'Plum Violet' },
+  { key: 'magenta', color: '#c026d3', label: 'Electric Magenta' },
+  { key: 'pink', color: '#db2777', label: 'Hot Pink' },
+  { key: 'rose', color: '#dc2626', label: 'Crimson Red' },
+  { key: 'coral', color: '#f97316', label: 'Coral Orange' },
+  { key: 'apricot', color: '#ea580c', label: 'Terracotta' },
+  { key: 'amber', color: '#d97706', label: 'Sunset Gold' },
+  { key: 'lime', color: '#65a30d', label: 'Lime Green' },
+  { key: 'sage', color: '#15803d', label: 'Forest Sage' },
+  { key: 'bronze', color: '#92400e', label: 'Warm Copper' },
+  { key: 'gray', color: '#475569', label: 'Cool Slate' },
+];
+
 export const getCategoryColor = (tone: string): string => {
+  if (!tone) return pastelPalette[0];
+  if (tone.startsWith('#') || tone.startsWith('rgb') || tone.startsWith('hsl'))
+    return tone;
   if (categoryColorMap[tone]) return categoryColorMap[tone];
   let hash = 0;
   for (let i = 0; i < tone.length; i++) {
@@ -74,9 +176,15 @@ export const getCategoryColor = (tone: string): string => {
 export const categoryFor = (
   id: CategoryId,
   custom: Category[] = []
-): Category =>
-  [...builtInCategories, ...custom].find((c) => c.id === id) ??
-  builtInCategories.at(-1)!;
+): Category => {
+  const found =
+    [...builtInCategories, ...custom].find((c) => c.id === id) ??
+    builtInCategories.at(-1)!;
+  return {
+    ...found,
+    Icon: getCategoryIcon(found),
+  };
+};
 
 export const normalizePhone = (value: string): string =>
   value.replace(/[^\d+]/g, '').replace(/^00/, '+');

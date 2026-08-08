@@ -19,9 +19,17 @@ export const NavButton = ({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${active ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted'} ${mobile ? 'flex-col gap-1 px-4 py-1 text-[11px]' : 'w-full text-left'}`}
+      className={`flex cursor-pointer items-center gap-3 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.98] ${
+        active
+          ? 'bg-primary text-primary-foreground shadow-xs'
+          : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'
+      } ${
+        mobile
+          ? 'flex-col gap-1 px-4 py-1.5 text-[11px]'
+          : 'w-full px-3.5 py-3 text-left'
+      }`}
     >
-      <Icon className="size-4" />
+      <Icon className="size-4 shrink-0" />
       {label}
     </button>
   );

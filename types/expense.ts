@@ -22,6 +22,7 @@ export type Category = {
   id: CategoryId;
   label: string;
   tone: string;
-  Icon: LucideIcon;
+  Icon?: LucideIcon;
+  iconName?: string;
   custom?: boolean;
 };

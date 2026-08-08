@@ -39,15 +39,17 @@ export const Home = ({
     <section className="mx-auto max-w-5xl">
       <div className="grid gap-8 xl:grid-cols-[1.1fr_.9fr]">
         <div>
-          <div className="rounded-3xl bg-primary p-6 text-primary-foreground shadow-sm sm:p-9">
-            <p className="text-sm opacity-70">Log a new expense</p>
+          <div className="rounded-3xl bg-primary p-7 text-primary-foreground shadow-sm sm:p-9">
+            <p className="text-xs font-medium uppercase tracking-wider opacity-70">
+              Log a new expense
+            </p>
             <input
               aria-label="Amount"
               inputMode="decimal"
               value={amount}
               onChange={(e) => parseAmount(e.target.value)}
               placeholder="₹ 0"
-              className="mt-5 w-full bg-transparent text-6xl font-semibold tracking-tight outline-none placeholder:text-primary-foreground/35 sm:text-7xl"
+              className="mt-4 w-full bg-transparent text-6xl font-bold tracking-tight outline-none placeholder:text-primary-foreground/35 sm:text-7xl"
             />
             <input
               aria-label="Note"
@@ -56,21 +58,23 @@ export const Home = ({
               placeholder="What was it for? (optional)"
               className="mt-5 w-full border-b border-primary-foreground/20 bg-transparent pb-3 text-sm outline-none placeholder:text-primary-foreground/55"
             />
-            <p className="mt-5 text-xs opacity-60">
-              Type “230 lunch” to capture the note too
+            <p className="mt-4 text-xs opacity-65">
+              Type “230 lunch” to capture the note automatically
             </p>
           </div>
           <div className="mt-8">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-semibold">Choose a category</h2>
+            <div className="mb-3.5 flex items-center justify-between">
+              <h2 className="text-sm font-semibold tracking-tight text-foreground">
+                Choose a category
+              </h2>
               <button
                 onClick={onAddCategory}
-                className="flex items-center gap-1 text-xs font-medium text-primary"
+                className="flex cursor-pointer items-center gap-1 text-xs font-medium text-primary transition hover:underline"
               >
                 <Plus className="size-3.5" /> Customize / Add
               </button>
             </div>
-            <div className="flex gap-3 overflow-x-auto pb-2">
+            <div className="flex gap-2.5 overflow-x-auto pb-2">
               {categories.map(({ id, label, tone, Icon }) => {
                 const IconComponent = Icon || Plus;
                 const color = getCategoryColor(tone);
@@ -78,7 +82,7 @@ export const Home = ({
                   <button
                     key={id}
                     onClick={() => addExpense(id)}
-                    className="flex min-w-20 flex-col items-center gap-2 rounded-2xl px-3.5 py-3 text-xs font-medium text-white shadow-xs transition hover:-translate-y-0.5 active:translate-y-0"
+                    className="flex min-w-20 shrink-0 cursor-pointer flex-col items-center gap-2 rounded-2xl px-4 py-3 text-xs font-medium text-white shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xs active:translate-y-0 active:scale-[0.97]"
                     style={{
                       backgroundColor: color,
                       color: '#ffffff',
@@ -91,14 +95,16 @@ export const Home = ({
               })}
             </div>
           </div>
-          <div className="mt-7">
+          <div className="mt-8">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-semibold">Quick re-log</h2>
+              <h2 className="text-sm font-semibold tracking-tight text-foreground">
+                Quick re-log
+              </h2>
               <span className="text-xs text-muted-foreground">
                 Your frequent picks
               </span>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-1">
+            <div className="flex gap-2.5 overflow-x-auto pb-1">
               {quickRelogItems.map((item) => {
                 const QuickIcon = item.Icon || Plus;
                 return (
@@ -110,11 +116,11 @@ export const Home = ({
                         note: item.label,
                       })
                     }
-                    className="flex shrink-0 items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm hover:border-primary/40"
+                    className="flex shrink-0 cursor-pointer items-center gap-2.5 rounded-xl border border-border/80 bg-card px-3.5 py-2.5 text-sm font-medium transition-all duration-200 hover:border-primary/40 hover:bg-accent/40 active:scale-[0.98]"
                   >
                     <QuickIcon className="size-4 text-primary" />
                     {item.label}
-                    <span className="text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       {money(item.amount)}
                     </span>
                   </button>
@@ -126,10 +132,10 @@ export const Home = ({
         <div>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs font-medium text-muted-foreground">
                 {showAll ? 'All activity' : 'Today'}
               </p>
-              <h2 className="mt-1 text-2xl font-semibold">
+              <h2 className="mt-1 text-2xl font-bold tracking-tight">
                 {money(
                   displayed.reduce((s: number, e: Expense) => s + e.amount, 0)
                 )}
@@ -137,7 +143,7 @@ export const Home = ({
             </div>
             <button
               onClick={() => setShowAll(!showAll)}
-              className="rounded-xl border border-border px-3 py-2 text-xs font-medium"
+              className="cursor-pointer rounded-xl border border-border/80 bg-card px-3.5 py-2 text-xs font-medium transition hover:bg-muted active:scale-[0.98]"
             >
               {showAll ? 'Today only' : 'See all'}
             </button>
@@ -152,20 +158,20 @@ export const Home = ({
               />
             ))}
             {!displayed.length && (
-              <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+              <div className="rounded-2xl border border-dashed border-border/80 p-8 text-center text-sm text-muted-foreground">
                 Your saved expenses will appear here.
               </div>
             )}
           </div>
           {undo && (
-            <div className="mt-4 flex items-center justify-between rounded-xl bg-accent px-4 py-3 text-sm">
+            <div className="mt-4 flex items-center justify-between rounded-xl border border-border/60 bg-accent/80 px-4 py-3 text-sm font-medium">
               <span>Expense added.</span>
               <button
                 onClick={() => {
                   remove(undo.id);
                   setUndo(null);
                 }}
-                className="font-medium text-primary"
+                className="cursor-pointer font-semibold text-primary transition hover:underline"
               >
                 Undo
               </button>
