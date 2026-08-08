@@ -35,9 +35,15 @@ const Page = () => {
   const { expenses, add, remove, hydrated, hydrate } = useExpenses();
   const [userId, setUserId] = useState('');
   const [phone, setPhone] = useState('');
+  const [initializing, setInitializing] = useState(true);
   const [view, setView] = useState<
     'home' | 'dashboard' | 'expenses' | 'settings'
-  >('home');
+  >(() => {
+    if (typeof window === 'undefined') return 'home';
+    const saved = localStorage.getItem('pocket-view') as
+      'home' | 'dashboard' | 'expenses' | 'settings' | null;
+    return saved ?? 'home';
+  });
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [online, setOnline] = useState(true);
@@ -76,8 +82,16 @@ const Page = () => {
   }, [theme]);
 
   useEffect(() => {
-    get<string>('pocket-user-id').then((saved) => saved && setUserId(saved));
+    get<string>('pocket-user-id').then((saved) => {
+      if (saved) setUserId(saved);
+      setInitializing(false);
+    });
   }, []);
+
+  // Persist active tab so refreshes restore the same view
+  useEffect(() => {
+    localStorage.setItem('pocket-view', view);
+  }, [view]);
 
   useEffect(() => {
     if (!userId) return;
@@ -370,6 +384,12 @@ const Page = () => {
     const formatted = formatIndianNumber(rawNum);
     setAmount(formatted);
   };
+
+  // While reading saved userId from IndexedDB, show nothing to prevent Login flash
+  if (initializing)
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background" />
+    );
 
   if (!userId)
     return (
