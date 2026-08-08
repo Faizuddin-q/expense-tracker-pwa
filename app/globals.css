@@ -1,0 +1,81 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 1.75rem;
+}
+:root {
+  color-scheme: light;
+  --background: oklch(0.975 0.012 93);
+  --foreground: oklch(0.24 0.025 170);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.24 0.025 170);
+  --primary: oklch(0.49 0.095 170);
+  --primary-foreground: oklch(0.98 0.012 93);
+  --secondary: oklch(0.94 0.025 170);
+  --secondary-foreground: oklch(0.32 0.05 170);
+  --muted: oklch(0.95 0.012 93);
+  --muted-foreground: oklch(0.53 0.025 170);
+  --accent: oklch(0.94 0.04 92);
+  --accent-foreground: oklch(0.3 0.04 92);
+  --destructive: oklch(0.62 0.16 25);
+  --border: oklch(0.9 0.018 170);
+  --input: oklch(0.9 0.018 170);
+  --ring: oklch(0.49 0.095 170);
+  --radius: 1rem;
+}
+* {
+  border-color: var(--border);
+}
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, sans-serif;
+}
+.category-mint {
+  background: oklch(0.93 0.06 165);
+}
+.category-sky {
+  background: oklch(0.93 0.045 230);
+}
+.category-lavender {
+  background: oklch(0.94 0.04 300);
+}
+.category-peach {
+  background: oklch(0.94 0.055 55);
+}
+.category-blush {
+  background: oklch(0.94 0.045 20);
+}
+.category-butter {
+  background: oklch(0.95 0.06 90);
+}
+.category-gray {
+  background: oklch(0.94 0.01 170);
+}
+button,
+input {
+  font: inherit;
+}
