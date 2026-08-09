@@ -46,6 +46,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
     setSelectedIconName,
     addCategory,
     updateCategoryColor,
+    updateCategoryIcon,
     deleteCategory,
     renameCategory,
     logout,
@@ -95,6 +96,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
         setSelectedIconName={setSelectedIconName}
         onAdd={addCategory}
         onUpdateCategoryColor={updateCategoryColor}
+        onUpdateCategoryIcon={updateCategoryIcon}
         onRenameCategory={renameCategory}
         onDeleteCategory={deleteCategory}
         onClose={() => setCategoryDialog(false)}

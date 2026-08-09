@@ -17,6 +17,8 @@ export default function SettingsPage() {
     sync,
     logout,
     customCategories,
+    categoryOverrides,
+    categoryIconOverrides,
     theme,
     setTheme,
     hideAmounts,
@@ -34,8 +36,22 @@ export default function SettingsPage() {
       expenses={expenses}
       userId={userId}
       sync={async () => {
-        const ok = await sync(userId, expenses, null, null, undefined, null);
-        if (ok) toast.success('Data synced', 'Latest expenses and profile pulled');
+        const ok = await sync(
+          userId,
+          expenses,
+          null,
+          customCategories.length > 0 ? customCategories : null,
+          undefined,
+          null,
+          null,
+          categoryOverrides,
+          categoryIconOverrides
+        );
+        if (ok)
+          toast.success(
+            'Data synced',
+            'Expenses, categories, colors, and icons pushed to your account'
+          );
       }}
       onChangeIdentity={logout}
       onLogout={logout}

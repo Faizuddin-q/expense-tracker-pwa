@@ -75,9 +75,10 @@ export const availableCategoryIcons = Object.entries(iconMap).map(
 );
 
 export const getCategoryIcon = (category: Partial<Category>): LucideIcon => {
-  if (category.Icon) return category.Icon;
+  // Prefer iconName so synced / overridden icons win over baked-in Icon components
   if (category.iconName && iconMap[category.iconName])
     return iconMap[category.iconName];
+  if (category.Icon) return category.Icon;
   return Plus;
 };
 
@@ -225,6 +226,47 @@ export const recoverOrphanCategories = (
   });
 
   return { categories: [...existingCustom, ...added], added };
+};
+
+/** Merge cloud + local category defs. Prefer non-default local styles, else cloud. */
+export const mergeCategoryDefs = (
+  cloud: Category,
+  local?: Category
+): Category => {
+  if (!local) {
+    return {
+      ...cloud,
+      Icon: getCategoryIcon(cloud),
+      custom: true,
+    };
+  }
+  const cloudRecovered = /^Recovered\b/i.test(cloud.label);
+  const localRecovered = /^Recovered\b/i.test(local.label);
+  const label =
+    cloudRecovered && !localRecovered
+      ? local.label
+      : cloud.label || local.label;
+
+  const pick = (
+    localVal: string | undefined,
+    cloudVal: string | undefined,
+    fallback: string
+  ) => {
+    if (localVal && localVal !== fallback) return localVal;
+    if (cloudVal && cloudVal !== fallback) return cloudVal;
+    return localVal || cloudVal || fallback;
+  };
+
+  const tone = pick(local.tone, cloud.tone, 'gray');
+  const iconName = pick(local.iconName, cloud.iconName, 'plus');
+  return {
+    id: cloud.id || local.id,
+    label,
+    tone,
+    iconName,
+    custom: true,
+    Icon: getCategoryIcon({ iconName }),
+  };
 };
 
 export const normalizePhone = (value: string): string => {

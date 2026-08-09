@@ -17,6 +17,7 @@ interface CategoryDialogProps {
   setSelectedIconName: (v: string) => void;
   onAdd: () => void;
   onUpdateCategoryColor: (id: string, newTone: string) => void;
+  onUpdateCategoryIcon?: (id: string, iconName: string) => void;
   onRenameCategory?: (id: string, label: string) => void;
   onDeleteCategory?: (id: string) => void;
   onClose: () => void;
@@ -32,6 +33,7 @@ export const CategoryDialog = ({
   setSelectedIconName,
   onAdd,
   onUpdateCategoryColor,
+  onUpdateCategoryIcon,
   onRenameCategory,
   onDeleteCategory,
   onClose,
@@ -56,7 +58,7 @@ export const CategoryDialog = ({
               Categories & Icons
             </h2>
             <p className="mt-0.5 text-xs font-medium text-muted-foreground">
-              Customize colors, select custom icons, or create new categories.
+              Customize colors and icons, or create new categories.
             </p>
           </div>
           <button
@@ -78,7 +80,7 @@ export const CategoryDialog = ({
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            Manage Colors ({categories.length})
+            Manage ({categories.length})
           </button>
           <button
             onClick={() => setActiveTab('add')}
@@ -193,6 +195,37 @@ export const CategoryDialog = ({
                         />
                       ))}
                     </div>
+
+                    {onUpdateCategoryIcon && (
+                      <div>
+                        <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                          Icon
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {availableCategoryIcons.map(({ key, Icon }) => {
+                            const active =
+                              (c.iconName ?? 'plus') === key;
+                            return (
+                              <button
+                                key={key}
+                                type="button"
+                                title={key}
+                                onClick={() =>
+                                  onUpdateCategoryIcon(c.id, key)
+                                }
+                                className={`grid size-8 cursor-pointer place-items-center rounded-lg transition-transform hover:scale-110 active:scale-95 ${
+                                  active
+                                    ? 'bg-foreground text-background ring-2 ring-foreground ring-offset-2 ring-offset-card'
+                                    : 'bg-muted text-muted-foreground hover:text-foreground'
+                                }`}
+                              >
+                                <Icon className="size-3.5" />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}

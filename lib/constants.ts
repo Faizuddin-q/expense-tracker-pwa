@@ -13,13 +13,31 @@ import {
 import { Category } from '@/types/expense';
 
 export const builtInCategories: Category[] = [
-  { id: 'food', label: 'Food', tone: 'mint', Icon: Utensils },
-  { id: 'transport', label: 'Transport', tone: 'sky', Icon: Car },
-  { id: 'shopping', label: 'Shopping', tone: 'lavender', Icon: ShoppingBag },
-  { id: 'bills', label: 'Bills', tone: 'peach', Icon: Receipt },
-  { id: 'health', label: 'Health', tone: 'blush', Icon: HeartPulse },
-  { id: 'entertainment', label: 'Fun', tone: 'butter', Icon: Film },
-  { id: 'other', label: 'Other', tone: 'gray', Icon: Plus },
+  { id: 'food', label: 'Food', tone: 'mint', iconName: 'utensils', Icon: Utensils },
+  { id: 'transport', label: 'Transport', tone: 'sky', iconName: 'car', Icon: Car },
+  {
+    id: 'shopping',
+    label: 'Shopping',
+    tone: 'lavender',
+    iconName: 'shopping',
+    Icon: ShoppingBag,
+  },
+  { id: 'bills', label: 'Bills', tone: 'peach', iconName: 'receipt', Icon: Receipt },
+  {
+    id: 'health',
+    label: 'Health',
+    tone: 'blush',
+    iconName: 'health',
+    Icon: HeartPulse,
+  },
+  {
+    id: 'entertainment',
+    label: 'Fun',
+    tone: 'butter',
+    iconName: 'film',
+    Icon: Film,
+  },
+  { id: 'other', label: 'Other', tone: 'gray', iconName: 'plus', Icon: Plus },
 ];
 
 export const navItems = [

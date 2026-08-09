@@ -20,6 +20,7 @@ import {
   formatIndianNumber,
   money,
   recoverOrphanCategories,
+  mergeCategoryDefs,
 } from '@/lib/utils';
 import { useExpenses } from '@/lib/store';
 import { toast, ToastHost } from '@/components/ToastHost';
@@ -76,6 +77,8 @@ interface AppContextValue {
   // Categories
   allCategories: Category[];
   customCategories: Category[];
+  categoryOverrides: Record<string, string>;
+  categoryIconOverrides: Record<string, string>;
   categoryDialog: boolean;
   setCategoryDialog: (v: boolean) => void;
   categoryName: string;
@@ -88,6 +91,7 @@ interface AppContextValue {
   deleteCategory: (id: string) => Promise<void>;
   renameCategory: (id: string, label: string) => Promise<void>;
   updateCategoryColor: (id: string, tone: string) => Promise<void>;
+  updateCategoryIcon: (id: string, iconName: string) => Promise<void>;
 
   // Theme
   theme: 'dark' | 'light';
@@ -113,7 +117,11 @@ interface AppContextValue {
     /** Pass a number to push budget; null/omit to leave cloud budget unchanged */
     profileBudget?: number | null,
     /** Pass boolean to push hide-amounts preference; null to leave unchanged */
-    profileHideAmounts?: boolean | null
+    profileHideAmounts?: boolean | null,
+    /** Pass a record to push color overrides; null to leave unchanged */
+    profileCategoryOverrides?: Record<string, string> | null,
+    /** Pass a record to push icon overrides; null to leave unchanged */
+    profileCategoryIconOverrides?: Record<string, string> | null
   ) => Promise<boolean>;
 
   // Derived
@@ -162,6 +170,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [categoryOverrides, setCategoryOverrides] = useState<
     Record<string, string>
   >({});
+  const categoryOverridesRef = useRef<Record<string, string>>({});
+  const [categoryIconOverrides, setCategoryIconOverrides] = useState<
+    Record<string, string>
+  >({});
+  const categoryIconOverridesRef = useRef<Record<string, string>>({});
 
   const [theme, setThemeState] = useState<'dark' | 'light'>('dark');
   const [hideAmounts, setHideAmountsState] = useState(false);
@@ -178,6 +191,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     customCategoriesRef.current = customCategories;
   }, [customCategories]);
 
+  useEffect(() => {
+    categoryOverridesRef.current = categoryOverrides;
+  }, [categoryOverrides]);
+
+  useEffect(() => {
+    categoryIconOverridesRef.current = categoryIconOverrides;
+  }, [categoryIconOverrides]);
+
   const persistCustomCategories = useCallback(
     async (id: string, next: Category[]) => {
       setCustomCategories(next);
@@ -193,6 +214,41 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         }))
       );
     },
+    []
+  );
+
+  const persistToneOverrides = useCallback(
+    async (id: string, next: Record<string, string>) => {
+      setCategoryOverrides(next);
+      categoryOverridesRef.current = next;
+      await set(`pocket-cat-overrides-${id}`, next);
+    },
+    []
+  );
+
+  const persistIconOverrides = useCallback(
+    async (id: string, next: Record<string, string>) => {
+      setCategoryIconOverrides(next);
+      categoryIconOverridesRef.current = next;
+      await set(`pocket-cat-icon-overrides-${id}`, next);
+    },
+    []
+  );
+
+  const bakeCategoryStyles = useCallback(
+    (
+      cats: Category[],
+      tones: Record<string, string> = categoryOverridesRef.current,
+      icons: Record<string, string> = categoryIconOverridesRef.current
+    ) =>
+      cats.map((c) => ({
+        ...c,
+        tone: tones[c.id] ?? c.tone,
+        iconName: icons[c.id] ?? c.iconName,
+        Icon: getCategoryIcon({
+          iconName: icons[c.id] ?? c.iconName,
+        }),
+      })),
     []
   );
 
@@ -249,6 +305,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         savedIncome,
         savedBudget,
         savedOverrides,
+        savedIconOverrides,
         savedHideAmounts,
       ] = await Promise.all([
         get<Expense[]>(`pocket-expenses-${userId}`),
@@ -256,6 +313,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         get<number>(`pocket-income-${userId}`),
         get<number>(`pocket-budget-${userId}`),
         get<Record<string, string>>(`pocket-cat-overrides-${userId}`),
+        get<Record<string, string>>(`pocket-cat-icon-overrides-${userId}`),
         get<boolean>(`pocket-hide-amounts-${userId}`),
       ]);
 
@@ -304,7 +362,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         setHideAmountsState(savedHideAmounts);
       }
 
-      setCategoryOverrides(savedOverrides ?? {});
+      await persistToneOverrides(userId, savedOverrides ?? {});
+      await persistIconOverrides(userId, savedIconOverrides ?? {});
       setProfileHydrated(true);
     };
 
@@ -319,7 +378,13 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       removeEventListener('online', on);
       removeEventListener('offline', off);
     };
-  }, [userId, hydrate, persistCustomCategories]);
+  }, [
+    userId,
+    hydrate,
+    persistCustomCategories,
+    persistToneOverrides,
+    persistIconOverrides,
+  ]);
 
   useEffect(() => {
     if (hydrated && userId) set(`pocket-expenses-${userId}`, expenses);
@@ -337,7 +402,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       profileCategories: Category[] | null = null,
       deletedIds = pendingDeletedIds,
       profileBudget: number | null = null,
-      profileHideAmounts: boolean | null = null
+      profileHideAmounts: boolean | null = null,
+      profileCategoryOverrides: Record<string, string> | null = null,
+      profileCategoryIconOverrides: Record<string, string> | null = null
     ): Promise<boolean> => {
       if (!id) return false;
       setSyncing(true);
@@ -348,9 +415,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           expenses: local,
           deletedIds,
         };
-        // Only push categories when explicitly provided (add/delete/rename/recover)
+        // Only push categories when explicitly provided (add/delete/rename/recover/styles)
         if (profileCategories !== null) {
-          payload.categories = profileCategories.map(
+          payload.categories = bakeCategoryStyles(profileCategories).map(
             ({ id: catId, label, tone, iconName, custom }) => ({
               id: catId,
               label,
@@ -359,6 +426,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
               custom,
             })
           );
+        }
+        if (profileCategoryOverrides !== null) {
+          payload.categoryOverrides = profileCategoryOverrides;
+        }
+        if (profileCategoryIconOverrides !== null) {
+          payload.categoryIconOverrides = profileCategoryIconOverrides;
         }
         // Only push profile money fields when explicitly provided
         if (typeof profileIncome === 'number' && profileIncome > 0) {
@@ -419,7 +492,37 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           await set(`pocket-hide-amounts-${id}`, data.profile.hideAmounts);
         }
 
-        // Merge cloud categories with local — never wipe local customs with []
+        // Color / icon overrides — empty cloud must never wipe local styles
+        const cloudToneOverrides =
+          data.profile?.categoryOverrides &&
+          typeof data.profile.categoryOverrides === 'object'
+            ? (data.profile.categoryOverrides as Record<string, string>)
+            : {};
+        const cloudIconOverrides =
+          data.profile?.categoryIconOverrides &&
+          typeof data.profile.categoryIconOverrides === 'object'
+            ? (data.profile.categoryIconOverrides as Record<string, string>)
+            : {};
+
+        if (profileCategoryOverrides !== null) {
+          await persistToneOverrides(id, profileCategoryOverrides);
+        } else if (Object.keys(cloudToneOverrides).length > 0) {
+          await persistToneOverrides(id, {
+            ...categoryOverridesRef.current,
+            ...cloudToneOverrides,
+          });
+        }
+
+        if (profileCategoryIconOverrides !== null) {
+          await persistIconOverrides(id, profileCategoryIconOverrides);
+        } else if (Object.keys(cloudIconOverrides).length > 0) {
+          await persistIconOverrides(id, {
+            ...categoryIconOverridesRef.current,
+            ...cloudIconOverrides,
+          });
+        }
+
+        // Merge cloud categories with local — fill missing tone/icon from local
         const cloudCategories: Category[] = Array.isArray(
           data.profile?.categories
         )
@@ -432,9 +535,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
         const mergedById = new Map<string, Category>();
         for (const c of cloudCategories) mergedById.set(c.id, c);
-        // Keep local-only customs (e.g. just recovered, not yet on cloud)
         for (const c of customCategoriesRef.current) {
-          if (!mergedById.has(c.id)) mergedById.set(c.id, c);
+          const existing = mergedById.get(c.id);
+          mergedById.set(
+            c.id,
+            existing ? mergeCategoryDefs(existing, c) : mergeCategoryDefs(c)
+          );
         }
 
         const { categories: withOrphans, added } = recoverOrphanCategories(
@@ -443,7 +549,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         );
         await persistCustomCategories(id, withOrphans);
 
-        // Push recovered categories back so cloud stays in sync
+        // Push recovered categories + styles so cloud stays complete
         if (added.length > 0 && !recoveringCategories.current) {
           recoveringCategories.current = true;
           try {
@@ -453,7 +559,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
               body: JSON.stringify({
                 userId: id,
                 expenses: [],
-                categories: withOrphans.map(
+                categories: bakeCategoryStyles(withOrphans).map(
                   ({ id: catId, label, tone, iconName, custom }) => ({
                     id: catId,
                     label,
@@ -462,6 +568,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                     custom,
                   })
                 ),
+                categoryOverrides: categoryOverridesRef.current,
+                categoryIconOverrides: categoryIconOverridesRef.current,
               }),
             });
             toast.success(
@@ -486,16 +594,46 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         setSyncing(false);
       }
     },
-    [userId, expenses, pendingDeletedIds, hydrate, persistCustomCategories]
+    [
+      userId,
+      expenses,
+      pendingDeletedIds,
+      hydrate,
+      persistCustomCategories,
+      persistToneOverrides,
+      persistIconOverrides,
+      bakeCategoryStyles,
+    ]
   );
 
-  // Pull cloud after local expenses + profile are loaded (do not push income/budget)
+  // After local hydrate: push categories + color/icon styles so other logins match
   useEffect(() => {
     if (!userId || !hydrated || !profileHydrated || !online) return;
     if (initialSyncDoneFor.current === userId) return;
     initialSyncDoneFor.current = userId;
-    void sync(userId);
-  }, [userId, hydrated, profileHydrated, online, sync]);
+    const localCats = customCategoriesRef.current;
+    const localTones = categoryOverridesRef.current;
+    const localIcons = categoryIconOverridesRef.current;
+    void sync(
+      userId,
+      expenses,
+      null,
+      localCats.length > 0 ? localCats : null,
+      pendingDeletedIds,
+      null,
+      null,
+      Object.keys(localTones).length > 0 ? localTones : null,
+      Object.keys(localIcons).length > 0 ? localIcons : null
+    );
+  }, [
+    userId,
+    hydrated,
+    profileHydrated,
+    online,
+    sync,
+    expenses,
+    pendingDeletedIds,
+  ]);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -514,6 +652,13 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const saved = await get<Expense[]>(`pocket-expenses-${normalized}`);
     const savedIncome = await get<number>(`pocket-income-${normalized}`);
     const savedBudget = await get<number>(`pocket-budget-${normalized}`);
+    const savedCats = await get<Category[]>(`pocket-categories-${normalized}`);
+    const savedTones = await get<Record<string, string>>(
+      `pocket-cat-overrides-${normalized}`
+    );
+    const savedIcons = await get<Record<string, string>>(
+      `pocket-cat-icon-overrides-${normalized}`
+    );
     hydrate(saved ?? []);
 
     const localIncome =
@@ -532,13 +677,30 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     } else {
       setNeedsIncome(false);
     }
+
+    const localCategories = Array.isArray(savedCats)
+      ? savedCats.map((c) => ({
+          ...c,
+          Icon: getCategoryIcon(c),
+          custom: true as const,
+        }))
+      : [];
+    if (localCategories.length) {
+      await persistCustomCategories(normalized, localCategories);
+    }
+    if (savedTones) await persistToneOverrides(normalized, savedTones);
+    if (savedIcons) await persistIconOverrides(normalized, savedIcons);
+
     const ok = await sync(
       normalized,
       saved ?? [],
       localIncome,
-      undefined,
-      undefined,
-      localBudget
+      localCategories.length > 0 ? localCategories : null,
+      [],
+      localBudget,
+      null,
+      savedTones && Object.keys(savedTones).length > 0 ? savedTones : null,
+      savedIcons && Object.keys(savedIcons).length > 0 ? savedIcons : null
     );
     if (ok) toast.success('Signed in', `Account +91 ${normalized}`);
   };
@@ -628,17 +790,80 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const allCategories = useMemo(
     () =>
-      [...builtInCategories, ...customCategories].map((c) => ({
-        ...c,
-        tone: categoryOverrides[c.id] ?? c.tone,
-      })),
-    [customCategories, categoryOverrides]
+      [...builtInCategories, ...customCategories].map((c) => {
+        const iconName =
+          categoryIconOverrides[c.id] ?? c.iconName;
+        return {
+          ...c,
+          tone: categoryOverrides[c.id] ?? c.tone,
+          iconName,
+          Icon: getCategoryIcon({ iconName, Icon: c.Icon }),
+        };
+      }),
+    [customCategories, categoryOverrides, categoryIconOverrides]
   );
 
   const updateCategoryColor = async (id: string, newTone: string) => {
-    const nextOverrides = { ...categoryOverrides, [id]: newTone };
-    setCategoryOverrides(nextOverrides);
-    if (userId) await set(`pocket-cat-overrides-${userId}`, nextOverrides);
+    if (!userId) return;
+    const nextOverrides = { ...categoryOverridesRef.current, [id]: newTone };
+    await persistToneOverrides(userId, nextOverrides);
+
+    let nextCats = customCategoriesRef.current;
+    if (nextCats.some((c) => c.id === id)) {
+      nextCats = nextCats.map((c) =>
+        c.id === id ? { ...c, tone: newTone } : c
+      );
+      await persistCustomCategories(userId, nextCats);
+    }
+
+    const ok = await sync(
+      userId,
+      expenses,
+      null,
+      nextCats.length > 0 ? nextCats : null,
+      pendingDeletedIds,
+      null,
+      null,
+      nextOverrides,
+      categoryIconOverridesRef.current
+    );
+    if (!ok) toast.error('Sync failed', 'Color saved on this device only');
+  };
+
+  const updateCategoryIcon = async (id: string, iconName: string) => {
+    if (!userId) return;
+    const nextIcons = {
+      ...categoryIconOverridesRef.current,
+      [id]: iconName,
+    };
+    await persistIconOverrides(userId, nextIcons);
+
+    let nextCats = customCategoriesRef.current;
+    if (nextCats.some((c) => c.id === id)) {
+      nextCats = nextCats.map((c) =>
+        c.id === id
+          ? {
+              ...c,
+              iconName,
+              Icon: getCategoryIcon({ iconName }),
+            }
+          : c
+      );
+      await persistCustomCategories(userId, nextCats);
+    }
+
+    const ok = await sync(
+      userId,
+      expenses,
+      null,
+      nextCats.length > 0 ? nextCats : null,
+      pendingDeletedIds,
+      null,
+      null,
+      categoryOverridesRef.current,
+      nextIcons
+    );
+    if (!ok) toast.error('Sync failed', 'Icon saved on this device only');
   };
 
   const deleteCategory = async (id: string) => {
@@ -646,7 +871,17 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       customCategories.find((c) => c.id === id)?.label ?? 'Category';
     const next = customCategories.filter((c) => c.id !== id);
     await persistCustomCategories(userId, next);
-    const ok = await sync(userId, expenses, null, next);
+    const ok = await sync(
+      userId,
+      expenses,
+      null,
+      next,
+      pendingDeletedIds,
+      null,
+      null,
+      categoryOverridesRef.current,
+      categoryIconOverridesRef.current
+    );
     if (ok) toast.success('Category removed', `"${removedLabel}" deleted`);
   };
 
@@ -659,7 +894,17 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       c.id === id ? { ...c, label: trimmed } : c
     );
     await persistCustomCategories(userId, next);
-    const ok = await sync(userId, expenses, null, next);
+    const ok = await sync(
+      userId,
+      expenses,
+      null,
+      next,
+      pendingDeletedIds,
+      null,
+      null,
+      categoryOverridesRef.current,
+      categoryIconOverridesRef.current
+    );
     if (ok) toast.success('Category renamed', `Now called "${trimmed}"`);
   };
 
@@ -681,7 +926,17 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     await persistCustomCategories(userId, next);
     setCategoryName('');
     setCategoryDialog(false);
-    const ok = await sync(userId, expenses, null, next);
+    const ok = await sync(
+      userId,
+      expenses,
+      null,
+      next,
+      pendingDeletedIds,
+      null,
+      null,
+      categoryOverridesRef.current,
+      categoryIconOverridesRef.current
+    );
     if (ok) toast.success('Category added', `"${label}" is ready to use`);
   };
 
@@ -837,6 +1092,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     saveBudget,
     allCategories,
     customCategories,
+    categoryOverrides,
+    categoryIconOverrides,
     categoryDialog,
     setCategoryDialog,
     categoryName,
@@ -849,6 +1106,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     deleteCategory,
     renameCategory,
     updateCategoryColor,
+    updateCategoryIcon,
     theme,
     setTheme,
     hideAmounts,

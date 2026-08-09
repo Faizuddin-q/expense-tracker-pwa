@@ -10,10 +10,37 @@ async function db() {
   return client.db('pocket');
 }
 
+const asStringRecord = (value: unknown): Record<string, string> | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const out: Record<string, string> = {};
+  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    if (
+      typeof key === 'string' &&
+      key.length > 0 &&
+      key.length <= 80 &&
+      typeof entry === 'string' &&
+      entry.length > 0 &&
+      entry.length <= 64
+    ) {
+      out[key] = entry;
+    }
+  }
+  return out;
+};
+
 export const POST = async (request: Request) => {
   try {
-    const { userId, expenses, monthlyIncome, monthlyBudget, categories, deletedIds, hideAmounts } =
-      await request.json();
+    const {
+      userId,
+      expenses,
+      monthlyIncome,
+      monthlyBudget,
+      categories,
+      deletedIds,
+      hideAmounts,
+      categoryOverrides,
+      categoryIconOverrides,
+    } = await request.json();
     if (
       typeof userId !== 'string' ||
       userId.length < 8 ||
@@ -84,7 +111,24 @@ export const POST = async (request: Request) => {
             typeof category?.id === 'string' &&
             typeof category?.label === 'string'
         )
+        .map((category) => ({
+          id: category.id,
+          label: category.label,
+          tone: typeof category.tone === 'string' ? category.tone : 'gray',
+          iconName:
+            typeof category.iconName === 'string' ? category.iconName : 'plus',
+          custom: category.custom !== false,
+        }))
         .slice(0, 100);
+    }
+
+    const toneOverrides = asStringRecord(categoryOverrides);
+    if (toneOverrides) {
+      profileUpdate.categoryOverrides = toneOverrides;
+    }
+    const iconOverrides = asStringRecord(categoryIconOverrides);
+    if (iconOverrides) {
+      profileUpdate.categoryIconOverrides = iconOverrides;
     }
 
     // Always touch the profile doc so findOne returns it even when only expenses sync
@@ -113,6 +157,8 @@ export const POST = async (request: Request) => {
                 ? profile.hideAmounts
                 : null,
             categories: profile.categories ?? [],
+            categoryOverrides: profile.categoryOverrides ?? {},
+            categoryIconOverrides: profile.categoryIconOverrides ?? {},
           }
         : null,
     });
