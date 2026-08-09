@@ -30,10 +30,10 @@ export default function SettingsPage() {
         sync(
           userId,
           expenses,
-          profileIncome ?? income,
+          profileIncome ?? null,
           customCategories,
           undefined,
-          profileBudget ?? budget
+          profileBudget ?? null
         )
       }
       onChangeIdentity={logout}

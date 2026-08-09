@@ -54,23 +54,27 @@ export const POST = async (request: Request) => {
           };
         })
       );
+
     const profileUpdate: Record<string, unknown> = {
       userId,
       updatedAt: new Date(),
     };
+    // Only overwrite income/budget when the client explicitly sends them
     if (
       typeof monthlyIncome === 'number' &&
       Number.isFinite(monthlyIncome) &&
       monthlyIncome > 0
-    )
+    ) {
       profileUpdate.monthlyIncome = monthlyIncome;
+    }
     if (
       typeof monthlyBudget === 'number' &&
       Number.isFinite(monthlyBudget) &&
       monthlyBudget > 0
-    )
+    ) {
       profileUpdate.monthlyBudget = monthlyBudget;
-    if (Array.isArray(categories))
+    }
+    if (Array.isArray(categories)) {
       profileUpdate.categories = categories
         .filter(
           (category) =>
@@ -78,12 +82,15 @@ export const POST = async (request: Request) => {
             typeof category?.label === 'string'
         )
         .slice(0, 100);
-    if (Object.keys(profileUpdate).length > 2)
-      await profiles.updateOne(
-        { userId },
-        { $set: profileUpdate },
-        { upsert: true }
-      );
+    }
+
+    // Always touch the profile doc so findOne returns it even when only expenses sync
+    await profiles.updateOne(
+      { userId },
+      { $set: profileUpdate },
+      { upsert: true }
+    );
+
     const [records, profile] = await Promise.all([
       collection
         .find({ userId })

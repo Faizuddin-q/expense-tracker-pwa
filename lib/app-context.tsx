@@ -87,10 +87,12 @@ interface AppContextValue {
   sync: (
     id?: string,
     local?: Expense[],
-    profileIncome?: number,
+    /** Pass a number to push income; null/omit to leave cloud income unchanged */
+    profileIncome?: number | null,
     profileCategories?: Category[],
     deletedIds?: string[],
-    profileBudget?: number
+    /** Pass a number to push budget; null/omit to leave cloud budget unchanged */
+    profileBudget?: number | null
   ) => Promise<void>;
 
   // Derived
@@ -144,6 +146,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState('');
   const [pendingDeletedIds, setPendingDeletedIds] = useState<string[]>([]);
+  const [profileHydrated, setProfileHydrated] = useState(false);
   const initialSyncDoneFor = useRef<string | null>(null);
 
   // ── Theme ────────────────────────────────────────────────────────────────
@@ -178,39 +181,65 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (!userId) return;
-    get<Expense[]>(`pocket-expenses-${userId}`).then((saved) =>
-      hydrate(saved ?? [])
-    );
-    get<Category[]>(`pocket-categories-${userId}`).then((saved) => {
-      if (Array.isArray(saved)) {
+    if (!userId) {
+      setProfileHydrated(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadLocal = async () => {
+      const [savedExpenses, savedCategories, savedIncome, savedBudget, savedOverrides] =
+        await Promise.all([
+          get<Expense[]>(`pocket-expenses-${userId}`),
+          get<Category[]>(`pocket-categories-${userId}`),
+          get<number>(`pocket-income-${userId}`),
+          get<number>(`pocket-budget-${userId}`),
+          get<Record<string, string>>(`pocket-cat-overrides-${userId}`),
+        ]);
+
+      if (cancelled) return;
+
+      hydrate(savedExpenses ?? []);
+
+      if (Array.isArray(savedCategories)) {
         setCustomCategories(
-          saved.map((c) => ({ ...c, Icon: getCategoryIcon(c), custom: true }))
+          savedCategories.map((c) => ({
+            ...c,
+            Icon: getCategoryIcon(c),
+            custom: true,
+          }))
         );
       }
-    });
-    get<number>(`pocket-income-${userId}`).then((saved) => {
-      if (typeof saved === 'number' && saved > 0) {
-        setIncome(saved);
-        setIncomeDraft(String(saved));
+
+      if (typeof savedIncome === 'number' && savedIncome > 0) {
+        setIncome(savedIncome);
+        setIncomeDraft(String(savedIncome));
         setNeedsIncome(false);
-      } else setNeedsIncome(true);
-    });
-    get<number>(`pocket-budget-${userId}`).then((saved) => {
-      if (typeof saved === 'number' && saved > 0) {
-        setBudget(saved);
-        setBudgetDraft(String(saved));
+      } else {
+        setNeedsIncome(true);
       }
-    });
-    get<Record<string, string>>(`pocket-cat-overrides-${userId}`).then(
-      (saved) => setCategoryOverrides(saved ?? {})
-    );
+
+      if (typeof savedBudget === 'number' && savedBudget > 0) {
+        setBudget(savedBudget);
+        setBudgetDraft(String(savedBudget));
+      } else {
+        setBudget(0);
+        setBudgetDraft('');
+      }
+
+      setCategoryOverrides(savedOverrides ?? {});
+      setProfileHydrated(true);
+    };
+
+    void loadLocal();
     setOnline(navigator.onLine);
     const on = () => setOnline(true);
     const off = () => setOnline(false);
     addEventListener('online', on);
     addEventListener('offline', off);
     return () => {
+      cancelled = true;
       removeEventListener('online', on);
       removeEventListener('offline', off);
     };
@@ -226,34 +255,42 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     async (
       id = userId,
       local = expenses,
-      profileIncome = income,
+      // null = do not push (avoids overwriting cloud with defaults / stale local)
+      profileIncome: number | null = null,
       profileCategories = customCategories,
       deletedIds = pendingDeletedIds,
-      profileBudget = budget
+      profileBudget: number | null = null
     ) => {
       if (!id) return;
       setSyncing(true);
       setError('');
       try {
+        const payload: Record<string, unknown> = {
+          userId: id,
+          expenses: local,
+          categories: profileCategories.map(
+            ({ id, label, tone, iconName, custom }) => ({
+              id,
+              label,
+              tone,
+              iconName,
+              custom,
+            })
+          ),
+          deletedIds,
+        };
+        // Only push profile money fields when explicitly provided
+        if (typeof profileIncome === 'number' && profileIncome > 0) {
+          payload.monthlyIncome = profileIncome;
+        }
+        if (typeof profileBudget === 'number' && profileBudget > 0) {
+          payload.monthlyBudget = profileBudget;
+        }
+
         const response = await fetch('/api/expenses/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: id,
-            expenses: local,
-            monthlyIncome: profileIncome,
-            monthlyBudget: profileBudget,
-            categories: profileCategories.map(
-              ({ id, label, tone, iconName, custom }) => ({
-                id,
-                label,
-                tone,
-                iconName,
-                custom,
-              })
-            ),
-            deletedIds,
-          }),
+          body: JSON.stringify(payload),
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error);
@@ -273,12 +310,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             .filter((e: Expense) => !deletedIds.includes(e.id));
           hydrate(activeExpenses);
         }
+        // Cloud profile is source of truth after sync
         if (data.profile?.monthlyIncome > 0) {
           setIncome(data.profile.monthlyIncome);
           setIncomeDraft(String(data.profile.monthlyIncome));
           await set(`pocket-income-${id}`, data.profile.monthlyIncome);
           setNeedsIncome(false);
-        } else if (data.profile === null) setNeedsIncome(true);
+        } else if (data.profile === null) {
+          setNeedsIncome(true);
+        }
         if (
           typeof data.profile?.monthlyBudget === 'number' &&
           data.profile.monthlyBudget > 0
@@ -307,25 +347,16 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         setSyncing(false);
       }
     },
-    [
-      userId,
-      expenses,
-      income,
-      budget,
-      customCategories,
-      pendingDeletedIds,
-      hydrate,
-    ]
+    [userId, expenses, customCategories, pendingDeletedIds, hydrate]
   );
 
-  // Pull/push cloud data when a saved session finishes loading locally.
-  // Without this, returning visits only show IndexedDB and never merge.
+  // Pull cloud after local expenses + profile are loaded (do not push income/budget)
   useEffect(() => {
-    if (!userId || !hydrated || !online) return;
+    if (!userId || !hydrated || !profileHydrated || !online) return;
     if (initialSyncDoneFor.current === userId) return;
     initialSyncDoneFor.current = userId;
     void sync(userId);
-  }, [userId, hydrated, online, sync]);
+  }, [userId, hydrated, profileHydrated, online, sync]);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -344,37 +375,30 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const savedIncome = await get<number>(`pocket-income-${normalized}`);
     const savedBudget = await get<number>(`pocket-budget-${normalized}`);
     hydrate(saved ?? []);
-    if (typeof savedBudget === 'number' && savedBudget > 0) {
-      setBudget(savedBudget);
-      setBudgetDraft(String(savedBudget));
+
+    const localIncome =
+      typeof savedIncome === 'number' && savedIncome > 0 ? savedIncome : null;
+    const localBudget =
+      typeof savedBudget === 'number' && savedBudget > 0 ? savedBudget : null;
+
+    if (localBudget) {
+      setBudget(localBudget);
+      setBudgetDraft(String(localBudget));
     }
-    if (typeof savedIncome === 'number' && savedIncome > 0) {
-      setIncome(savedIncome);
-      setIncomeDraft(String(savedIncome));
+    if (localIncome) {
+      setIncome(localIncome);
+      setIncomeDraft(String(localIncome));
       setNeedsIncome(false);
-      sync(
-        normalized,
-        saved,
-        savedIncome,
-        undefined,
-        undefined,
-        typeof savedBudget === 'number' && savedBudget > 0 ? savedBudget : 0
-      );
     } else {
       setNeedsIncome(false);
-      sync(
-        normalized,
-        saved,
-        0,
-        undefined,
-        undefined,
-        typeof savedBudget === 'number' && savedBudget > 0 ? savedBudget : 0
-      );
     }
+    // Push local profile only when this device already has values; otherwise pull
+    sync(normalized, saved ?? [], localIncome, undefined, undefined, localBudget);
   };
 
   const logout = async () => {
     initialSyncDoneFor.current = null;
+    setProfileHydrated(false);
     await del('pocket-user-id');
     setUserId('');
     setPhone('');
@@ -392,7 +416,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setIncome(parsed);
     await set(`pocket-income-${userId}`, parsed);
     setNeedsIncome(false);
-    sync(userId, expenses, parsed);
+    // Push income; leave budget unchanged on the server
+    sync(userId, expenses, parsed, customCategories, pendingDeletedIds, null);
   };
 
   const saveBudget = async () => {
@@ -403,14 +428,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
     setBudget(parsed);
     await set(`pocket-budget-${userId}`, parsed);
-    sync(
-      userId,
-      expenses,
-      income,
-      customCategories,
-      pendingDeletedIds,
-      parsed
-    );
+    // Push budget; leave income unchanged on the server
+    sync(userId, expenses, null, customCategories, pendingDeletedIds, parsed);
   };
 
   // ── Categories ────────────────────────────────────────────────────────────
@@ -443,7 +462,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         custom,
       }))
     );
-    sync(userId, expenses, income, next);
+    sync(userId, expenses, null, next);
   };
 
   const addCategory = async () => {
@@ -471,7 +490,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     );
     setCategoryName('');
     setCategoryDialog(false);
-    sync(userId, expenses, income, next);
+    sync(userId, expenses, null, next);
   };
 
   // ── Expenses ──────────────────────────────────────────────────────────────
@@ -482,7 +501,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const nextDeleted = Array.from(new Set([...pendingDeletedIds, id]));
     setPendingDeletedIds(nextDeleted);
     const updatedExpenses = expenses.filter((e) => e.id !== id);
-    sync(userId, updatedExpenses, income, customCategories, nextDeleted);
+    sync(userId, updatedExpenses, null, customCategories, nextDeleted);
   };
 
   const addExpense = (category: CategoryId, preset?: Partial<Expense>) => {
