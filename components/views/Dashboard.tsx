@@ -9,7 +9,8 @@ import {
 } from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
 import { builtInCategories } from '@/lib/constants';
-import { getCategoryColor, money } from '@/lib/utils';
+import { getCategoryColor } from '@/lib/utils';
+import { Money } from '@/components/Money';
 
 interface CategoryBreakdown extends Category {
   total: number;
@@ -485,7 +486,7 @@ export const Dashboard = ({
                       {hoveredCategory.label}
                     </span>
                     <span className="font-mono-numbers text-lg font-bold tracking-tight text-foreground">
-                      {money(hoveredCategory.total)}
+                      <Money value={hoveredCategory.total} />
                     </span>
                     <span className="text-[11px] font-semibold text-primary">
                       {Math.round(
@@ -525,7 +526,7 @@ export const Dashboard = ({
                     <span>{hoveredCategory.label}</span>
                   </div>
                   <div className="font-mono-numbers mt-0.5 text-sm font-bold">
-                    {money(hoveredCategory.total)}
+                    <Money value={hoveredCategory.total} />
                   </div>
                   <div className="text-[10px] opacity-80">
                     {Math.round(
@@ -542,7 +543,7 @@ export const Dashboard = ({
                 Spent in this period
               </p>
               <p className="font-mono-numbers mt-1 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-                {money(activeSpend)}
+                <Money value={activeSpend} />
               </p>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -552,7 +553,7 @@ export const Dashboard = ({
                       vs Budget
                     </p>
                     <p className="font-mono-numbers mt-1 text-sm font-bold text-foreground">
-                      {budgetPercent}% · {money(budget)}
+                      {budgetPercent}% · <Money value={budget} />
                     </p>
                     <p
                       className={`mt-0.5 text-xs font-semibold ${
@@ -560,8 +561,7 @@ export const Dashboard = ({
                       }`}
                     >
                       {overBudget
-                        ? `${money(Math.abs(budgetRemaining))} over`
-                        : `${money(budgetRemaining)} left`}
+                        ? <><Money value={Math.abs(budgetRemaining)} /> over</> : <><Money value={budgetRemaining} /> left</>}
                     </p>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-sm bg-muted">
                       <div
@@ -580,7 +580,7 @@ export const Dashboard = ({
                     vs Income
                   </p>
                   <p className="font-mono-numbers mt-1 text-sm font-bold text-foreground">
-                    {incomePercent}% · {money(income)}
+                    {incomePercent}% · <Money value={income} />
                   </p>
                   <p
                     className={`mt-0.5 text-xs font-semibold ${
@@ -588,8 +588,7 @@ export const Dashboard = ({
                     }`}
                   >
                     {overIncome
-                      ? `${money(Math.abs(incomeRemaining))} over`
-                      : `${money(incomeRemaining)} left`}
+                      ? <><Money value={Math.abs(incomeRemaining)} /> over</> : <><Money value={incomeRemaining} /> left</>}
                   </p>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-sm bg-muted">
                     <div
@@ -616,7 +615,7 @@ export const Dashboard = ({
             {activeByCategory[0]?.label ?? 'Your first'} is your top spending
             category for this period (
             <span className="font-mono-numbers font-semibold text-foreground">
-              {money(activeByCategory[0]?.total ?? 0)}
+              <Money value={activeByCategory[0]?.total ?? 0} />
             </span>
             ). Mindful choices keep your pace comfortable.
           </p>
@@ -713,7 +712,7 @@ export const Dashboard = ({
                   />
                 </div>
                 <span className="font-mono-numbers w-20 shrink-0 text-right text-xs font-bold text-foreground sm:w-24 sm:text-sm">
-                  {money(c.total)}
+                  <Money value={c.total} />
                 </span>
               </div>
             );

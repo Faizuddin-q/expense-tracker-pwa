@@ -48,6 +48,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
     updateCategoryColor,
     deleteCategory,
     logout,
+    screenObscured,
   } = useApp();
 
   const router = useRouter();
@@ -103,6 +104,16 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {screenObscured && (
+        <div className="fixed inset-0 z-[200] grid place-items-center bg-background">
+          <div className="text-center">
+            <p className="text-2xl font-extrabold tracking-tight text-foreground">
+              Pocket
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">Amounts hidden</p>
+          </div>
+        </div>
+      )}
       {/* Desktop Sidebar */}
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r border-border bg-card px-5 py-7 lg:flex">
         <Brand />

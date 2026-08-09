@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Category, CategoryId, Expense } from '@/types/expense';
 import { builtInCategories, quickRelogItems } from '@/lib/constants';
-import { getCategoryColor, money } from '@/lib/utils';
+import { getCategoryColor } from '@/lib/utils';
+import { useApp } from '@/lib/app-context';
+import { Money } from '@/components/Money';
 import { ExpenseRow } from '@/components/ExpenseRow';
 import { ExpenseEditDialog } from '@/components/ExpenseEditDialog';
 import { toast } from '@/components/ToastHost';
@@ -48,6 +50,7 @@ export const Home = ({
   categories = builtInCategories,
   onAddCategory,
 }: HomeProps) => {
+  const { hideAmounts } = useApp();
   const [editing, setEditing] = useState<Expense | null>(null);
   const displayedTotal = displayed.reduce(
     (s: number, e: Expense) => s + e.amount,
@@ -70,15 +73,27 @@ export const Home = ({
             </div>
 
             <div className="mt-3.5 flex items-center gap-2 sm:mt-4">
-              <input
-                aria-label="Amount"
-                inputMode="decimal"
-                value={amount}
-                onChange={(e) => parseAmount(e.target.value)}
-                placeholder="₹ 0"
-                className="font-mono-numbers w-full truncate bg-transparent text-4xl font-extrabold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/30 sm:text-5xl md:text-6xl"
-              />
+              {hideAmounts ? (
+                <p className="font-mono-numbers w-full text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl md:text-6xl">
+                  ₹ ••••
+                </p>
+              ) : (
+                <input
+                  aria-label="Amount"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={(e) => parseAmount(e.target.value)}
+                  placeholder="₹ 0"
+                  className="font-mono-numbers w-full truncate bg-transparent text-4xl font-extrabold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/30 sm:text-5xl md:text-6xl"
+                />
+              )}
             </div>
+            {hideAmounts && (
+              <p className="mt-2 text-xs font-medium text-muted-foreground">
+                Amounts hidden — turn off Hide amounts in Settings to show
+                &amp; log.
+              </p>
+            )}
 
             <div className="mt-4 pt-1 sm:mt-5 sm:pt-2">
               <input
@@ -175,7 +190,7 @@ export const Home = ({
                     <QuickIcon className="size-3.5 text-primary shrink-0 sm:size-4" />
                     <span>{item.label}</span>
                     <span className="font-mono-numbers font-semibold text-muted-foreground">
-                      {money(item.amount)}
+                      <Money value={item.amount} />
                     </span>
                   </button>
                 );
@@ -192,7 +207,7 @@ export const Home = ({
                 {showAll ? 'Total Activity' : 'Spent Today'}
               </p>
               <h2 className="font-mono-numbers mt-1 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-                {money(displayedTotal)}
+                <Money value={displayedTotal} />
               </h2>
             </div>
             <button
@@ -209,7 +224,7 @@ export const Home = ({
                 key={expense.id}
                 expense={expense}
                 remove={remove}
-                onEdit={setEditing}
+                onEdit={hideAmounts ? undefined : setEditing}
                 categories={categories}
               />
             ))}

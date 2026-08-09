@@ -1,4 +1,4 @@
-import { Check, Download, LogOut, Moon, Sun } from 'lucide-react';
+import { Check, Download, Eye, EyeOff, LogOut, Moon, Sun } from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
 import {
   downloadCsv,
@@ -22,6 +22,8 @@ interface SettingsProps {
   categories?: Category[];
   theme: 'dark' | 'light';
   setTheme: (t: 'dark' | 'light') => void;
+  hideAmounts: boolean;
+  setHideAmounts: (v: boolean) => void;
 }
 
 export const Settings = ({
@@ -39,6 +41,8 @@ export const Settings = ({
   categories = [],
   theme,
   setTheme,
+  hideAmounts,
+  setHideAmounts,
 }: SettingsProps) => {
   return (
     <section className="mx-auto max-w-3xl">
@@ -112,6 +116,38 @@ export const Settings = ({
 
         <div className="mt-6 sm:mt-8 flex flex-col gap-2">
           <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
+            Privacy
+          </label>
+          <p className="text-xs text-muted-foreground">
+            Hide rupee amounts with bullets when showing your phone. Preference
+            syncs with your account. App switcher previews are covered
+            automatically.
+          </p>
+          <button
+            type="button"
+            onClick={() => setHideAmounts(!hideAmounts)}
+            className={`mt-1 flex h-11 cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 text-xs font-bold transition active:scale-[0.98] sm:h-12 sm:text-sm ${
+              hideAmounts
+                ? 'border-primary/40 bg-primary/15 text-primary'
+                : 'border-border/80 bg-card text-foreground hover:bg-muted'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              {hideAmounts ? (
+                <EyeOff className="size-4" />
+              ) : (
+                <Eye className="size-4" />
+              )}
+              Hide amounts
+            </span>
+            <span className="text-[11px] font-semibold opacity-80">
+              {hideAmounts ? 'On' : 'Off'}
+            </span>
+          </button>
+        </div>
+
+        <div className="mt-6 sm:mt-8 flex flex-col gap-2">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
             Monthly income
           </label>
           <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
@@ -122,7 +158,12 @@ export const Settings = ({
               <input
                 aria-label="Monthly income"
                 inputMode="decimal"
-                value={formatIndianNumber(incomeDraft || '')}
+                value={
+                  hideAmounts
+                    ? '••••••'
+                    : formatIndianNumber(incomeDraft || '')
+                }
+                readOnly={hideAmounts}
                 onChange={(e) =>
                   setIncomeDraft(formatIndianNumber(e.target.value))
                 }
@@ -155,7 +196,12 @@ export const Settings = ({
               <input
                 aria-label="Monthly spend budget"
                 inputMode="decimal"
-                value={formatIndianNumber(budgetDraft || '')}
+                value={
+                  hideAmounts
+                    ? '••••••'
+                    : formatIndianNumber(budgetDraft || '')
+                }
+                readOnly={hideAmounts}
                 onChange={(e) =>
                   setBudgetDraft(formatIndianNumber(e.target.value))
                 }

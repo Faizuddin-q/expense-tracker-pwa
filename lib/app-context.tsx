@@ -91,6 +91,11 @@ interface AppContextValue {
   theme: 'dark' | 'light';
   setTheme: (t: 'dark' | 'light') => void;
 
+  // Privacy — hide ₹ amounts from peeking eyes (no lock)
+  hideAmounts: boolean;
+  setHideAmounts: (v: boolean) => void;
+  screenObscured: boolean;
+
   // Sync / network
   online: boolean;
   syncing: boolean;
@@ -103,7 +108,9 @@ interface AppContextValue {
     profileCategories?: Category[],
     deletedIds?: string[],
     /** Pass a number to push budget; null/omit to leave cloud budget unchanged */
-    profileBudget?: number | null
+    profileBudget?: number | null,
+    /** Pass boolean to push hide-amounts preference; null to leave unchanged */
+    profileHideAmounts?: boolean | null
   ) => Promise<boolean>;
 
   // Derived
@@ -153,6 +160,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   >({});
 
   const [theme, setThemeState] = useState<'dark' | 'light'>('dark');
+  const [hideAmounts, setHideAmountsState] = useState(false);
+  const [screenObscured, setScreenObscured] = useState(false);
   const [online, setOnline] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState('');
@@ -182,6 +191,13 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const setTheme = (t: 'dark' | 'light') => setThemeState(t);
 
+  // Obscure UI before OS captures app-switcher / multitasking preview
+  useEffect(() => {
+    const onVisibility = () => setScreenObscured(document.hidden);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
+
   // ── Init from IndexedDB ───────────────────────────────────────────────────
 
   useEffect(() => {
@@ -200,14 +216,21 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     let cancelled = false;
 
     const loadLocal = async () => {
-      const [savedExpenses, savedCategories, savedIncome, savedBudget, savedOverrides] =
-        await Promise.all([
-          get<Expense[]>(`pocket-expenses-${userId}`),
-          get<Category[]>(`pocket-categories-${userId}`),
-          get<number>(`pocket-income-${userId}`),
-          get<number>(`pocket-budget-${userId}`),
-          get<Record<string, string>>(`pocket-cat-overrides-${userId}`),
-        ]);
+      const [
+        savedExpenses,
+        savedCategories,
+        savedIncome,
+        savedBudget,
+        savedOverrides,
+        savedHideAmounts,
+      ] = await Promise.all([
+        get<Expense[]>(`pocket-expenses-${userId}`),
+        get<Category[]>(`pocket-categories-${userId}`),
+        get<number>(`pocket-income-${userId}`),
+        get<number>(`pocket-budget-${userId}`),
+        get<Record<string, string>>(`pocket-cat-overrides-${userId}`),
+        get<boolean>(`pocket-hide-amounts-${userId}`),
+      ]);
 
       if (cancelled) return;
 
@@ -237,6 +260,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setBudget(0);
         setBudgetDraft('');
+      }
+
+      if (typeof savedHideAmounts === 'boolean') {
+        setHideAmountsState(savedHideAmounts);
       }
 
       setCategoryOverrides(savedOverrides ?? {});
@@ -270,7 +297,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       profileIncome: number | null = null,
       profileCategories = customCategories,
       deletedIds = pendingDeletedIds,
-      profileBudget: number | null = null
+      profileBudget: number | null = null,
+      profileHideAmounts: boolean | null = null
     ): Promise<boolean> => {
       if (!id) return false;
       setSyncing(true);
@@ -296,6 +324,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         }
         if (typeof profileBudget === 'number' && profileBudget > 0) {
           payload.monthlyBudget = profileBudget;
+        }
+        if (typeof profileHideAmounts === 'boolean') {
+          payload.hideAmounts = profileHideAmounts;
         }
 
         const response = await fetch('/api/expenses/sync', {
@@ -337,6 +368,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           setBudget(data.profile.monthlyBudget);
           setBudgetDraft(String(data.profile.monthlyBudget));
           await set(`pocket-budget-${id}`, data.profile.monthlyBudget);
+        }
+        if (typeof data.profile?.hideAmounts === 'boolean') {
+          setHideAmountsState(data.profile.hideAmounts);
+          await set(`pocket-hide-amounts-${id}`, data.profile.hideAmounts);
         }
         if (Array.isArray(data.profile?.categories)) {
           setCustomCategories(
@@ -425,7 +460,33 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setUserId('');
     setPhone('');
     hydrate([]);
+    setHideAmountsState(false);
     toast.success('Logged out', 'Your cloud data is still safe');
+  };
+
+  const setHideAmounts = (v: boolean) => {
+    setHideAmountsState(v);
+    if (userId) {
+      void set(`pocket-hide-amounts-${userId}`, v);
+      void sync(
+        userId,
+        expenses,
+        null,
+        customCategories,
+        pendingDeletedIds,
+        null,
+        v
+      ).then((ok) => {
+        if (ok) {
+          toast.success(
+            v ? 'Amounts hidden' : 'Amounts visible',
+            v
+              ? 'Synced to your account'
+              : 'Synced — amounts show normally again'
+          );
+        }
+      });
+    }
   };
 
   // ── Income ────────────────────────────────────────────────────────────────
@@ -706,6 +767,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     updateCategoryColor,
     theme,
     setTheme,
+    hideAmounts,
+    setHideAmounts,
+    screenObscured,
     online,
     syncing,
     error,

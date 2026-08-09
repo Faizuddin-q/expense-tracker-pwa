@@ -19,6 +19,8 @@ export default function SettingsPage() {
     customCategories,
     theme,
     setTheme,
+    hideAmounts,
+    setHideAmounts,
   } = useApp();
 
   return (
@@ -47,6 +49,8 @@ export default function SettingsPage() {
       categories={customCategories}
       theme={theme}
       setTheme={setTheme}
+      hideAmounts={hideAmounts}
+      setHideAmounts={setHideAmounts}
     />
   );
 }

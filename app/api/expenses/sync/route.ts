@@ -12,7 +12,7 @@ async function db() {
 
 export const POST = async (request: Request) => {
   try {
-    const { userId, expenses, monthlyIncome, monthlyBudget, categories, deletedIds } =
+    const { userId, expenses, monthlyIncome, monthlyBudget, categories, deletedIds, hideAmounts } =
       await request.json();
     if (
       typeof userId !== 'string' ||
@@ -74,6 +74,9 @@ export const POST = async (request: Request) => {
     ) {
       profileUpdate.monthlyBudget = monthlyBudget;
     }
+    if (typeof hideAmounts === 'boolean') {
+      profileUpdate.hideAmounts = hideAmounts;
+    }
     if (Array.isArray(categories)) {
       profileUpdate.categories = categories
         .filter(
@@ -105,6 +108,10 @@ export const POST = async (request: Request) => {
         ? {
             monthlyIncome: profile.monthlyIncome,
             monthlyBudget: profile.monthlyBudget,
+            hideAmounts:
+              typeof profile.hideAmounts === 'boolean'
+                ? profile.hideAmounts
+                : null,
             categories: profile.categories ?? [],
           }
         : null,

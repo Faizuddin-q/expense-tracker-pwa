@@ -1,6 +1,7 @@
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
-import { categoryFor, getCategoryColor, money } from '@/lib/utils';
+import { categoryFor, getCategoryColor } from '@/lib/utils';
+import { Money } from '@/components/Money';
 import { builtInCategories } from '@/lib/constants';
 
 interface ExpenseRowProps {
@@ -51,7 +52,7 @@ export const ExpenseRow = ({
       </button>
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         <span className="font-mono-numbers text-xs font-extrabold tracking-tight text-foreground sm:text-base">
-          {money(expense.amount)}
+          <Money value={expense.amount} />
         </span>
         {onEdit && (
           <button

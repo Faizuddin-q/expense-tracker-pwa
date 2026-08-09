@@ -8,7 +8,9 @@ import {
   X,
 } from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
-import { categoryFor, downloadCsv, money } from '@/lib/utils';
+import { categoryFor, downloadCsv } from '@/lib/utils';
+import { useApp } from '@/lib/app-context';
+import { Money } from '@/components/Money';
 import { ExpenseRow } from '@/components/ExpenseRow';
 import { ExpenseEditDialog } from '@/components/ExpenseEditDialog';
 import { toast } from '@/components/ToastHost';
@@ -42,6 +44,7 @@ export const Expenses = ({
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [editing, setEditing] = useState<Expense | null>(null);
+  const { hideAmounts } = useApp();
 
   // Extract available months from expenses
   const availableMonths = useMemo(() => {
@@ -417,7 +420,7 @@ export const Expenses = ({
         <p className="text-sm font-semibold tracking-tight text-foreground">
           Total:{' '}
           <span className="font-mono-numbers font-bold text-primary">
-            {money(filteredTotal)}
+            <Money value={filteredTotal} />
           </span>
         </p>
       </div>
@@ -429,7 +432,7 @@ export const Expenses = ({
             key={e.id}
             expense={e}
             remove={remove}
-            onEdit={setEditing}
+            onEdit={hideAmounts ? undefined : setEditing}
             categories={categories}
           />
         ))}

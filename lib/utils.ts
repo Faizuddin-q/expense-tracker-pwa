@@ -231,7 +231,10 @@ export const parseRawNumber = (val: string): string => {
   return val.replace(/,/g, '');
 };
 
-export const money = (n: number): string => {
+export const MASKED_MONEY = '₹ ••••';
+
+export const money = (n: number, hidden = false): string => {
+  if (hidden) return MASKED_MONEY;
   if (!Number.isFinite(n)) return '₹0';
   return `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 };

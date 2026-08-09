@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
 import { builtInCategories } from '@/lib/constants';
-import { getCategoryColor, money } from '@/lib/utils';
+import { getCategoryColor } from '@/lib/utils';
+import { Money } from '@/components/Money';
 
 interface MonthlySummaryProps {
   expenses: Expense[];
@@ -120,7 +121,7 @@ export const MonthlySummary = ({
             Total spent
           </p>
           <p className="font-mono-numbers mt-1.5 text-2xl font-extrabold text-foreground">
-            {money(totals.spent)}
+            <Money value={totals.spent} />
           </p>
         </div>
         <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-2xs sm:p-5">
@@ -128,7 +129,7 @@ export const MonthlySummary = ({
             Avg / month
           </p>
           <p className="font-mono-numbers mt-1.5 text-2xl font-extrabold text-foreground">
-            {money(totals.avg)}
+            <Money value={totals.avg} />
           </p>
         </div>
       </div>
@@ -176,7 +177,7 @@ export const MonthlySummary = ({
                     {hasBudget && (
                       <div>
                         <div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground">
-                          <span>Budget {money(budget)}</span>
+                          <span>Budget <Money value={budget} /></span>
                           <span className="font-mono-numbers">
                             {m.budgetPercent}%
                           </span>
@@ -195,7 +196,7 @@ export const MonthlySummary = ({
                     )}
                     <div>
                       <div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground">
-                        <span>Income {money(income)}</span>
+                        <span>Income <Money value={income} /></span>
                         <span className="font-mono-numbers">
                           {m.incomePercent}%
                         </span>
@@ -216,7 +217,7 @@ export const MonthlySummary = ({
 
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   <p className="font-mono-numbers text-base font-extrabold text-foreground sm:text-lg">
-                    {money(m.total)}
+                    <Money value={m.total} />
                   </p>
                   {hasBudget ? (
                     <span
@@ -230,8 +231,7 @@ export const MonthlySummary = ({
                         <TrendingDown className="size-3" />
                       )}
                       {overBudget
-                        ? `${money(Math.abs(m.budgetRemaining))} over`
-                        : `${money(m.budgetRemaining)} left`}
+                        ? <><Money value={Math.abs(m.budgetRemaining)} /> over</> : <><Money value={m.budgetRemaining} /> left</>}
                     </span>
                   ) : (
                     <span
@@ -240,8 +240,7 @@ export const MonthlySummary = ({
                       }`}
                     >
                       {overIncome
-                        ? `${money(Math.abs(m.incomeRemaining))} over`
-                        : `${money(m.incomeRemaining)} left`}
+                        ? <><Money value={Math.abs(m.incomeRemaining)} /> over</> : <><Money value={m.incomeRemaining} /> left</>}
                     </span>
                   )}
                   {isOpen ? (
@@ -261,7 +260,7 @@ export const MonthlySummary = ({
                           vs Budget
                         </p>
                         <p className="font-mono-numbers mt-0.5 text-sm font-bold text-foreground">
-                          {m.budgetPercent}% of {money(budget)}
+                          {m.budgetPercent}% of <Money value={budget} />
                         </p>
                         <p
                           className={`text-xs font-semibold ${
@@ -269,8 +268,7 @@ export const MonthlySummary = ({
                           }`}
                         >
                           {overBudget
-                            ? `${money(Math.abs(m.budgetRemaining))} over budget`
-                            : `${money(m.budgetRemaining)} under budget`}
+                            ? <><Money value={Math.abs(m.budgetRemaining)} /> over budget</> : <><Money value={m.budgetRemaining} /> under budget</>}
                         </p>
                       </div>
                     )}
@@ -279,7 +277,7 @@ export const MonthlySummary = ({
                         vs Income
                       </p>
                       <p className="font-mono-numbers mt-0.5 text-sm font-bold text-foreground">
-                        {m.incomePercent}% of {money(income)}
+                        {m.incomePercent}% of <Money value={income} />
                       </p>
                       <p
                         className={`text-xs font-semibold ${
@@ -287,8 +285,7 @@ export const MonthlySummary = ({
                         }`}
                       >
                         {overIncome
-                          ? `${money(Math.abs(m.incomeRemaining))} over income`
-                          : `${money(m.incomeRemaining)} of income left`}
+                          ? <><Money value={Math.abs(m.incomeRemaining)} /> over income</> : <><Money value={m.incomeRemaining} /> of income left</>}
                       </p>
                     </div>
                   </div>
@@ -330,7 +327,7 @@ export const MonthlySummary = ({
                               />
                             </div>
                             <span className="font-mono-numbers w-16 shrink-0 text-right text-xs font-bold text-foreground sm:w-20">
-                              {money(c.total)}
+                              <Money value={c.total} />
                             </span>
                           </div>
                         );
