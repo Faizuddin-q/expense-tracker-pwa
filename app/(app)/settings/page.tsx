@@ -2,13 +2,16 @@
 
 import { useApp } from '@/lib/app-context';
 import { Settings } from '@/components/views/Settings';
+import { toast } from '@/components/ToastHost';
 
 export default function SettingsPage() {
   const {
-    income,
-    setIncome,
-    budget,
-    setBudget,
+    incomeDraft,
+    setIncomeDraft,
+    saveIncome,
+    budgetDraft,
+    setBudgetDraft,
+    saveBudget,
     expenses,
     userId,
     sync,
@@ -20,22 +23,25 @@ export default function SettingsPage() {
 
   return (
     <Settings
-      income={income}
-      setIncome={setIncome}
-      budget={budget}
-      setBudget={setBudget}
+      incomeDraft={incomeDraft}
+      setIncomeDraft={setIncomeDraft}
+      onSaveIncome={saveIncome}
+      budgetDraft={budgetDraft}
+      setBudgetDraft={setBudgetDraft}
+      onSaveBudget={saveBudget}
       expenses={expenses}
       userId={userId}
-      sync={(profileIncome?: number, profileBudget?: number) =>
-        sync(
+      sync={async () => {
+        const ok = await sync(
           userId,
           expenses,
-          profileIncome ?? null,
+          null,
           customCategories,
           undefined,
-          profileBudget ?? null
-        )
-      }
+          null
+        );
+        if (ok) toast.success('Data synced', 'Latest expenses and profile pulled');
+      }}
       onChangeIdentity={logout}
       onLogout={logout}
       categories={customCategories}

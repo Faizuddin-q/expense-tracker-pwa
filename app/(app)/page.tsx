@@ -10,6 +10,7 @@ export default function HomePage() {
     setNote,
     parseAmount,
     addExpense,
+    updateExpense,
     expenses,
     showAll,
     setShowAll,
@@ -28,6 +29,7 @@ export default function HomePage() {
       setNote={setNote}
       parseAmount={parseAmount}
       addExpense={addExpense}
+      updateExpense={updateExpense}
       displayed={showAll ? expenses : today}
       showAll={showAll}
       setShowAll={setShowAll}

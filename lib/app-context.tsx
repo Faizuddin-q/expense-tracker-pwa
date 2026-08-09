@@ -18,8 +18,10 @@ import {
   isValidIndianMobile,
   parseRawNumber,
   formatIndianNumber,
+  money,
 } from '@/lib/utils';
 import { useExpenses } from '@/lib/store';
+import { toast, ToastHost } from '@/components/ToastHost';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -37,6 +39,15 @@ interface AppContextValue {
   add: (expense: Expense) => void;
   handleDeleteExpense: (id: string) => void;
   addExpense: (category: CategoryId, preset?: Partial<Expense>) => void;
+  updateExpense: (
+    id: string,
+    patch: {
+      amount: number;
+      note?: string;
+      category: CategoryId;
+      date: string;
+    }
+  ) => void;
   amount: string;
   setAmount: (v: string) => void;
   parseAmount: (v: string) => void;
@@ -93,7 +104,7 @@ interface AppContextValue {
     deletedIds?: string[],
     /** Pass a number to push budget; null/omit to leave cloud budget unchanged */
     profileBudget?: number | null
-  ) => Promise<void>;
+  ) => Promise<boolean>;
 
   // Derived
   monthSpend: number;
@@ -115,7 +126,7 @@ export const useApp = () => {
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
-  const { expenses, add, remove, hydrated, hydrate } = useExpenses();
+  const { expenses, add, update, remove, hydrated, hydrate } = useExpenses();
 
   const [userId, setUserId] = useState('');
   const [phone, setPhone] = useState('');
@@ -260,8 +271,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       profileCategories = customCategories,
       deletedIds = pendingDeletedIds,
       profileBudget: number | null = null
-    ) => {
-      if (!id) return;
+    ): Promise<boolean> => {
+      if (!id) return false;
       setSyncing(true);
       setError('');
       try {
@@ -337,12 +348,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           );
           await set(`pocket-categories-${id}`, data.profile.categories);
         }
+        return true;
       } catch (err: unknown) {
         const msg =
           err instanceof Error
             ? err.message
             : 'Cloud sync is unavailable. Your data is still saved on this device.';
         setError(msg);
+        toast.error('Sync failed', msg);
+        return false;
       } finally {
         setSyncing(false);
       }
@@ -363,9 +377,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const continueWithPhone = async () => {
     const normalized = normalizePhone(phone);
     if (!isValidIndianMobile(normalized)) {
-      setError(
-        'Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.'
-      );
+      const msg =
+        'Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.';
+      setError(msg);
+      toast.error('Invalid mobile number', msg);
       return;
     }
     setError('');
@@ -392,8 +407,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     } else {
       setNeedsIncome(false);
     }
-    // Push local profile only when this device already has values; otherwise pull
-    sync(normalized, saved ?? [], localIncome, undefined, undefined, localBudget);
+    const ok = await sync(
+      normalized,
+      saved ?? [],
+      localIncome,
+      undefined,
+      undefined,
+      localBudget
+    );
+    if (ok) toast.success('Signed in', `Account +91 ${normalized}`);
   };
 
   const logout = async () => {
@@ -403,6 +425,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setUserId('');
     setPhone('');
     hydrate([]);
+    toast.success('Logged out', 'Your cloud data is still safe');
   };
 
   // ── Income ────────────────────────────────────────────────────────────────
@@ -410,26 +433,44 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const saveIncome = async () => {
     const parsed = Number(incomeDraft.replace(/[^0-9.]/g, ''));
     if (!Number.isFinite(parsed) || parsed <= 0) {
-      setError('Enter a monthly income greater than zero.');
+      const msg = 'Enter a monthly income greater than zero.';
+      setError(msg);
+      toast.error('Could not save income', msg);
       return;
     }
     setIncome(parsed);
     await set(`pocket-income-${userId}`, parsed);
     setNeedsIncome(false);
-    // Push income; leave budget unchanged on the server
-    sync(userId, expenses, parsed, customCategories, pendingDeletedIds, null);
+    const ok = await sync(
+      userId,
+      expenses,
+      parsed,
+      customCategories,
+      pendingDeletedIds,
+      null
+    );
+    if (ok) toast.success('Income updated', `Set to ${money(parsed)}`);
   };
 
   const saveBudget = async () => {
     const parsed = Number(budgetDraft.replace(/[^0-9.]/g, ''));
     if (!Number.isFinite(parsed) || parsed <= 0) {
-      setError('Enter a monthly budget greater than zero.');
+      const msg = 'Enter a monthly budget greater than zero.';
+      setError(msg);
+      toast.error('Could not save budget', msg);
       return;
     }
     setBudget(parsed);
     await set(`pocket-budget-${userId}`, parsed);
-    // Push budget; leave income unchanged on the server
-    sync(userId, expenses, null, customCategories, pendingDeletedIds, parsed);
+    const ok = await sync(
+      userId,
+      expenses,
+      null,
+      customCategories,
+      pendingDeletedIds,
+      parsed
+    );
+    if (ok) toast.success('Budget updated', `Set to ${money(parsed)}`);
   };
 
   // ── Categories ────────────────────────────────────────────────────────────
@@ -450,6 +491,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const deleteCategory = async (id: string) => {
+    const removedLabel =
+      customCategories.find((c) => c.id === id)?.label ?? 'Category';
     const next = customCategories.filter((c) => c.id !== id);
     setCustomCategories(next);
     await set(
@@ -462,12 +505,16 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         custom,
       }))
     );
-    sync(userId, expenses, null, next);
+    const ok = await sync(userId, expenses, null, next);
+    if (ok) toast.success('Category removed', `"${removedLabel}" deleted`);
   };
 
   const addCategory = async () => {
     const label = categoryName.trim();
-    if (!label || !userId) return;
+    if (!label || !userId) {
+      toast.error('Could not add category', 'Enter a category name');
+      return;
+    }
     const custom: Category = {
       id: `custom-${crypto.randomUUID()}`,
       label,
@@ -490,24 +537,38 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     );
     setCategoryName('');
     setCategoryDialog(false);
-    sync(userId, expenses, null, next);
+    const ok = await sync(userId, expenses, null, next);
+    if (ok) toast.success('Category added', `"${label}" is ready to use`);
   };
 
   // ── Expenses ──────────────────────────────────────────────────────────────
 
   const handleDeleteExpense = (id: string) => {
+    const target = expenses.find((e) => e.id === id);
     remove(id);
     if (undo?.id === id) setUndo(null);
     const nextDeleted = Array.from(new Set([...pendingDeletedIds, id]));
     setPendingDeletedIds(nextDeleted);
     const updatedExpenses = expenses.filter((e) => e.id !== id);
-    sync(userId, updatedExpenses, null, customCategories, nextDeleted);
+    void sync(userId, updatedExpenses, null, customCategories, nextDeleted).then(
+      (ok) => {
+        if (ok) {
+          toast.success(
+            'Expense deleted',
+            target ? `${money(target.amount)} removed` : 'Removed from your list'
+          );
+        }
+      }
+    );
   };
 
   const addExpense = (category: CategoryId, preset?: Partial<Expense>) => {
     const rawNumber = parseRawNumber(amount);
     const parsed = Number(rawNumber);
-    if (!parsed && !preset?.amount) return;
+    if (!parsed && !preset?.amount) {
+      toast.error('Could not add expense', 'Enter an amount first');
+      return;
+    }
     const now = new Date().toISOString();
     const expense: Expense = {
       id: crypto.randomUUID(),
@@ -524,7 +585,40 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setNote('');
     setUndo(expense);
     setTimeout(() => setUndo(null), 5000);
-    setTimeout(() => sync(userId, [expense]), 0);
+    toast.success(
+      'Expense added',
+      `${money(expense.amount)}${expense.note ? ` · ${expense.note}` : ''}`
+    );
+    void sync(userId, [expense]);
+  };
+
+  const updateExpense = (
+    id: string,
+    patch: {
+      amount: number;
+      note?: string;
+      category: CategoryId;
+      date: string;
+    }
+  ) => {
+    const now = new Date().toISOString();
+    const updated: Partial<Expense> = {
+      amount: patch.amount,
+      note: patch.note,
+      category: patch.category,
+      date: patch.date,
+      updatedAt: now,
+      syncStatus: online ? 'synced' : 'pending',
+    };
+    update(id, updated);
+    const nextExpenses = expenses.map((e) =>
+      e.id === id ? { ...e, ...updated, id: e.id } : e
+    );
+    toast.success(
+      'Expense updated',
+      `${money(patch.amount)}${patch.note ? ` · ${patch.note}` : ''}`
+    );
+    void sync(userId, nextExpenses.filter((e) => e.id === id));
   };
 
   const parseAmount = (value: string) => {
@@ -577,6 +671,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     add,
     handleDeleteExpense,
     addExpense,
+    updateExpense,
     amount,
     setAmount,
     parseAmount,
@@ -621,5 +716,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     logout,
   };
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return (
+    <AppContext.Provider value={value}>
+      {children}
+      <ToastHost />
+    </AppContext.Provider>
+  );
 };

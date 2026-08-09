@@ -10,10 +10,21 @@ import {
 import { Category, Expense } from '@/types/expense';
 import { categoryFor, downloadCsv, money } from '@/lib/utils';
 import { ExpenseRow } from '@/components/ExpenseRow';
+import { ExpenseEditDialog } from '@/components/ExpenseEditDialog';
+import { toast } from '@/components/ToastHost';
 
 interface ExpensesProps {
   expenses: Expense[];
   remove: (id: string) => void;
+  updateExpense: (
+    id: string,
+    patch: {
+      amount: number;
+      note?: string;
+      category: string;
+      date: string;
+    }
+  ) => void;
   categories?: Category[];
 }
 
@@ -22,6 +33,7 @@ type TimeRangeOption = 'all' | '1d' | '7d' | '14d' | '30d' | 'month' | 'custom';
 export const Expenses = ({
   expenses,
   remove,
+  updateExpense,
   categories = [],
 }: ExpensesProps) => {
   const [query, setQuery] = useState('');
@@ -29,6 +41,7 @@ export const Expenses = ({
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [editing, setEditing] = useState<Expense | null>(null);
 
   // Extract available months from expenses
   const availableMonths = useMemo(() => {
@@ -416,6 +429,7 @@ export const Expenses = ({
             key={e.id}
             expense={e}
             remove={remove}
+            onEdit={setEditing}
             categories={categories}
           />
         ))}
@@ -425,6 +439,22 @@ export const Expenses = ({
           </div>
         )}
       </div>
+
+      {editing && (
+        <ExpenseEditDialog
+          expense={editing}
+          categories={categories}
+          onClose={() => setEditing(null)}
+          onSave={(patch) => {
+            if (patch.amount <= 0) {
+              toast.error('Invalid amount', 'Enter a valid amount greater than zero');
+              return;
+            }
+            updateExpense(editing.id, patch);
+            setEditing(null);
+          }}
+        />
+      )}
     </section>
   );
 };

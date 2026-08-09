@@ -1,17 +1,22 @@
-import { useEffect, useState } from 'react';
 import { Check, Download, LogOut, Moon, Sun } from 'lucide-react';
-import { set } from 'idb-keyval';
 import { Category, Expense } from '@/types/expense';
-import { downloadCsv, formatIndianMobileDisplay, formatIndianNumber, parseRawNumber } from '@/lib/utils';
+import {
+  downloadCsv,
+  formatIndianMobileDisplay,
+  formatIndianNumber,
+} from '@/lib/utils';
+import { toast } from '@/components/ToastHost';
 
 interface SettingsProps {
-  income: number;
-  setIncome: (n: number) => void;
-  budget: number;
-  setBudget: (n: number) => void;
+  incomeDraft: string;
+  setIncomeDraft: (v: string) => void;
+  onSaveIncome: () => void;
+  budgetDraft: string;
+  setBudgetDraft: (v: string) => void;
+  onSaveBudget: () => void;
   expenses: Expense[];
   userId: string;
-  sync: (profileIncome?: number, profileBudget?: number) => void;
+  sync: () => void;
   onChangeIdentity: () => void;
   onLogout: () => void;
   categories?: Category[];
@@ -20,10 +25,12 @@ interface SettingsProps {
 }
 
 export const Settings = ({
-  income,
-  setIncome,
-  budget,
-  setBudget,
+  incomeDraft,
+  setIncomeDraft,
+  onSaveIncome,
+  budgetDraft,
+  setBudgetDraft,
+  onSaveBudget,
   expenses,
   userId,
   sync,
@@ -33,39 +40,6 @@ export const Settings = ({
   theme,
   setTheme,
 }: SettingsProps) => {
-  const [incomeDraft, setIncomeDraft] = useState(
-    formatIndianNumber(income || '')
-  );
-  const [budgetDraft, setBudgetDraft] = useState(
-    formatIndianNumber(budget || '')
-  );
-
-  useEffect(() => {
-    setIncomeDraft(formatIndianNumber(income || ''));
-  }, [income]);
-
-  useEffect(() => {
-    setBudgetDraft(formatIndianNumber(budget || ''));
-  }, [budget]);
-
-  const handleSaveIncome = async () => {
-    const raw = parseRawNumber(incomeDraft);
-    const parsed = Number(raw);
-    if (!Number.isFinite(parsed) || parsed <= 0) return;
-    setIncome(parsed);
-    await set(`pocket-income-${userId}`, parsed);
-    sync(parsed);
-  };
-
-  const handleSaveBudget = async () => {
-    const raw = parseRawNumber(budgetDraft);
-    const parsed = Number(raw);
-    if (!Number.isFinite(parsed) || parsed <= 0) return;
-    setBudget(parsed);
-    await set(`pocket-budget-${userId}`, parsed);
-    sync(undefined, parsed);
-  };
-
   return (
     <section className="mx-auto max-w-3xl">
       <div className="rounded-2xl border border-border/90 bg-card p-5 shadow-xs sm:rounded-3xl sm:p-8 md:p-9">
@@ -76,7 +50,6 @@ export const Settings = ({
           Your mobile number identifies your private expense space.
         </p>
 
-        {/* Theme / Appearance Selection */}
         <div className="mt-6 sm:mt-8 flex flex-col gap-2">
           <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
             Appearance & Theme
@@ -149,7 +122,7 @@ export const Settings = ({
               <input
                 aria-label="Monthly income"
                 inputMode="decimal"
-                value={incomeDraft}
+                value={formatIndianNumber(incomeDraft || '')}
                 onChange={(e) =>
                   setIncomeDraft(formatIndianNumber(e.target.value))
                 }
@@ -158,7 +131,7 @@ export const Settings = ({
               />
             </div>
             <button
-              onClick={handleSaveIncome}
+              onClick={onSaveIncome}
               className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground shadow-2xs transition-all hover:opacity-90 active:scale-[0.98] sm:h-12 sm:text-sm"
             >
               <Check className="size-4" /> Save Income
@@ -182,7 +155,7 @@ export const Settings = ({
               <input
                 aria-label="Monthly spend budget"
                 inputMode="decimal"
-                value={budgetDraft}
+                value={formatIndianNumber(budgetDraft || '')}
                 onChange={(e) =>
                   setBudgetDraft(formatIndianNumber(e.target.value))
                 }
@@ -191,7 +164,7 @@ export const Settings = ({
               />
             </div>
             <button
-              onClick={handleSaveBudget}
+              onClick={onSaveBudget}
               className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground shadow-2xs transition-all hover:opacity-90 active:scale-[0.98] sm:h-12 sm:text-sm"
             >
               <Check className="size-4" /> Save Budget
@@ -199,7 +172,6 @@ export const Settings = ({
           </div>
         </div>
 
-        {/* Export Data */}
         <div className="mt-6 border-t border-border/60 pt-6 sm:mt-8 sm:pt-8">
           <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm">
             Export Data
@@ -208,14 +180,16 @@ export const Settings = ({
             Download your full expense history as a CSV file.
           </p>
           <button
-            onClick={() => downloadCsv(expenses, categories)}
+            onClick={() => {
+              downloadCsv(expenses, categories);
+              toast.success('CSV downloaded', `${expenses.length} expenses exported`);
+            }}
             className="mt-3.5 flex h-10.5 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border/80 bg-card px-4.5 text-xs font-bold text-foreground transition-all hover:bg-muted active:scale-[0.98] sm:h-11 sm:px-5 sm:text-sm"
           >
             <Download className="size-4" /> Download CSV ({expenses.length})
           </button>
         </div>
 
-        {/* Mobile logout — desktop uses header */}
         <div className="mt-6 border-t border-border/60 pt-6 lg:hidden sm:mt-8 sm:pt-8">
           <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm">
             Account

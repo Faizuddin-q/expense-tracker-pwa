@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Category, CategoryId, Expense } from '@/types/expense';
 import { builtInCategories, quickRelogItems } from '@/lib/constants';
 import { getCategoryColor, money } from '@/lib/utils';
 import { ExpenseRow } from '@/components/ExpenseRow';
+import { ExpenseEditDialog } from '@/components/ExpenseEditDialog';
+import { toast } from '@/components/ToastHost';
 
 interface HomeProps {
   amount: string;
@@ -10,6 +13,15 @@ interface HomeProps {
   setNote: (v: string) => void;
   parseAmount: (v: string) => void;
   addExpense: (category: CategoryId, preset?: Partial<Expense>) => void;
+  updateExpense: (
+    id: string,
+    patch: {
+      amount: number;
+      note?: string;
+      category: CategoryId;
+      date: string;
+    }
+  ) => void;
   displayed: Expense[];
   showAll: boolean;
   setShowAll: (v: boolean) => void;
@@ -26,6 +38,7 @@ export const Home = ({
   setNote,
   parseAmount,
   addExpense,
+  updateExpense,
   displayed,
   showAll,
   setShowAll,
@@ -35,6 +48,7 @@ export const Home = ({
   categories = builtInCategories,
   onAddCategory,
 }: HomeProps) => {
+  const [editing, setEditing] = useState<Expense | null>(null);
   const displayedTotal = displayed.reduce(
     (s: number, e: Expense) => s + e.amount,
     0
@@ -195,6 +209,7 @@ export const Home = ({
                 key={expense.id}
                 expense={expense}
                 remove={remove}
+                onEdit={setEditing}
                 categories={categories}
               />
             ))}
@@ -222,6 +237,22 @@ export const Home = ({
           )}
         </div>
       </div>
+
+      {editing && (
+        <ExpenseEditDialog
+          expense={editing}
+          categories={categories}
+          onClose={() => setEditing(null)}
+          onSave={(patch) => {
+            if (patch.amount <= 0) {
+              toast.error('Invalid amount', 'Enter a valid amount greater than zero');
+              return;
+            }
+            updateExpense(editing.id, patch);
+            setEditing(null);
+          }}
+        />
+      )}
     </section>
   );
 };
