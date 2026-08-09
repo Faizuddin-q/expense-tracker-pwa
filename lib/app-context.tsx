@@ -9,12 +9,13 @@ import {
   useRef,
   useState,
 } from 'react';
-import { get, set } from 'idb-keyval';
+import { get, set, del } from 'idb-keyval';
 import { Category, CategoryId, Expense } from '@/types/expense';
 import { builtInCategories } from '@/lib/constants';
 import {
   getCategoryIcon,
   normalizePhone,
+  isValidIndianMobile,
   parseRawNumber,
   formatIndianNumber,
 } from '@/lib/utils';
@@ -98,7 +99,7 @@ interface AppContextValue {
   today: Expense[];
 
   // Identity reset
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -330,8 +331,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const continueWithPhone = async () => {
     const normalized = normalizePhone(phone);
-    if (normalized.length < 8) {
-      setError('Enter a valid mobile number.');
+    if (!isValidIndianMobile(normalized)) {
+      setError(
+        'Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.'
+      );
       return;
     }
     setError('');
@@ -370,8 +373,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     initialSyncDoneFor.current = null;
+    await del('pocket-user-id');
     setUserId('');
     setPhone('');
     hydrate([]);

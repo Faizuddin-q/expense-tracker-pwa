@@ -189,11 +189,23 @@ export const categoryFor = (
 export const normalizePhone = (value: string): string => {
   let digits = value.replace(/\D/g, '');
   if (digits.startsWith('00')) digits = digits.slice(2);
-  // Treat +91 / 91XXXXXXXXXX as the same Indian mobile account
+  // Strip country code so +91 / 91XXXXXXXXXX map to the same 10-digit account
   if (digits.length === 12 && digits.startsWith('91')) {
     digits = digits.slice(2);
   }
+  if (digits.length > 10) digits = digits.slice(-10);
   return digits;
+};
+
+/** Indian mobiles: exactly 10 digits, starting with 6–9. */
+export const isValidIndianMobile = (value: string): boolean =>
+  /^[6-9]\d{9}$/.test(normalizePhone(value));
+
+export const formatIndianMobileDisplay = (value: string): string => {
+  const digits = normalizePhone(value);
+  if (!digits) return '+91';
+  if (digits.length <= 5) return `+91 ${digits}`;
+  return `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`;
 };
 
 export const formatIndianNumber = (val: number | string): string => {

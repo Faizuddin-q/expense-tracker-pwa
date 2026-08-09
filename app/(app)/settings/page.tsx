@@ -37,6 +37,7 @@ export default function SettingsPage() {
         )
       }
       onChangeIdentity={logout}
+      onLogout={logout}
       categories={customCategories}
       theme={theme}
       setTheme={setTheme}

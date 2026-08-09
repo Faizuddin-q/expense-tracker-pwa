@@ -8,6 +8,11 @@ interface LoginProps {
 }
 
 export const Login = ({ phone, setPhone, onContinue, error }: LoginProps) => {
+  const handlePhoneChange = (raw: string) => {
+    const digits = raw.replace(/\D/g, '').slice(0, 10);
+    setPhone(digits);
+  };
+
   return (
     <main className="grid min-h-screen place-items-center bg-background px-5 py-10">
       <section className="w-full max-w-md rounded-3xl bg-card p-8 shadow-sm ring-1 ring-border sm:p-10">
@@ -33,22 +38,31 @@ export const Login = ({ phone, setPhone, onContinue, error }: LoginProps) => {
           </p>
           <label className="mt-8 flex flex-col gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Mobile number
-            <input
-              autoFocus
-              inputMode="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              onKeyDown={(e) => {
-                if (
-                  e.key === 'Enter' &&
-                  !e.nativeEvent.isComposing &&
-                  e.keyCode !== 229
-                )
-                  onContinue();
-              }}
-              placeholder="+91 98765 43210"
-              className="h-12 w-full rounded-xl border border-input bg-background px-4 text-sm font-medium text-foreground outline-none focus:ring-2 focus:ring-ring"
-            />
+            <div className="flex h-12 overflow-hidden rounded-xl border border-input bg-background focus-within:ring-2 focus-within:ring-ring">
+              <span className="flex shrink-0 items-center border-r border-input bg-muted/60 px-3 text-sm font-bold text-foreground">
+                +91
+              </span>
+              <input
+                autoFocus
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel-national"
+                maxLength={10}
+                value={phone}
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (
+                    e.key === 'Enter' &&
+                    !e.nativeEvent.isComposing &&
+                    e.keyCode !== 229
+                  )
+                    onContinue();
+                }}
+                placeholder="98765 43210"
+                aria-label="10-digit Indian mobile number"
+                className="font-mono-numbers h-full w-full bg-transparent px-3 text-sm font-medium tracking-wide text-foreground outline-none placeholder:text-muted-foreground/60"
+              />
+            </div>
           </label>
           {error && (
             <p className="mt-3 text-xs font-medium text-destructive">{error}</p>

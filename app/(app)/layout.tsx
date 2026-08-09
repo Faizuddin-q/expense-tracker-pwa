@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import { Moon, Sparkles, Sun, Wifi, WifiOff } from 'lucide-react';
+import { LogOut, Moon, Sparkles, Sun, Wifi, WifiOff } from 'lucide-react';
 import { AppProvider, useApp } from '@/lib/app-context';
 import { Brand } from '@/components/Brand';
 import { NavButton } from '@/components/NavButton';
@@ -47,6 +47,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
     addCategory,
     updateCategoryColor,
     deleteCategory,
+    logout,
   } = useApp();
 
   const router = useRouter();
@@ -157,6 +158,14 @@ function AppShell({ children }: { children: React.ReactNode }) {
               )}
               {syncing ? 'Syncing' : online ? 'Synced' : 'Offline mode'}
             </span>
+            <button
+              onClick={() => void logout()}
+              title="Log out"
+              className="hidden cursor-pointer items-center gap-1.5 rounded-lg border border-border/80 bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-2xs transition hover:bg-muted hover:text-destructive active:scale-95 lg:flex lg:px-3.5"
+            >
+              <LogOut className="size-3.5" />
+              Log out
+            </button>
           </div>
         </header>
 

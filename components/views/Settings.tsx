@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Check, Download, Moon, Sun } from 'lucide-react';
+import { Check, Download, LogOut, Moon, Sun } from 'lucide-react';
 import { set } from 'idb-keyval';
 import { Category, Expense } from '@/types/expense';
-import { downloadCsv, formatIndianNumber, parseRawNumber } from '@/lib/utils';
+import { downloadCsv, formatIndianMobileDisplay, formatIndianNumber, parseRawNumber } from '@/lib/utils';
 
 interface SettingsProps {
   income: number;
@@ -13,6 +13,7 @@ interface SettingsProps {
   userId: string;
   sync: (profileIncome?: number, profileBudget?: number) => void;
   onChangeIdentity: () => void;
+  onLogout: () => void;
   categories?: Category[];
   theme: 'dark' | 'light';
   setTheme: (t: 'dark' | 'light') => void;
@@ -27,6 +28,7 @@ export const Settings = ({
   userId,
   sync,
   onChangeIdentity,
+  onLogout,
   categories = [],
   theme,
   setTheme,
@@ -107,11 +109,17 @@ export const Settings = ({
           <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
             Mobile account ID
           </label>
-          <input
-            readOnly
-            value={userId}
-            className="h-11 w-full cursor-not-allowed rounded-xl border border-input bg-muted/60 px-4 text-xs font-semibold text-foreground outline-none sm:h-12 sm:text-sm"
-          />
+          <div className="flex h-11 overflow-hidden rounded-xl border border-input bg-muted/60 sm:h-12">
+            <span className="flex shrink-0 items-center border-r border-input px-3 text-xs font-bold text-muted-foreground sm:text-sm">
+              +91
+            </span>
+            <input
+              readOnly
+              value={userId}
+              className="font-mono-numbers h-full w-full cursor-not-allowed bg-transparent px-3 text-xs font-semibold tracking-wide text-foreground outline-none sm:text-sm"
+              aria-label={formatIndianMobileDisplay(userId)}
+            />
+          </div>
         </div>
 
         <div className="mt-3.5 flex flex-wrap gap-2.5 sm:mt-4 sm:gap-3">
@@ -204,6 +212,22 @@ export const Settings = ({
             className="mt-3.5 flex h-10.5 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border/80 bg-card px-4.5 text-xs font-bold text-foreground transition-all hover:bg-muted active:scale-[0.98] sm:h-11 sm:px-5 sm:text-sm"
           >
             <Download className="size-4" /> Download CSV ({expenses.length})
+          </button>
+        </div>
+
+        {/* Mobile logout — desktop uses header */}
+        <div className="mt-6 border-t border-border/60 pt-6 lg:hidden sm:mt-8 sm:pt-8">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm">
+            Account
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Sign out on this device. Your synced data stays in the cloud.
+          </p>
+          <button
+            onClick={onLogout}
+            className="mt-3.5 flex h-10.5 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4.5 text-xs font-bold text-destructive transition-all hover:bg-destructive/15 active:scale-[0.98] sm:h-11 sm:text-sm"
+          >
+            <LogOut className="size-4" /> Log out
           </button>
         </div>
       </div>
