@@ -22,5 +22,12 @@ export const useExpenses = create<Store>((setState) => ({
     })),
   remove: (id) =>
     setState((s) => ({ expenses: s.expenses.filter((e) => e.id !== id) })),
-  hydrate: (items) => setState({ expenses: items, hydrated: true }),
+  hydrate: (items) =>
+    setState({
+      expenses: items.map((e) => ({
+        ...e,
+        amount: Number(e.amount) || 0,
+      })),
+      hydrated: true,
+    }),
 }));

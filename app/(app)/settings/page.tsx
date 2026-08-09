@@ -34,14 +34,7 @@ export default function SettingsPage() {
       expenses={expenses}
       userId={userId}
       sync={async () => {
-        const ok = await sync(
-          userId,
-          expenses,
-          null,
-          customCategories,
-          undefined,
-          null
-        );
+        const ok = await sync(userId, expenses, null, null, undefined, null);
         if (ok) toast.success('Data synced', 'Latest expenses and profile pulled');
       }}
       onChangeIdentity={logout}

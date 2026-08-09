@@ -43,51 +43,55 @@ export const Dashboard = ({
     null
   );
 
-  // Extract available months from expenses
+  // Extract available months from expenses (newest first; always include current)
   const availableMonths = useMemo(() => {
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const monthMap = new Map<string, string>();
+
     expenses.forEach((e) => {
       const d = new Date(e.date);
-      if (!isNaN(d.getTime())) {
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        const label = d.toLocaleDateString('en-IN', {
-          month: 'long',
-          year: 'numeric',
-        });
-        monthMap.set(key, label);
-      }
+      if (isNaN(d.getTime())) return;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleDateString('en-IN', {
+        month: 'long',
+        year: 'numeric',
+      });
+      monthMap.set(key, label);
     });
 
-    const currentYear = new Date().getFullYear();
-    const currentMonthKey = `${currentYear}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+    if (!monthMap.has(currentMonthKey)) {
+      monthMap.set(
+        currentMonthKey,
+        now.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+      );
+    }
 
-    if (monthMap.size === 0) {
+    if (monthMap.size === 1 && !expenses.length) {
       for (let m = 0; m < 12; m++) {
-        const d = new Date(currentYear, m, 1);
-        const key = `${currentYear}-${String(m + 1).padStart(2, '0')}`;
-        const label = d.toLocaleDateString('en-IN', {
-          month: 'long',
-          year: 'numeric',
-        });
-        monthMap.set(key, label);
+        const d = new Date(now.getFullYear(), m, 1);
+        const key = `${now.getFullYear()}-${String(m + 1).padStart(2, '0')}`;
+        monthMap.set(
+          key,
+          d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+        );
       }
     }
 
-    return Array.from(monthMap.entries()).map(([key, label]) => ({
-      key,
-      label,
-      isCurrent: key === currentMonthKey,
-    }));
+    return Array.from(monthMap.entries())
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([key, label]) => ({
+        key,
+        label,
+        isCurrent: key === currentMonthKey,
+      }));
   }, [expenses]);
 
-  const currentMonthKey = useMemo(() => {
+  const activeMonthKey = useMemo(() => {
     if (selectedMonth) return selectedMonth;
-    if (availableMonths.length > 0) return availableMonths[0].key;
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  }, [availableMonths, selectedMonth]);
-
-  const activeMonthKey = selectedMonth || currentMonthKey;
+  }, [selectedMonth]);
 
   const handlePrevMonth = () => {
     const currentIndex = availableMonths.findIndex(
@@ -112,7 +116,7 @@ export const Dashboard = ({
     const now = new Date();
     return expenses.filter((e) => {
       const eDate = new Date(e.date);
-      if (isNaN(eDate.getTime())) return true;
+      if (isNaN(eDate.getTime())) return false;
 
       if (timeRange === '1d') {
         const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -161,32 +165,55 @@ export const Dashboard = ({
     });
   }, [expenses, timeRange, activeMonthKey, startDate, endDate]);
 
+  const expenseAmount = (e: Expense) => {
+    const n = Number(e.amount);
+    return Number.isFinite(n) ? n : 0;
+  };
+
   const activeSpend = useMemo(
-    () => filteredExpenses.reduce((sum, e) => sum + e.amount, 0),
+    () => filteredExpenses.reduce((sum, e) => sum + expenseAmount(e), 0),
     [filteredExpenses]
   );
 
+  // Group by expense category IDs first so orphaned/custom IDs are never dropped
   const activeByCategory = useMemo(() => {
-    const cats = categories.length ? categories : builtInCategories;
-    return cats
-      .map((c) => ({
-        ...c,
-        total: filteredExpenses
-          .filter((e) => e.category === c.id)
-          .reduce((sum, e) => sum + e.amount, 0),
-      }))
+    const catMeta = categories.length ? categories : builtInCategories;
+    const totals = new Map<string, number>();
+    filteredExpenses.forEach((e) => {
+      const id = e.category || 'other';
+      totals.set(id, (totals.get(id) ?? 0) + expenseAmount(e));
+    });
+
+    return Array.from(totals.entries())
+      .map(([id, total]) => {
+        const meta =
+          catMeta.find((c) => c.id === id) ??
+          builtInCategories.find((c) => c.id === id) ??
+          ({
+            id,
+            label: id === 'other' ? 'Other' : id,
+            tone: 'gray',
+            Icon: Plus,
+          } satisfies Category);
+        return { ...meta, total };
+      })
       .filter((c) => c.total > 0)
       .sort((a, b) => b.total - a.total);
   }, [categories, filteredExpenses]);
 
-  const hasBudget = budget > 0;
-  const budgetPercent = Math.round((activeSpend / Math.max(budget || 1, 1)) * 100);
-  const incomePercent = Math.round((activeSpend / Math.max(income, 1)) * 100);
+  // Income/budget are monthly targets — only compare in calendar-month view
+  const showMoneyTargets = timeRange === 'month';
+  const hasBudget = showMoneyTargets && budget > 0;
+  const budgetPercent = showMoneyTargets
+    ? Math.round((activeSpend / Math.max(budget || 1, 1)) * 100)
+    : 0;
+  const incomePercent = showMoneyTargets
+    ? Math.round((activeSpend / Math.max(income, 1)) * 100)
+    : 0;
   const budgetRemaining = (budget || 0) - activeSpend;
   const incomeRemaining = income - activeSpend;
   const overBudget = hasBudget && budgetRemaining < 0;
-  const overIncome = incomeRemaining < 0;
-  // Donut center defaults to budget when set, otherwise income.
+  const overIncome = showMoneyTargets && incomeRemaining < 0;
   const primaryPercent = hasBudget ? budgetPercent : incomePercent;
 
   // SVG Donut Chart Calculation
@@ -495,13 +522,22 @@ export const Dashboard = ({
                       %
                     </span>
                   </>
-                ) : (
+                ) : showMoneyTargets ? (
                   <>
                     <span className="font-mono-numbers text-2xl font-bold tracking-tight text-foreground">
                       {primaryPercent}%
                     </span>
                     <span className="text-[11px] font-medium text-muted-foreground">
                       of {hasBudget ? 'budget' : 'income'}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="font-mono-numbers text-2xl font-bold tracking-tight text-foreground">
+                      <Money value={activeSpend} />
+                    </span>
+                    <span className="text-[11px] font-medium text-muted-foreground">
+                      total spend
                     </span>
                   </>
                 )}
@@ -547,7 +583,7 @@ export const Dashboard = ({
               </p>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {hasBudget && (
+                {showMoneyTargets && hasBudget && (
                   <div className="rounded-xl border border-border/70 bg-background/60 p-3">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                       vs Budget
@@ -575,6 +611,7 @@ export const Dashboard = ({
                     </div>
                   </div>
                 )}
+                {showMoneyTargets && (
                 <div className="rounded-xl border border-border/70 bg-background/60 p-3">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                     vs Income
@@ -601,6 +638,7 @@ export const Dashboard = ({
                     />
                   </div>
                 </div>
+                )}
               </div>
             </div>
           </div>
@@ -619,7 +657,7 @@ export const Dashboard = ({
             </span>
             ). Mindful choices keep your pace comfortable.
           </p>
-          {hasBudget && (
+          {showMoneyTargets && hasBudget && (
             <div className="mt-5">
               <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
                 <span>Budget</span>
@@ -635,6 +673,7 @@ export const Dashboard = ({
               </div>
             </div>
           )}
+          {showMoneyTargets && (
           <div className={hasBudget ? 'mt-3' : 'mt-5'}>
             <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
               <span>Income</span>
@@ -649,8 +688,11 @@ export const Dashboard = ({
               />
             </div>
           </div>
+          )}
           <p className="mt-2.5 text-xs font-medium text-muted-foreground">
-            {overBudget
+            {!showMoneyTargets
+              ? `${activeByCategory.length} categories in this period`
+              : overBudget
               ? 'Past your monthly spend budget — logging still works'
               : overIncome
                 ? 'Past your monthly income for this period'

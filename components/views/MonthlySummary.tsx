@@ -3,6 +3,7 @@ import {
   CalendarRange,
   ChevronDown,
   ChevronUp,
+  Plus,
   TrendingDown,
   TrendingUp,
 } from 'lucide-react';
@@ -47,6 +48,10 @@ export const MonthlySummary = ({
     const now = new Date();
     const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const groups = new Map<string, Expense[]>();
+    const amountOf = (e: Expense) => {
+      const n = Number(e.amount);
+      return Number.isFinite(n) ? n : 0;
+    };
 
     expenses.forEach((e) => {
       const d = new Date(e.date);
@@ -70,14 +75,26 @@ export const MonthlySummary = ({
           'en-IN',
           { month: 'long', year: 'numeric' }
         );
-        const total = list.reduce((sum, e) => sum + e.amount, 0);
-        const byCategory = cats
-          .map((c) => ({
-            ...c,
-            total: list
-              .filter((e) => e.category === c.id)
-              .reduce((sum, e) => sum + e.amount, 0),
-          }))
+        const total = list.reduce((sum, e) => sum + amountOf(e), 0);
+
+        const totals = new Map<string, number>();
+        list.forEach((e) => {
+          const id = e.category || 'other';
+          totals.set(id, (totals.get(id) ?? 0) + amountOf(e));
+        });
+        const byCategory = Array.from(totals.entries())
+          .map(([id, catTotal]) => {
+            const meta =
+              cats.find((c) => c.id === id) ??
+              builtInCategories.find((c) => c.id === id) ??
+              ({
+                id,
+                label: id === 'other' ? 'Other' : id,
+                tone: 'gray',
+                Icon: Plus,
+              } satisfies Category);
+            return { ...meta, total: catTotal };
+          })
           .filter((c) => c.total > 0)
           .sort((a, b) => b.total - a.total);
 

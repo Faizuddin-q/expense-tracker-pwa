@@ -19,6 +19,7 @@ import {
   parseRawNumber,
   formatIndianNumber,
   money,
+  recoverOrphanCategories,
 } from '@/lib/utils';
 import { useExpenses } from '@/lib/store';
 import { toast, ToastHost } from '@/components/ToastHost';
@@ -85,6 +86,7 @@ interface AppContextValue {
   setSelectedIconName: (v: string) => void;
   addCategory: () => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
+  renameCategory: (id: string, label: string) => Promise<void>;
   updateCategoryColor: (id: string, tone: string) => Promise<void>;
 
   // Theme
@@ -105,7 +107,8 @@ interface AppContextValue {
     local?: Expense[],
     /** Pass a number to push income; null/omit to leave cloud income unchanged */
     profileIncome?: number | null,
-    profileCategories?: Category[],
+    /** Pass an array to push categories; null/omit to leave cloud categories unchanged */
+    profileCategories?: Category[] | null,
     deletedIds?: string[],
     /** Pass a number to push budget; null/omit to leave cloud budget unchanged */
     profileBudget?: number | null,
@@ -151,6 +154,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [budgetDraft, setBudgetDraft] = useState('');
 
   const [customCategories, setCustomCategories] = useState<Category[]>([]);
+  const customCategoriesRef = useRef<Category[]>([]);
   const [categoryDialog, setCategoryDialog] = useState(false);
   const [categoryName, setCategoryName] = useState('');
   const [selectedTone, setSelectedTone] = useState('mint');
@@ -168,6 +172,29 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [pendingDeletedIds, setPendingDeletedIds] = useState<string[]>([]);
   const [profileHydrated, setProfileHydrated] = useState(false);
   const initialSyncDoneFor = useRef<string | null>(null);
+  const recoveringCategories = useRef(false);
+
+  useEffect(() => {
+    customCategoriesRef.current = customCategories;
+  }, [customCategories]);
+
+  const persistCustomCategories = useCallback(
+    async (id: string, next: Category[]) => {
+      setCustomCategories(next);
+      customCategoriesRef.current = next;
+      await set(
+        `pocket-categories-${id}`,
+        next.map(({ id: catId, label, tone, iconName, custom }) => ({
+          id: catId,
+          label,
+          tone,
+          iconName,
+          custom,
+        }))
+      );
+    },
+    []
+  );
 
   // ── Theme ────────────────────────────────────────────────────────────────
 
@@ -236,13 +263,24 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
       hydrate(savedExpenses ?? []);
 
-      if (Array.isArray(savedCategories)) {
-        setCustomCategories(
-          savedCategories.map((c) => ({
+      let nextCategories: Category[] = Array.isArray(savedCategories)
+        ? savedCategories.map((c) => ({
             ...c,
             Icon: getCategoryIcon(c),
             custom: true,
           }))
+        : [];
+
+      const { categories: recovered, added } = recoverOrphanCategories(
+        savedExpenses ?? [],
+        nextCategories
+      );
+      nextCategories = recovered;
+      await persistCustomCategories(userId, nextCategories);
+      if (added.length > 0) {
+        toast.success(
+          'Categories restored',
+          `${added.length} missing ${added.length === 1 ? 'category' : 'categories'} recovered from your expenses — rename them in Categories`
         );
       }
 
@@ -281,7 +319,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       removeEventListener('online', on);
       removeEventListener('offline', off);
     };
-  }, [userId, hydrate]);
+  }, [userId, hydrate, persistCustomCategories]);
 
   useEffect(() => {
     if (hydrated && userId) set(`pocket-expenses-${userId}`, expenses);
@@ -295,7 +333,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       local = expenses,
       // null = do not push (avoids overwriting cloud with defaults / stale local)
       profileIncome: number | null = null,
-      profileCategories = customCategories,
+      // null = do not push categories (avoids wiping cloud customs with [])
+      profileCategories: Category[] | null = null,
       deletedIds = pendingDeletedIds,
       profileBudget: number | null = null,
       profileHideAmounts: boolean | null = null
@@ -307,17 +346,20 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         const payload: Record<string, unknown> = {
           userId: id,
           expenses: local,
-          categories: profileCategories.map(
-            ({ id, label, tone, iconName, custom }) => ({
-              id,
+          deletedIds,
+        };
+        // Only push categories when explicitly provided (add/delete/rename/recover)
+        if (profileCategories !== null) {
+          payload.categories = profileCategories.map(
+            ({ id: catId, label, tone, iconName, custom }) => ({
+              id: catId,
               label,
               tone,
               iconName,
               custom,
             })
-          ),
-          deletedIds,
-        };
+          );
+        }
         // Only push profile money fields when explicitly provided
         if (typeof profileIncome === 'number' && profileIncome > 0) {
           payload.monthlyIncome = profileIncome;
@@ -342,11 +384,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             prev.filter((item) => !deletedIds.includes(item))
           );
         }
+
+        let activeExpenses = local;
         if (Array.isArray(data.expenses)) {
-          const activeExpenses = data.expenses
+          activeExpenses = data.expenses
             .map((e: Expense) => ({
               ...e,
               id: e.localId ?? e.id,
+              amount: Number(e.amount) || 0,
               syncStatus: 'synced' as const,
             }))
             .filter((e: Expense) => !deletedIds.includes(e.id));
@@ -373,16 +418,61 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           setHideAmountsState(data.profile.hideAmounts);
           await set(`pocket-hide-amounts-${id}`, data.profile.hideAmounts);
         }
-        if (Array.isArray(data.profile?.categories)) {
-          setCustomCategories(
-            data.profile.categories.map((c: Category) => ({
+
+        // Merge cloud categories with local — never wipe local customs with []
+        const cloudCategories: Category[] = Array.isArray(
+          data.profile?.categories
+        )
+          ? data.profile.categories.map((c: Category) => ({
               ...c,
               Icon: getCategoryIcon(c),
               custom: true,
             }))
-          );
-          await set(`pocket-categories-${id}`, data.profile.categories);
+          : [];
+
+        const mergedById = new Map<string, Category>();
+        for (const c of cloudCategories) mergedById.set(c.id, c);
+        // Keep local-only customs (e.g. just recovered, not yet on cloud)
+        for (const c of customCategoriesRef.current) {
+          if (!mergedById.has(c.id)) mergedById.set(c.id, c);
         }
+
+        const { categories: withOrphans, added } = recoverOrphanCategories(
+          activeExpenses,
+          Array.from(mergedById.values())
+        );
+        await persistCustomCategories(id, withOrphans);
+
+        // Push recovered categories back so cloud stays in sync
+        if (added.length > 0 && !recoveringCategories.current) {
+          recoveringCategories.current = true;
+          try {
+            await fetch('/api/expenses/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: id,
+                expenses: [],
+                categories: withOrphans.map(
+                  ({ id: catId, label, tone, iconName, custom }) => ({
+                    id: catId,
+                    label,
+                    tone,
+                    iconName,
+                    custom,
+                  })
+                ),
+              }),
+            });
+            toast.success(
+              'Categories restored',
+              `${added.length} missing ${added.length === 1 ? 'category' : 'categories'} recovered — rename them in Categories`
+            );
+          } finally {
+            recoveringCategories.current = false;
+          }
+        }
+
         return true;
       } catch (err: unknown) {
         const msg =
@@ -396,7 +486,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         setSyncing(false);
       }
     },
-    [userId, expenses, customCategories, pendingDeletedIds, hydrate]
+    [userId, expenses, pendingDeletedIds, hydrate, persistCustomCategories]
   );
 
   // Pull cloud after local expenses + profile are loaded (do not push income/budget)
@@ -472,7 +562,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         userId,
         expenses,
         null,
-        customCategories,
+        null,
         pendingDeletedIds,
         null,
         v
@@ -506,7 +596,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       userId,
       expenses,
       parsed,
-      customCategories,
+      null,
       pendingDeletedIds,
       null
     );
@@ -527,7 +617,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       userId,
       expenses,
       null,
-      customCategories,
+      null,
       pendingDeletedIds,
       parsed
     );
@@ -555,19 +645,22 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const removedLabel =
       customCategories.find((c) => c.id === id)?.label ?? 'Category';
     const next = customCategories.filter((c) => c.id !== id);
-    setCustomCategories(next);
-    await set(
-      `pocket-categories-${userId}`,
-      next.map(({ id, label, tone, iconName, custom }) => ({
-        id,
-        label,
-        tone,
-        iconName,
-        custom,
-      }))
-    );
+    await persistCustomCategories(userId, next);
     const ok = await sync(userId, expenses, null, next);
     if (ok) toast.success('Category removed', `"${removedLabel}" deleted`);
+  };
+
+  const renameCategory = async (id: string, label: string) => {
+    const trimmed = label.trim();
+    if (!trimmed || !userId) return;
+    const target = customCategories.find((c) => c.id === id);
+    if (!target || target.label === trimmed) return;
+    const next = customCategories.map((c) =>
+      c.id === id ? { ...c, label: trimmed } : c
+    );
+    await persistCustomCategories(userId, next);
+    const ok = await sync(userId, expenses, null, next);
+    if (ok) toast.success('Category renamed', `Now called "${trimmed}"`);
   };
 
   const addCategory = async () => {
@@ -585,17 +678,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       custom: true,
     };
     const next = [...customCategories, custom];
-    setCustomCategories(next);
-    await set(
-      `pocket-categories-${userId}`,
-      next.map(({ id, label, tone, iconName, custom }) => ({
-        id,
-        label,
-        tone,
-        iconName,
-        custom,
-      }))
-    );
+    await persistCustomCategories(userId, next);
     setCategoryName('');
     setCategoryDialog(false);
     const ok = await sync(userId, expenses, null, next);
@@ -611,7 +694,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const nextDeleted = Array.from(new Set([...pendingDeletedIds, id]));
     setPendingDeletedIds(nextDeleted);
     const updatedExpenses = expenses.filter((e) => e.id !== id);
-    void sync(userId, updatedExpenses, null, customCategories, nextDeleted).then(
+    void sync(userId, updatedExpenses, null, null, nextDeleted).then(
       (ok) => {
         if (ok) {
           toast.success(
@@ -764,6 +847,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setSelectedIconName,
     addCategory,
     deleteCategory,
+    renameCategory,
     updateCategoryColor,
     theme,
     setTheme,

@@ -17,6 +17,7 @@ interface CategoryDialogProps {
   setSelectedIconName: (v: string) => void;
   onAdd: () => void;
   onUpdateCategoryColor: (id: string, newTone: string) => void;
+  onRenameCategory?: (id: string, label: string) => void;
   onDeleteCategory?: (id: string) => void;
   onClose: () => void;
 }
@@ -31,6 +32,7 @@ export const CategoryDialog = ({
   setSelectedIconName,
   onAdd,
   onUpdateCategoryColor,
+  onRenameCategory,
   onDeleteCategory,
   onClose,
 }: CategoryDialogProps) => {
@@ -103,19 +105,40 @@ export const CategoryDialog = ({
                     key={c.id}
                     className="flex flex-col gap-2.5 rounded-2xl border border-border/80 bg-background/60 p-3.5 transition-colors duration-150 hover:bg-background"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex min-w-0 flex-1 items-center gap-2.5">
                         <div
-                          className="grid size-7.5 place-items-center rounded-lg text-white shadow-2xs"
+                          className="grid size-7.5 shrink-0 place-items-center rounded-lg text-white shadow-2xs"
                           style={{ backgroundColor: currentColor }}
                         >
                           <IconComponent className="size-4 text-white" />
                         </div>
-                        <span className="text-sm font-bold text-foreground">
-                          {c.label}
-                        </span>
+                        {c.custom && onRenameCategory ? (
+                          <input
+                            defaultValue={c.label}
+                            aria-label={`Rename ${c.label}`}
+                            onBlur={(e) => {
+                              const next = e.target.value.trim();
+                              if (next && next !== c.label) {
+                                onRenameCategory(c.id, next);
+                              } else {
+                                e.target.value = c.label;
+                              }
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.currentTarget.blur();
+                              }
+                            }}
+                            className="min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-1.5 py-1 text-sm font-bold text-foreground outline-none hover:border-border focus:border-input focus:bg-background focus:ring-2 focus:ring-ring"
+                          />
+                        ) : (
+                          <span className="truncate text-sm font-bold text-foreground">
+                            {c.label}
+                          </span>
+                        )}
                         {c.custom && (
-                          <span className="rounded-lg bg-accent/80 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                          <span className="shrink-0 rounded-lg bg-accent/80 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
                             custom
                           </span>
                         )}
