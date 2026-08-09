@@ -115,7 +115,7 @@ export const CategoryDialog = ({
                           {c.label}
                         </span>
                         {c.custom && (
-                          <span className="rounded-full bg-accent/80 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                          <span className="rounded-lg bg-accent/80 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
                             custom
                           </span>
                         )}
@@ -123,7 +123,7 @@ export const CategoryDialog = ({
                       <div className="flex items-center gap-2">
                         <label
                           title="Pick custom color"
-                          className="relative flex cursor-pointer items-center justify-center rounded-full ring-1 ring-border transition-transform hover:scale-110 active:scale-95"
+                          className="relative flex cursor-pointer items-center justify-center rounded-lg ring-1 ring-border transition-transform hover:scale-110 active:scale-95"
                         >
                           <input
                             type="color"
@@ -138,7 +138,7 @@ export const CategoryDialog = ({
                             className="size-6 cursor-pointer border-0 bg-transparent opacity-0"
                           />
                           <div
-                            className="pointer-events-none absolute inset-0 size-6 rounded-full"
+                            className="pointer-events-none absolute inset-0 size-6 rounded-lg"
                             style={{ backgroundColor: currentColor }}
                           />
                         </label>
@@ -161,7 +161,7 @@ export const CategoryDialog = ({
                           key={opt.key}
                           onClick={() => onUpdateCategoryColor(c.id, opt.key)}
                           title={opt.label}
-                          className={`size-5 cursor-pointer rounded-full transition-transform hover:scale-110 active:scale-95 ${
+                          className={`size-5 cursor-pointer rounded-lg transition-transform hover:scale-110 active:scale-95 ${
                             c.tone === opt.key
                               ? 'ring-2 ring-foreground ring-offset-2 ring-offset-card'
                               : ''
@@ -260,7 +260,7 @@ export const CategoryDialog = ({
                             : '#10b981'
                         }
                         onChange={(e) => setSelectedTone(e.target.value)}
-                        className="size-5.5 cursor-pointer rounded-full border-0 p-0"
+                        className="size-5.5 cursor-pointer rounded-lg border-0 p-0"
                       />
                     </label>
                   </div>
@@ -272,7 +272,7 @@ export const CategoryDialog = ({
                         type="button"
                         onClick={() => setSelectedTone(opt.key)}
                         title={opt.label}
-                        className={`grid size-7 cursor-pointer place-items-center rounded-full transition-transform hover:scale-110 active:scale-95 ${
+                        className={`grid size-7 cursor-pointer place-items-center rounded-lg transition-transform hover:scale-110 active:scale-95 ${
                           selectedTone === opt.key
                             ? 'ring-2 ring-foreground ring-offset-2 ring-offset-card'
                             : ''

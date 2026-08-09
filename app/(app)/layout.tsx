@@ -138,7 +138,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-              className="flex cursor-pointer items-center gap-1.5 rounded-full border border-border/80 bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-2xs transition hover:bg-muted active:scale-95 sm:px-3.5"
+              className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border/80 bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-2xs transition hover:bg-muted active:scale-95 sm:px-3.5"
             >
               {theme === 'dark' ? (
                 <Sun className="size-3.5 text-amber-400" />
@@ -149,7 +149,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
                 {theme === 'dark' ? 'Light' : 'Dark'}
               </span>
             </button>
-            <span className="hidden items-center gap-2 rounded-full border border-border/80 bg-card px-3.5 py-1.5 text-xs font-medium text-muted-foreground shadow-2xs sm:flex">
+            <span className="hidden items-center gap-2 rounded-lg border border-border/80 bg-card px-3.5 py-1.5 text-xs font-medium text-muted-foreground shadow-2xs sm:flex">
               {online ? (
                 <Wifi className="size-3.5 text-primary" />
               ) : (

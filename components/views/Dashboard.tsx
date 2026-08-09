@@ -517,7 +517,7 @@ export const Dashboard = ({
                 >
                   <div className="flex items-center gap-1.5 font-semibold">
                     <span
-                      className="size-2 rounded-full"
+                      className="size-2 rounded-sm"
                       style={{
                         backgroundColor: getCategoryColor(hoveredCategory.tone),
                       }}
@@ -563,9 +563,9 @@ export const Dashboard = ({
                         ? `${money(Math.abs(budgetRemaining))} over`
                         : `${money(budgetRemaining)} left`}
                     </p>
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-sm bg-muted">
                       <div
-                        className={`h-full rounded-full transition-all duration-300 ${
+                        className={`h-full rounded-sm transition-all duration-300 ${
                           overBudget ? 'bg-destructive' : 'bg-primary'
                         }`}
                         style={{
@@ -591,9 +591,9 @@ export const Dashboard = ({
                       ? `${money(Math.abs(incomeRemaining))} over`
                       : `${money(incomeRemaining)} left`}
                   </p>
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-sm bg-muted">
                     <div
-                      className={`h-full rounded-full transition-all duration-300 ${
+                      className={`h-full rounded-sm transition-all duration-300 ${
                         overIncome ? 'bg-destructive' : 'bg-primary'
                       }`}
                       style={{
@@ -626,9 +626,9 @@ export const Dashboard = ({
                 <span>Budget</span>
                 <span className="font-mono-numbers">{budgetPercent}%</span>
               </div>
-              <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-card">
+              <div className="mt-1.5 h-2 overflow-hidden rounded-sm bg-card">
                 <div
-                  className={`h-full rounded-full transition-all duration-300 ${
+                  className={`h-full rounded-sm transition-all duration-300 ${
                     overBudget ? 'bg-destructive' : 'bg-primary'
                   }`}
                   style={{ width: `${Math.min(100, budgetPercent)}%` }}
@@ -641,9 +641,9 @@ export const Dashboard = ({
               <span>Income</span>
               <span className="font-mono-numbers">{incomePercent}%</span>
             </div>
-            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-card">
+            <div className="mt-1.5 h-2 overflow-hidden rounded-sm bg-card">
               <div
-                className={`h-full rounded-full transition-all duration-300 ${
+                className={`h-full rounded-sm transition-all duration-300 ${
                   overIncome ? 'bg-destructive' : 'bg-primary'
                 }`}
                 style={{ width: `${Math.min(100, incomePercent)}%` }}
@@ -703,9 +703,9 @@ export const Dashboard = ({
                 <span className="w-20 shrink-0 text-xs font-semibold text-foreground sm:w-28 sm:text-sm">
                   {c.label}
                 </span>
-                <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
+                <div className="h-2.5 flex-1 overflow-hidden rounded-sm bg-muted">
                   <div
-                    className="h-full rounded-full transition-all duration-300"
+                    className="h-full rounded-sm transition-all duration-300"
                     style={{
                       width: `${Math.min(100, catPercent)}%`,
                       backgroundColor: catColor,

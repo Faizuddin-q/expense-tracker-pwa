@@ -24,10 +24,15 @@
   --color-ring: var(--ring);
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
-  --radius-2xl: 1.5rem;
-  --radius-3xl: 1.75rem;
+  /* Radius scale: 4 / 10 / 16 only */
+  --radius-xs: 4px;
+  --radius-sm: 4px;
+  --radius-md: 4px;
+  --radius-lg: 10px;
+  --radius-xl: 10px;
+  --radius-2xl: 16px;
+  --radius-3xl: 16px;
+  --radius-4xl: 16px;
 }
 
 :root {
@@ -50,7 +55,7 @@
   --border: oklch(0.25 0.015 240);
   --input: oklch(0.25 0.015 240);
   --ring: oklch(0.62 0.16 160);
-  --radius: 1.25rem;
+  --radius: 10px;
 
   /* Emil Kowalski custom easings */
   --ease-out-emil: cubic-bezier(0.23, 1, 0.32, 1);
@@ -129,7 +134,7 @@ textarea {
 
 ::-webkit-scrollbar-thumb {
   background: oklch(0.32 0.015 240);
-  border-radius: 9999px;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {

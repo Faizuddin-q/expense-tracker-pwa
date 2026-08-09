@@ -50,7 +50,7 @@ export const Home = ({
               <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
                 Log New Expense
               </span>
-              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary ring-1 ring-primary/20 sm:px-3 sm:py-1 sm:text-[11px]">
+              <span className="rounded-lg bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary ring-1 ring-primary/20 sm:px-3 sm:py-1 sm:text-[11px]">
                 Quick entry
               </span>
             </div>

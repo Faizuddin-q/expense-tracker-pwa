@@ -181,9 +181,9 @@ export const MonthlySummary = ({
                             {m.budgetPercent}%
                           </span>
                         </div>
-                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                        <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-muted">
                           <div
-                            className={`h-full rounded-full ${
+                            className={`h-full rounded-sm ${
                               overBudget ? 'bg-destructive' : 'bg-primary'
                             }`}
                             style={{
@@ -200,9 +200,9 @@ export const MonthlySummary = ({
                           {m.incomePercent}%
                         </span>
                       </div>
-                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-muted">
                         <div
-                          className={`h-full rounded-full ${
+                          className={`h-full rounded-sm ${
                             overIncome ? 'bg-destructive' : 'bg-primary'
                           }`}
                           style={{
@@ -320,9 +320,9 @@ export const MonthlySummary = ({
                             <span className="w-20 shrink-0 text-xs font-semibold text-foreground sm:w-24">
                               {c.label}
                             </span>
-                            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                            <div className="h-1.5 flex-1 overflow-hidden rounded-sm bg-muted">
                               <div
-                                className="h-full rounded-full"
+                                className="h-full rounded-sm"
                                 style={{
                                   width: `${catPercent}%`,
                                   backgroundColor: color,
