@@ -7,6 +7,11 @@ export const metadata: Metadata = {
   description: 'A calm, offline-first expense tracker for everyday spending.',
   generator: 'v0.app',
   manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Pocket',
+  },
   icons: {
     icon: [
       {

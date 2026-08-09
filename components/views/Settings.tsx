@@ -1,4 +1,4 @@
-import { Check, Download, Eye, EyeOff, LogOut, Moon, Sun } from 'lucide-react';
+import { Check, Download, Eye, EyeOff, Hand, LogOut, Moon, Sun } from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
 import {
   downloadCsv,
@@ -24,6 +24,9 @@ interface SettingsProps {
   setTheme: (t: 'dark' | 'light') => void;
   hideAmounts: boolean;
   setHideAmounts: (v: boolean) => void;
+  backTapEnabled: boolean;
+  setBackTapEnabled: (on: boolean) => void;
+  onOpenBackTapGuide?: () => void;
 }
 
 export const Settings = ({
@@ -43,6 +46,9 @@ export const Settings = ({
   setTheme,
   hideAmounts,
   setHideAmounts,
+  backTapEnabled,
+  setBackTapEnabled,
+  onOpenBackTapGuide,
 }: SettingsProps) => {
   return (
     <section className="mx-auto max-w-3xl">
@@ -216,6 +222,43 @@ export const Settings = ({
               <Check className="size-4" /> Save Budget
             </button>
           </div>
+        </div>
+
+        <div className="mt-6 border-t border-border/60 pt-6 sm:mt-8 sm:pt-8">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm">
+            Quick open
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Double-tap the back of your phone to open Pocket. This is controlled
+            by your phone — turning it on opens the system setting so you can
+            finish in one step.
+          </p>
+          <button
+            type="button"
+            onClick={() => setBackTapEnabled(!backTapEnabled)}
+            className={`mt-3.5 flex h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 text-xs font-bold transition active:scale-[0.98] sm:h-12 sm:text-sm ${
+              backTapEnabled
+                ? 'border-primary/40 bg-primary/15 text-primary'
+                : 'border-border/80 bg-card text-foreground hover:bg-muted'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <Hand className="size-4" />
+              Open with double tap
+            </span>
+            <span className="text-[11px] font-semibold opacity-80">
+              {backTapEnabled ? 'On' : 'Off'}
+            </span>
+          </button>
+          {onOpenBackTapGuide && (
+            <button
+              type="button"
+              onClick={onOpenBackTapGuide}
+              className="mt-2 cursor-pointer text-left text-xs font-semibold text-muted-foreground underline-offset-2 transition hover:text-foreground hover:underline"
+            >
+              Show setup guide
+            </button>
+          )}
         </div>
 
         <div className="mt-6 border-t border-border/60 pt-6 sm:mt-8 sm:pt-8">

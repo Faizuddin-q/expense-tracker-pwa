@@ -8,6 +8,7 @@ import { Brand } from '@/components/Brand';
 import { NavButton } from '@/components/NavButton';
 import { CategoryDialog } from '@/components/CategoryDialog';
 import { IncomeSetup } from '@/components/IncomeSetup';
+import { PwaProvider } from '@/components/PwaProvider';
 import { navItems } from '@/lib/constants';
 
 // ─── Page title map ───────────────────────────────────────────────────────────
@@ -214,7 +215,9 @@ function AppShell({ children }: { children: React.ReactNode }) {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AppProvider>
-      <AppShell>{children}</AppShell>
+      <PwaProvider>
+        <AppShell>{children}</AppShell>
+      </PwaProvider>
     </AppProvider>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useApp } from '@/lib/app-context';
+import { usePwa } from '@/components/PwaProvider';
 import { Settings } from '@/components/views/Settings';
 import { toast } from '@/components/ToastHost';
 
@@ -24,6 +25,7 @@ export default function SettingsPage() {
     hideAmounts,
     setHideAmounts,
   } = useApp();
+  const { backTapEnabled, setBackTapEnabled, openBackTapGuide } = usePwa();
 
   return (
     <Settings
@@ -60,6 +62,9 @@ export default function SettingsPage() {
       setTheme={setTheme}
       hideAmounts={hideAmounts}
       setHideAmounts={setHideAmounts}
+      backTapEnabled={backTapEnabled}
+      setBackTapEnabled={(on) => void setBackTapEnabled(on)}
+      onOpenBackTapGuide={openBackTapGuide}
     />
   );
 }
