@@ -186,8 +186,15 @@ export const categoryFor = (
   };
 };
 
-export const normalizePhone = (value: string): string =>
-  value.replace(/[^\d+]/g, '').replace(/^00/, '+');
+export const normalizePhone = (value: string): string => {
+  let digits = value.replace(/\D/g, '');
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  // Treat +91 / 91XXXXXXXXXX as the same Indian mobile account
+  if (digits.length === 12 && digits.startsWith('91')) {
+    digits = digits.slice(2);
+  }
+  return digits;
+};
 
 export const formatIndianNumber = (val: number | string): string => {
   if (val === '' || val === null || val === undefined) return '';

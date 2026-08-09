@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { get, set } from 'idb-keyval';
@@ -142,6 +143,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState('');
   const [pendingDeletedIds, setPendingDeletedIds] = useState<string[]>([]);
+  const initialSyncDoneFor = useRef<string | null>(null);
 
   // ── Theme ────────────────────────────────────────────────────────────────
 
@@ -315,6 +317,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     ]
   );
 
+  // Pull/push cloud data when a saved session finishes loading locally.
+  // Without this, returning visits only show IndexedDB and never merge.
+  useEffect(() => {
+    if (!userId || !hydrated || !online) return;
+    if (initialSyncDoneFor.current === userId) return;
+    initialSyncDoneFor.current = userId;
+    void sync(userId);
+  }, [userId, hydrated, online, sync]);
+
   // ── Auth ──────────────────────────────────────────────────────────────────
 
   const continueWithPhone = async () => {
@@ -360,6 +371,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = () => {
+    initialSyncDoneFor.current = null;
     setUserId('');
     setPhone('');
     hydrate([]);
