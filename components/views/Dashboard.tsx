@@ -18,6 +18,8 @@ interface CategoryBreakdown extends Category {
 interface DashboardProps {
   expenses: Expense[];
   income: number;
+  /** Monthly spend target for analytics. Falls back to income when unset. */
+  budget?: number;
   categories?: Category[];
 }
 
@@ -26,6 +28,7 @@ type TimeRangeOption = 'all' | '1d' | '7d' | '14d' | '30d' | 'month' | 'custom';
 export const Dashboard = ({
   expenses,
   income,
+  budget = 0,
   categories = builtInCategories,
 }: DashboardProps) => {
   const [timeRange, setTimeRange] = useState<TimeRangeOption>('month');
@@ -175,10 +178,15 @@ export const Dashboard = ({
       .sort((a, b) => b.total - a.total);
   }, [categories, filteredExpenses]);
 
-  const percent = Math.min(
-    100,
-    Math.round((activeSpend / Math.max(income, 1)) * 100)
-  );
+  const hasBudget = budget > 0;
+  const budgetPercent = Math.round((activeSpend / Math.max(budget || 1, 1)) * 100);
+  const incomePercent = Math.round((activeSpend / Math.max(income, 1)) * 100);
+  const budgetRemaining = (budget || 0) - activeSpend;
+  const incomeRemaining = income - activeSpend;
+  const overBudget = hasBudget && budgetRemaining < 0;
+  const overIncome = incomeRemaining < 0;
+  // Donut center defaults to budget when set, otherwise income.
+  const primaryPercent = hasBudget ? budgetPercent : incomePercent;
 
   // SVG Donut Chart Calculation
   const radius = 38;
@@ -489,10 +497,10 @@ export const Dashboard = ({
                 ) : (
                   <>
                     <span className="font-mono-numbers text-2xl font-bold tracking-tight text-foreground">
-                      {percent}%
+                      {primaryPercent}%
                     </span>
                     <span className="text-[11px] font-medium text-muted-foreground">
-                      of income
+                      of {hasBudget ? 'budget' : 'income'}
                     </span>
                   </>
                 )}
@@ -529,23 +537,72 @@ export const Dashboard = ({
               )}
             </div>
 
-            <div>
+            <div className="w-full min-w-0 flex-1">
               <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
                 Spent in this period
               </p>
               <p className="font-mono-numbers mt-1 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
                 {money(activeSpend)}
               </p>
-              <p className="mt-1.5 text-xs font-medium text-muted-foreground sm:mt-2 sm:text-sm">
-                of{' '}
-                <span className="font-mono-numbers font-semibold">
-                  {money(income)}
-                </span>{' '}
-                income ·{' '}
-                <span className="font-mono-numbers font-semibold text-primary">
-                  {money(Math.max(0, income - activeSpend))} left
-                </span>
-              </p>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {hasBudget && (
+                  <div className="rounded-xl border border-border/70 bg-background/60 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      vs Budget
+                    </p>
+                    <p className="font-mono-numbers mt-1 text-sm font-bold text-foreground">
+                      {budgetPercent}% · {money(budget)}
+                    </p>
+                    <p
+                      className={`mt-0.5 text-xs font-semibold ${
+                        overBudget ? 'text-destructive' : 'text-primary'
+                      }`}
+                    >
+                      {overBudget
+                        ? `${money(Math.abs(budgetRemaining))} over`
+                        : `${money(budgetRemaining)} left`}
+                    </p>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          overBudget ? 'bg-destructive' : 'bg-primary'
+                        }`}
+                        style={{
+                          width: `${Math.min(100, budgetPercent)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+                <div className="rounded-xl border border-border/70 bg-background/60 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    vs Income
+                  </p>
+                  <p className="font-mono-numbers mt-1 text-sm font-bold text-foreground">
+                    {incomePercent}% · {money(income)}
+                  </p>
+                  <p
+                    className={`mt-0.5 text-xs font-semibold ${
+                      overIncome ? 'text-destructive' : 'text-primary'
+                    }`}
+                  >
+                    {overIncome
+                      ? `${money(Math.abs(incomeRemaining))} over`
+                      : `${money(incomeRemaining)} left`}
+                  </p>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        overIncome ? 'bg-destructive' : 'bg-primary'
+                      }`}
+                      style={{
+                        width: `${Math.min(100, incomePercent)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -563,16 +620,46 @@ export const Dashboard = ({
             </span>
             ). Mindful choices keep your pace comfortable.
           </p>
-          <div className="mt-6 h-2.5 overflow-hidden rounded-full bg-card">
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-300"
-              style={{ width: `${percent}%` }}
-            />
+          {hasBudget && (
+            <div className="mt-5">
+              <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
+                <span>Budget</span>
+                <span className="font-mono-numbers">{budgetPercent}%</span>
+              </div>
+              <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-card">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    overBudget ? 'bg-destructive' : 'bg-primary'
+                  }`}
+                  style={{ width: `${Math.min(100, budgetPercent)}%` }}
+                />
+              </div>
+            </div>
+          )}
+          <div className={hasBudget ? 'mt-3' : 'mt-5'}>
+            <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
+              <span>Income</span>
+              <span className="font-mono-numbers">{incomePercent}%</span>
+            </div>
+            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-card">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${
+                  overIncome ? 'bg-destructive' : 'bg-primary'
+                }`}
+                style={{ width: `${Math.min(100, incomePercent)}%` }}
+              />
+            </div>
           </div>
           <p className="mt-2.5 text-xs font-medium text-muted-foreground">
-            {percent <= 80
-              ? "You're on track for a calm spending pace"
-              : 'Approaching your monthly income budget'}
+            {overBudget
+              ? 'Past your monthly spend budget — logging still works'
+              : overIncome
+                ? 'Past your monthly income for this period'
+                : (hasBudget ? budgetPercent : incomePercent) <= 80
+                  ? "You're on track for a calm spending pace"
+                  : hasBudget
+                    ? 'Approaching your monthly spend budget'
+                    : 'Approaching your monthly income'}
           </p>
         </div>
       </div>

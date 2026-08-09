@@ -52,6 +52,13 @@ interface AppContextValue {
   setIncomeDraft: (v: string) => void;
   saveIncome: () => Promise<void>;
 
+  // Monthly spend budget (analytics only — does not cap logging)
+  budget: number;
+  setBudget: (v: number) => void;
+  budgetDraft: string;
+  setBudgetDraft: (v: string) => void;
+  saveBudget: () => Promise<void>;
+
   // Categories
   allCategories: Category[];
   customCategories: Category[];
@@ -80,7 +87,8 @@ interface AppContextValue {
     local?: Expense[],
     profileIncome?: number,
     profileCategories?: Category[],
-    deletedIds?: string[]
+    deletedIds?: string[],
+    profileBudget?: number
   ) => Promise<void>;
 
   // Derived
@@ -117,6 +125,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const [income, setIncome] = useState(60000);
   const [incomeDraft, setIncomeDraft] = useState('60000');
+  const [budget, setBudget] = useState(0);
+  const [budgetDraft, setBudgetDraft] = useState('');
 
   const [customCategories, setCustomCategories] = useState<Category[]>([]);
   const [categoryDialog, setCategoryDialog] = useState(false);
@@ -183,6 +193,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         setNeedsIncome(false);
       } else setNeedsIncome(true);
     });
+    get<number>(`pocket-budget-${userId}`).then((saved) => {
+      if (typeof saved === 'number' && saved > 0) {
+        setBudget(saved);
+        setBudgetDraft(String(saved));
+      }
+    });
     get<Record<string, string>>(`pocket-cat-overrides-${userId}`).then(
       (saved) => setCategoryOverrides(saved ?? {})
     );
@@ -209,7 +225,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       local = expenses,
       profileIncome = income,
       profileCategories = customCategories,
-      deletedIds = pendingDeletedIds
+      deletedIds = pendingDeletedIds,
+      profileBudget = budget
     ) => {
       if (!id) return;
       setSyncing(true);
@@ -222,6 +239,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             userId: id,
             expenses: local,
             monthlyIncome: profileIncome,
+            monthlyBudget: profileBudget,
             categories: profileCategories.map(
               ({ id, label, tone, iconName, custom }) => ({
                 id,
@@ -258,6 +276,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           await set(`pocket-income-${id}`, data.profile.monthlyIncome);
           setNeedsIncome(false);
         } else if (data.profile === null) setNeedsIncome(true);
+        if (
+          typeof data.profile?.monthlyBudget === 'number' &&
+          data.profile.monthlyBudget > 0
+        ) {
+          setBudget(data.profile.monthlyBudget);
+          setBudgetDraft(String(data.profile.monthlyBudget));
+          await set(`pocket-budget-${id}`, data.profile.monthlyBudget);
+        }
         if (Array.isArray(data.profile?.categories)) {
           setCustomCategories(
             data.profile.categories.map((c: Category) => ({
@@ -278,7 +304,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         setSyncing(false);
       }
     },
-    [userId, expenses, income, customCategories, pendingDeletedIds, hydrate]
+    [
+      userId,
+      expenses,
+      income,
+      budget,
+      customCategories,
+      pendingDeletedIds,
+      hydrate,
+    ]
   );
 
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -294,15 +328,34 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     await set('pocket-user-id', normalized);
     const saved = await get<Expense[]>(`pocket-expenses-${normalized}`);
     const savedIncome = await get<number>(`pocket-income-${normalized}`);
+    const savedBudget = await get<number>(`pocket-budget-${normalized}`);
     hydrate(saved ?? []);
+    if (typeof savedBudget === 'number' && savedBudget > 0) {
+      setBudget(savedBudget);
+      setBudgetDraft(String(savedBudget));
+    }
     if (typeof savedIncome === 'number' && savedIncome > 0) {
       setIncome(savedIncome);
       setIncomeDraft(String(savedIncome));
       setNeedsIncome(false);
-      sync(normalized, saved, savedIncome);
+      sync(
+        normalized,
+        saved,
+        savedIncome,
+        undefined,
+        undefined,
+        typeof savedBudget === 'number' && savedBudget > 0 ? savedBudget : 0
+      );
     } else {
       setNeedsIncome(false);
-      sync(normalized, saved, 0);
+      sync(
+        normalized,
+        saved,
+        0,
+        undefined,
+        undefined,
+        typeof savedBudget === 'number' && savedBudget > 0 ? savedBudget : 0
+      );
     }
   };
 
@@ -324,6 +377,24 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     await set(`pocket-income-${userId}`, parsed);
     setNeedsIncome(false);
     sync(userId, expenses, parsed);
+  };
+
+  const saveBudget = async () => {
+    const parsed = Number(budgetDraft.replace(/[^0-9.]/g, ''));
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      setError('Enter a monthly budget greater than zero.');
+      return;
+    }
+    setBudget(parsed);
+    await set(`pocket-budget-${userId}`, parsed);
+    sync(
+      userId,
+      expenses,
+      income,
+      customCategories,
+      pendingDeletedIds,
+      parsed
+    );
   };
 
   // ── Categories ────────────────────────────────────────────────────────────
@@ -485,6 +556,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     incomeDraft,
     setIncomeDraft,
     saveIncome,
+    budget,
+    setBudget,
+    budgetDraft,
+    setBudgetDraft,
+    saveBudget,
     allCategories,
     customCategories,
     categoryDialog,

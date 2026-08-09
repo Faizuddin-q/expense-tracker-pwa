@@ -15,6 +15,7 @@ import { navItems } from '@/lib/constants';
 const PAGE_TITLES: Record<string, string> = {
   '/': 'Good morning, there.',
   '/dashboard': 'Your month at a glance',
+  '/summary': 'Month by month',
   '/expenses': 'All expenses',
   '/settings': 'Settings',
 };
@@ -119,7 +120,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <main className="pb-28 sm:pb-24 lg:ml-64 lg:pb-8">
+      <main className="pb-[calc(5.25rem+env(safe-area-inset-bottom))] sm:pb-24 lg:ml-64 lg:pb-8">
         <header className="flex items-center justify-between px-4 py-4 sm:px-8 sm:py-6 lg:px-12 lg:py-8">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
@@ -169,11 +170,16 @@ function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </main>
 
-      {/* Mobile bottom nav */}
-      <nav className="fixed inset-x-4 bottom-3 z-50 mx-auto flex max-w-md justify-around rounded-2xl border border-border/80 bg-card/90 px-2 py-1.5 shadow-xl backdrop-blur-md lg:hidden">
-        {navItems.map((item) => (
-          <NavButton key={item.id} {...item} mobile />
-        ))}
+      {/* Mobile floating tab bar */}
+      <nav
+        aria-label="Primary"
+        className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 lg:hidden"
+      >
+        <div className="mx-auto flex h-14 max-w-md items-stretch rounded-2xl border border-border/70 bg-card/90 px-1 shadow-lg shadow-black/10 ring-1 ring-black/5 backdrop-blur-xl dark:shadow-black/40 dark:ring-white/5">
+          {navItems.map((item) => (
+            <NavButton key={item.id} {...item} mobile />
+          ))}
+        </div>
       </nav>
     </div>
   );

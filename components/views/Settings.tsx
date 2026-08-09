@@ -7,9 +7,11 @@ import { downloadCsv, formatIndianNumber, parseRawNumber } from '@/lib/utils';
 interface SettingsProps {
   income: number;
   setIncome: (n: number) => void;
+  budget: number;
+  setBudget: (n: number) => void;
   expenses: Expense[];
   userId: string;
-  sync: (profileIncome?: number) => void;
+  sync: (profileIncome?: number, profileBudget?: number) => void;
   onChangeIdentity: () => void;
   categories?: Category[];
   theme: 'dark' | 'light';
@@ -19,6 +21,8 @@ interface SettingsProps {
 export const Settings = ({
   income,
   setIncome,
+  budget,
+  setBudget,
   expenses,
   userId,
   sync,
@@ -30,10 +34,17 @@ export const Settings = ({
   const [incomeDraft, setIncomeDraft] = useState(
     formatIndianNumber(income || '')
   );
+  const [budgetDraft, setBudgetDraft] = useState(
+    formatIndianNumber(budget || '')
+  );
 
   useEffect(() => {
     setIncomeDraft(formatIndianNumber(income || ''));
   }, [income]);
+
+  useEffect(() => {
+    setBudgetDraft(formatIndianNumber(budget || ''));
+  }, [budget]);
 
   const handleSaveIncome = async () => {
     const raw = parseRawNumber(incomeDraft);
@@ -42,6 +53,15 @@ export const Settings = ({
     setIncome(parsed);
     await set(`pocket-income-${userId}`, parsed);
     sync(parsed);
+  };
+
+  const handleSaveBudget = async () => {
+    const raw = parseRawNumber(budgetDraft);
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed) || parsed <= 0) return;
+    setBudget(parsed);
+    await set(`pocket-budget-${userId}`, parsed);
+    sync(undefined, parsed);
   };
 
   return (
@@ -134,6 +154,39 @@ export const Settings = ({
               className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground shadow-2xs transition-all hover:opacity-90 active:scale-[0.98] sm:h-12 sm:text-sm"
             >
               <Check className="size-4" /> Save Income
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-6 sm:mt-8 flex flex-col gap-2">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
+            Monthly spend budget
+          </label>
+          <p className="text-xs text-muted-foreground">
+            Target for analytics only — you can still log expenses past this
+            amount.
+          </p>
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
+            <div className="flex h-11 flex-1 items-center rounded-xl border border-input bg-background px-4 focus-within:ring-2 focus-within:ring-ring sm:h-12">
+              <span className="text-xs font-bold text-muted-foreground sm:text-sm">
+                ₹
+              </span>
+              <input
+                aria-label="Monthly spend budget"
+                inputMode="decimal"
+                value={budgetDraft}
+                onChange={(e) =>
+                  setBudgetDraft(formatIndianNumber(e.target.value))
+                }
+                placeholder="e.g. 30,000"
+                className="font-mono-numbers w-full bg-transparent px-3 text-xs font-bold text-foreground outline-none placeholder:text-muted-foreground/60 sm:text-sm"
+              />
+            </div>
+            <button
+              onClick={handleSaveBudget}
+              className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground shadow-2xs transition-all hover:opacity-90 active:scale-[0.98] sm:h-12 sm:text-sm"
+            >
+              <Check className="size-4" /> Save Budget
             </button>
           </div>
         </div>

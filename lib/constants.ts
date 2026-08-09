@@ -1,5 +1,6 @@
 import {
   Car,
+  CalendarRange,
   Film,
   HeartPulse,
   LayoutDashboard,
@@ -22,15 +23,35 @@ export const builtInCategories: Category[] = [
 ];
 
 export const navItems = [
-  { id: 'home', label: 'Quick add', icon: Plus, href: '/' },
+  { id: 'home', label: 'Quick add', shortLabel: 'Add', icon: Plus, href: '/' },
   {
     id: 'dashboard',
     label: 'Overview',
+    shortLabel: 'Overview',
     icon: LayoutDashboard,
     href: '/dashboard',
   },
-  { id: 'expenses', label: 'Expenses', icon: Receipt, href: '/expenses' },
-  { id: 'settings', label: 'Settings', icon: SettingsIcon, href: '/settings' },
+  {
+    id: 'summary',
+    label: 'Summary',
+    shortLabel: 'Summary',
+    icon: CalendarRange,
+    href: '/summary',
+  },
+  {
+    id: 'expenses',
+    label: 'Expenses',
+    shortLabel: 'Expenses',
+    icon: Receipt,
+    href: '/expenses',
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    shortLabel: 'Settings',
+    icon: SettingsIcon,
+    href: '/settings',
+  },
 ] as const;
 
 export const quickRelogItems = [

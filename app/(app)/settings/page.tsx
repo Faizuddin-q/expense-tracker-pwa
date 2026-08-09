@@ -7,6 +7,8 @@ export default function SettingsPage() {
   const {
     income,
     setIncome,
+    budget,
+    setBudget,
     expenses,
     userId,
     sync,
@@ -20,10 +22,19 @@ export default function SettingsPage() {
     <Settings
       income={income}
       setIncome={setIncome}
+      budget={budget}
+      setBudget={setBudget}
       expenses={expenses}
       userId={userId}
-      sync={(profileIncome?: number) =>
-        sync(userId, expenses, profileIncome ?? income)
+      sync={(profileIncome?: number, profileBudget?: number) =>
+        sync(
+          userId,
+          expenses,
+          profileIncome ?? income,
+          customCategories,
+          undefined,
+          profileBudget ?? budget
+        )
       }
       onChangeIdentity={logout}
       categories={customCategories}
