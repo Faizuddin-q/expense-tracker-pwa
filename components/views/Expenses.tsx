@@ -332,7 +332,7 @@ export const Expenses = ({
         </div>
         <button
           onClick={() => downloadCsv(filtered, categories)}
-          className="flex cursor-pointer items-center justify-center gap-2 rounded-xl sm:rounded-2xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98] sm:px-5 sm:py-3 sm:text-sm"
+          className="flex cursor-pointer items-center justify-center gap-2 rounded-xl sm:rounded-2xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98] sm:px-5 sm:py-3 sm:text-sm"
         >
           <Download className="size-3.5 sm:size-4" /> Export CSV (
           {filtered.length})
@@ -344,7 +344,7 @@ export const Expenses = ({
         <div className="flex shrink-0 items-center gap-2">
           <button
             onClick={() => setTimeRange('all')}
-            className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition-all active:scale-[0.97] ${
+            className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition active:scale-[0.97] ${
               timeRange === 'all'
                 ? 'bg-primary text-primary-foreground'
                 : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -354,7 +354,7 @@ export const Expenses = ({
           </button>
           <button
             onClick={() => setTimeRange('1d')}
-            className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition-all active:scale-[0.97] ${
+            className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition active:scale-[0.97] ${
               timeRange === '1d'
                 ? 'bg-primary text-primary-foreground'
                 : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -364,7 +364,7 @@ export const Expenses = ({
           </button>
           <button
             onClick={() => setTimeRange('7d')}
-            className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition-all active:scale-[0.97] ${
+            className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition active:scale-[0.97] ${
               timeRange === '7d'
                 ? 'bg-primary text-primary-foreground'
                 : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -374,7 +374,7 @@ export const Expenses = ({
           </button>
           <button
             onClick={() => setTimeRange('14d')}
-            className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition-all active:scale-[0.97] ${
+            className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition active:scale-[0.97] ${
               timeRange === '14d'
                 ? 'bg-primary text-primary-foreground'
                 : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -384,7 +384,7 @@ export const Expenses = ({
           </button>
           <button
             onClick={() => setTimeRange('30d')}
-            className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition-all active:scale-[0.97] ${
+            className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition active:scale-[0.97] ${
               timeRange === '30d'
                 ? 'bg-primary text-primary-foreground'
                 : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -394,7 +394,7 @@ export const Expenses = ({
           </button>
           <button
             onClick={() => setTimeRange('month')}
-            className={`shrink-0 flex cursor-pointer items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all active:scale-[0.97] ${
+            className={`shrink-0 flex cursor-pointer items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition active:scale-[0.97] ${
               timeRange === 'month'
                 ? 'bg-primary text-primary-foreground'
                 : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -404,7 +404,7 @@ export const Expenses = ({
           </button>
           <button
             onClick={() => setTimeRange('custom')}
-            className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition-all active:scale-[0.97] ${
+            className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-2 text-xs font-bold transition active:scale-[0.97] ${
               timeRange === 'custom'
                 ? 'bg-primary text-primary-foreground'
                 : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'

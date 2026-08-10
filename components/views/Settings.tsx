@@ -67,7 +67,7 @@ export const Settings = ({
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3">
             <button
               onClick={() => setTheme('dark')}
-              className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-3.5 text-xs font-bold transition-all active:scale-[0.97] sm:p-4 sm:text-sm ${
+              className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-3.5 text-xs font-bold transition active:scale-[0.97] sm:p-4 sm:text-sm ${
                 theme === 'dark'
                   ? 'border-primary bg-primary/15 text-primary'
                   : 'border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -77,7 +77,7 @@ export const Settings = ({
             </button>
             <button
               onClick={() => setTheme('light')}
-              className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-3.5 text-xs font-bold transition-all active:scale-[0.97] sm:p-4 sm:text-sm ${
+              className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-3.5 text-xs font-bold transition active:scale-[0.97] sm:p-4 sm:text-sm ${
                 theme === 'light'
                   ? 'border-primary bg-primary/15 text-primary'
                   : 'border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -108,7 +108,7 @@ export const Settings = ({
         <div className="mt-3.5 flex flex-wrap gap-2.5 sm:mt-4 sm:gap-3">
           <button
             onClick={() => sync()}
-            className="h-10.5 cursor-pointer rounded-xl bg-primary px-4.5 text-xs font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98] sm:h-11 sm:px-5 sm:text-sm"
+            className="h-10.5 cursor-pointer rounded-xl bg-primary px-4.5 text-xs font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98] sm:h-11 sm:px-5 sm:text-sm"
           >
             Sync data
           </button>
@@ -179,7 +179,7 @@ export const Settings = ({
             </div>
             <button
               onClick={onSaveIncome}
-              className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98] sm:h-12 sm:text-sm"
+              className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98] sm:h-12 sm:text-sm"
             >
               <Check className="size-4" /> Save Income
             </button>
@@ -217,7 +217,7 @@ export const Settings = ({
             </div>
             <button
               onClick={onSaveBudget}
-              className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98] sm:h-12 sm:text-sm"
+              className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98] sm:h-12 sm:text-sm"
             >
               <Check className="size-4" /> Save Budget
             </button>
@@ -273,7 +273,7 @@ export const Settings = ({
               downloadCsv(expenses, categories);
               toast.success('CSV downloaded', `${expenses.length} expenses exported`);
             }}
-            className="mt-3.5 flex h-10.5 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border/80 bg-card px-4.5 text-xs font-bold text-foreground transition-all hover:bg-muted active:scale-[0.98] sm:h-11 sm:px-5 sm:text-sm"
+            className="mt-3.5 flex h-10.5 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border/80 bg-card px-4.5 text-xs font-bold text-foreground transition hover:bg-muted active:scale-[0.98] sm:h-11 sm:px-5 sm:text-sm"
           >
             <Download className="size-4" /> Download CSV ({expenses.length})
           </button>
@@ -288,7 +288,7 @@ export const Settings = ({
           </p>
           <button
             onClick={onLogout}
-            className="mt-3.5 flex h-10.5 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4.5 text-xs font-bold text-destructive transition-all hover:bg-destructive/15 active:scale-[0.98] sm:h-11 sm:text-sm"
+            className="mt-3.5 flex h-10.5 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4.5 text-xs font-bold text-destructive transition hover:bg-destructive/15 active:scale-[0.98] sm:h-11 sm:text-sm"
           >
             <LogOut className="size-4" /> Log out
           </button>

@@ -50,7 +50,7 @@ export const CategoryDialog = ({
       <div
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-card p-5 sm:p-7 shadow-2xl ring-1 ring-border duration-200 animate-in slide-in-from-bottom-5 sm:zoom-in-95"
+        className="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-card p-5 sm:p-7 shadow-2xl ring-1 ring-border duration-200 ease-[var(--ease-drawer)] animate-in slide-in-from-bottom-5 sm:zoom-in-95"
       >
         <div className="flex items-center justify-between">
           <div>
@@ -74,7 +74,7 @@ export const CategoryDialog = ({
         <div className="mt-4 sm:mt-5 flex rounded-xl bg-muted/80 p-1 text-xs font-bold">
           <button
             onClick={() => setActiveTab('manage')}
-            className={`flex-1 cursor-pointer rounded-lg py-2 transition-all duration-200 active:scale-95 sm:py-2.5 ${
+            className={`flex-1 cursor-pointer rounded-lg py-2 transition duration-200 active:scale-95 sm:py-2.5 ${
               activeTab === 'manage'
                 ? 'bg-card text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
@@ -84,7 +84,7 @@ export const CategoryDialog = ({
           </button>
           <button
             onClick={() => setActiveTab('add')}
-            className={`flex-1 cursor-pointer rounded-lg py-2 transition-all duration-200 active:scale-95 sm:py-2.5 ${
+            className={`flex-1 cursor-pointer rounded-lg py-2 transition duration-200 active:scale-95 sm:py-2.5 ${
               activeTab === 'add'
                 ? 'bg-card text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
@@ -244,7 +244,7 @@ export const CategoryDialog = ({
                   </p>
                   <div className="mt-2 flex items-center gap-3.5">
                     <div
-                      className="flex min-w-24 shrink-0 flex-col items-center gap-2 rounded-2xl px-4 py-3 text-xs font-bold text-white shadow-sm transition-all"
+                      className="flex min-w-24 shrink-0 flex-col items-center gap-2 rounded-2xl px-4 py-3 text-xs font-bold text-white shadow-sm transition"
                       style={{ backgroundColor: previewColor }}
                     >
                       <PreviewIcon className="size-5 text-white" />
@@ -286,7 +286,7 @@ export const CategoryDialog = ({
                         type="button"
                         onClick={() => setSelectedIconName(key)}
                         title={key}
-                        className={`grid size-9 cursor-pointer place-items-center rounded-xl transition-all hover:scale-105 active:scale-95 ${
+                        className={`grid size-9 cursor-pointer place-items-center rounded-xl transition hover:scale-105 active:scale-95 ${
                           selectedIconName === key
                             ? 'bg-primary text-primary-foreground shadow-xs ring-2 ring-primary/40'
                             : 'bg-muted/70 text-foreground hover:bg-muted'
@@ -345,7 +345,7 @@ export const CategoryDialog = ({
               <div className="shrink-0 border-t border-border/60 pt-3">
                 <button
                   onClick={onAdd}
-                  className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
+                  className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 active:scale-[0.98]"
                 >
                   Add Category <Plus className="size-4" />
                 </button>

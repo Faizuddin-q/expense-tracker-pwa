@@ -73,7 +73,7 @@ export const ExpenseEditDialog = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="edit-expense-title"
-        className="relative z-10 w-full max-w-md rounded-t-3xl bg-card p-5 shadow-2xl ring-1 ring-border duration-200 animate-in slide-in-from-bottom-5 sm:rounded-3xl sm:p-7 sm:zoom-in-95"
+        className="relative z-10 w-full max-w-md rounded-t-3xl bg-card p-5 shadow-2xl ring-1 ring-border duration-200 ease-[var(--ease-drawer)] animate-in slide-in-from-bottom-5 sm:rounded-3xl sm:p-7 sm:zoom-in-95"
       >
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -90,7 +90,7 @@ export const ExpenseEditDialog = ({
           <button
             type="button"
             onClick={onClose}
-            className="cursor-pointer rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            className="cursor-pointer rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground active:scale-90"
           >
             <X className="size-4" />
           </button>

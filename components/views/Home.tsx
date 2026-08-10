@@ -133,7 +133,7 @@ export const Home = ({
                   <button
                     key={id}
                     onClick={() => addExpense(id)}
-                    className="group flex cursor-pointer flex-col items-center gap-1.5 rounded-xl p-2.5 text-xs font-bold text-white shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:scale-[0.95] sm:gap-2 sm:rounded-2xl sm:p-3"
+                    className="group flex cursor-pointer flex-col items-center gap-1.5 rounded-xl p-2.5 text-xs font-bold text-white shadow-xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:scale-[0.95] sm:gap-2 sm:rounded-2xl sm:p-3"
                     style={{ backgroundColor: color }}
                   >
                     <div className="grid size-7 place-items-center rounded-lg bg-white/20 transition-transform duration-200 group-hover:scale-110 sm:size-8 sm:rounded-xl">
@@ -149,7 +149,7 @@ export const Home = ({
               {/* Add Custom Category Card */}
               <button
                 onClick={onAddCategory}
-                className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-primary/40 bg-card p-2.5 text-xs font-bold text-primary transition-all duration-200 hover:border-primary hover:bg-primary/5 active:scale-[0.95] sm:rounded-2xl sm:p-3"
+                className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-primary/40 bg-card p-2.5 text-xs font-bold text-primary transition duration-200 hover:border-primary hover:bg-primary/5 active:scale-[0.95] sm:rounded-2xl sm:p-3"
               >
                 <div className="grid size-7 place-items-center rounded-lg bg-primary/10 sm:size-8 sm:rounded-xl">
                   <Plus className="size-3.5 text-primary sm:size-4" />
@@ -181,7 +181,7 @@ export const Home = ({
                         note: item.label,
                       })
                     }
-                    className="flex cursor-pointer items-center gap-2 rounded-xl border border-border/80 bg-card px-3 py-2 text-[11px] font-bold transition-all duration-200 hover:border-primary/40 hover:bg-accent/40 active:scale-[0.97] sm:gap-2.5 sm:rounded-2xl sm:px-4 sm:py-2.5 sm:text-xs"
+                    className="flex cursor-pointer items-center gap-2 rounded-xl border border-border/80 bg-card px-3 py-2 text-[11px] font-bold transition duration-200 hover:border-primary/40 hover:bg-accent/40 active:scale-[0.97] sm:gap-2.5 sm:rounded-2xl sm:px-4 sm:py-2.5 sm:text-xs"
                   >
                     <QuickIcon className="size-3.5 shrink-0 text-primary sm:size-4" />
                     <span>{item.label}</span>

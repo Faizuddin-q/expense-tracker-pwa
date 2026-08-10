@@ -26,7 +26,7 @@ export const ExpenseRow = ({
       <button
         type="button"
         onClick={() => onEdit?.(expense)}
-        className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left"
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left transition active:opacity-60"
       >
         <div
           className="grid size-8 shrink-0 place-items-center rounded-lg transition-transform duration-200 group-hover:scale-105 sm:size-9.5"

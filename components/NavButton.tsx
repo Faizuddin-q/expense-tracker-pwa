@@ -58,7 +58,7 @@ export const NavButton = ({
     <Link
       href={href}
       aria-current={active ? 'page' : undefined}
-      className={`group relative flex w-full cursor-pointer items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.96] ${
+      className={`group relative flex w-full cursor-pointer items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition duration-200 active:scale-[0.96] ${
         active
           ? 'bg-primary text-primary-foreground'
           : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'

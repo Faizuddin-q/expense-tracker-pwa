@@ -16,7 +16,7 @@ const ProgressBar = ({
 }) => (
   <div className={`h-1.5 overflow-hidden rounded-full bg-muted ${className}`}>
     <div
-      className="h-full rounded-full transition-all duration-300"
+      className="h-full rounded-full transition duration-300"
       style={{ width: `${Math.min(100, Math.max(0, value))}%`, backgroundColor: color }}
     />
   </div>
@@ -287,7 +287,7 @@ export const Dashboard = ({
         <div className="flex shrink-0 items-center gap-2">
           <button
             onClick={() => setTimeRange('month')}
-            className={`flex cursor-pointer items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+            className={`flex cursor-pointer items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition active:scale-[0.97] ${
               timeRange === 'month'
                 ? 'bg-primary text-primary-foreground'
                 : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -297,7 +297,7 @@ export const Dashboard = ({
           </button>
           <button
             onClick={() => setTimeRange('1d')}
-            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition active:scale-[0.97] ${
               timeRange === '1d'
                 ? 'bg-primary text-primary-foreground'
                 : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -307,7 +307,7 @@ export const Dashboard = ({
           </button>
           <button
             onClick={() => setTimeRange('7d')}
-            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition active:scale-[0.97] ${
               timeRange === '7d'
                 ? 'bg-primary text-primary-foreground'
                 : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -317,7 +317,7 @@ export const Dashboard = ({
           </button>
           <button
             onClick={() => setTimeRange('14d')}
-            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition active:scale-[0.97] ${
               timeRange === '14d'
                 ? 'bg-primary text-primary-foreground'
                 : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -327,7 +327,7 @@ export const Dashboard = ({
           </button>
           <button
             onClick={() => setTimeRange('30d')}
-            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition active:scale-[0.97] ${
               timeRange === '30d'
                 ? 'bg-primary text-primary-foreground'
                 : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -337,7 +337,7 @@ export const Dashboard = ({
           </button>
           <button
             onClick={() => setTimeRange('all')}
-            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition active:scale-[0.97] ${
               timeRange === 'all'
                 ? 'bg-primary text-primary-foreground'
                 : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -347,7 +347,7 @@ export const Dashboard = ({
           </button>
           <button
             onClick={() => setTimeRange('custom')}
-            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.97] ${
+            className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold transition active:scale-[0.97] ${
               timeRange === 'custom'
                 ? 'bg-primary text-primary-foreground'
                 : 'border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -465,7 +465,7 @@ export const Dashboard = ({
                         cx="50"
                         cy="50"
                         r={radius}
-                        className="cursor-pointer fill-none transition-all duration-200 hover:stroke-[16]"
+                        className="cursor-pointer fill-none transition duration-200 hover:stroke-[16]"
                         stroke={color}
                         strokeWidth="13"
                         strokeDasharray={strokeDasharray}
@@ -687,7 +687,7 @@ export const Dashboard = ({
                 key={c.id}
                 onMouseEnter={() => setHoveredCategory(c)}
                 onMouseLeave={() => setHoveredCategory(null)}
-                className={`flex cursor-pointer items-center gap-3.5 rounded-2xl p-2.5 transition-all duration-200 ${
+                className={`flex cursor-pointer items-center gap-3.5 rounded-2xl p-2.5 transition duration-200 ${
                   isHovered ? 'bg-accent/70' : 'hover:bg-accent/40'
                 }`}
               >

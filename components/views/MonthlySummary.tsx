@@ -23,7 +23,7 @@ const ProgressBar = ({
 }) => (
   <div className={`h-1.5 overflow-hidden rounded-full bg-muted ${className}`}>
     <div
-      className="h-full rounded-full transition-all duration-300"
+      className="h-full rounded-full transition duration-300"
       style={{ width: `${Math.min(100, Math.max(0, value))}%`, backgroundColor: color }}
     />
   </div>
@@ -183,7 +183,7 @@ export const MonthlySummary = ({
               <button
                 type="button"
                 onClick={() => setExpanded(isOpen ? null : m.key)}
-                className="flex w-full cursor-pointer items-start gap-3 p-4 text-left transition hover:bg-muted/40 sm:gap-4 sm:p-5"
+                className="flex w-full cursor-pointer items-start gap-3 p-4 text-left transition hover:bg-muted/40 active:bg-muted/60 sm:gap-4 sm:p-5"
               >
                 <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-primary sm:size-11">
                   <CalendarRange className="size-4.5 sm:size-5" />

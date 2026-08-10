@@ -24,7 +24,7 @@
   --color-ring: var(--ring);
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-mono: 'IBM Plex Mono', 'JetBrains Mono', monospace;
-  /* Friendly, conventional radius scale */
+  /* Friendly, conventional radius scale, dont touch radius i like them like this only. */
   --radius-xs: 2px;
   --radius-sm: 3px;
   --radius-md: 4px;
@@ -33,6 +33,11 @@
   --radius-2xl: 10px;
   --radius-3xl: 12px;
   --radius-4xl: 14px;
+  /* Stronger, more intentional easing curves than Tailwind's defaults */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  /* Applies to every bare `transition`/`transition-*` utility app-wide */
+  --default-transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* Clean modern SaaS: neutral surfaces, one consistent accent color in both themes. */
@@ -58,9 +63,8 @@
   --ring: oklch(0.64 0.19 258);
   --radius: 10px;
 
-  /* Emil Kowalski custom easings */
-  --ease-out-emil: cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-drawer-emil: cubic-bezier(0.32, 0.72, 0, 1);
+  /* iOS-style drawer/sheet curve, for bottom-sheet dialogs */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 :root.light,
