@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import { LogOut, Moon, Sparkles, Sun, Wifi, WifiOff } from 'lucide-react';
+import { LogOut, Moon, Sun } from 'lucide-react';
 import { AppProvider, useApp } from '@/lib/app-context';
 import { Brand } from '@/components/Brand';
 import { NavButton } from '@/components/NavButton';
@@ -10,14 +10,15 @@ import { CategoryDialog } from '@/components/CategoryDialog';
 import { IncomeSetup } from '@/components/IncomeSetup';
 import { PwaProvider } from '@/components/PwaProvider';
 import { navItems } from '@/lib/constants';
+import { formatIndianMobileDisplay } from '@/lib/utils';
 
-// ─── Page title map ───────────────────────────────────────────────────────────
+// ─── Page titles ──────────────────────────────────────────────────────────────
 
 const PAGE_TITLES: Record<string, string> = {
-  '/': 'Good to see you.',
-  '/dashboard': 'Your month at a glance',
-  '/summary': 'Month by month',
-  '/expenses': 'All expenses',
+  '/': 'Add expense',
+  '/dashboard': 'Overview',
+  '/summary': 'Summary',
+  '/expenses': 'Expenses',
   '/settings': 'Settings',
 };
 
@@ -65,12 +66,10 @@ function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [initializing, userId, router]);
 
-  // Blank screen while loading
   if (initializing) {
     return <div className="min-h-screen bg-background" />;
   }
 
-  // Income setup screen
   if (userId && needsIncome) {
     return (
       <IncomeSetup
@@ -84,7 +83,6 @@ function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Category dialog overlay
   if (categoryDialog) {
     return (
       <CategoryDialog
@@ -107,100 +105,105 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
   if (!userId) return null;
 
+  const syncLabel = syncing ? 'Syncing' : online ? 'Synced' : 'Offline';
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {screenObscured && (
         <div className="fixed inset-0 z-[200] grid place-items-center bg-background">
           <div className="text-center">
-            <p className="text-2xl font-extrabold tracking-tight text-foreground">
+            <p className="text-base font-semibold tracking-tight text-foreground">
               Pocket
             </p>
-            <p className="mt-2 text-sm text-muted-foreground">Amounts hidden</p>
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              Amounts hidden
+            </p>
           </div>
         </div>
       )}
-      {/* Desktop Sidebar */}
-      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r border-border bg-card px-5 py-7 lg:flex">
-        <Brand />
-        <nav className="mt-14 flex flex-col gap-1.5">
+
+      {/* Desktop sidebar */}
+      <aside className="fixed inset-y-0 left-0 hidden w-56 flex-col border-r border-border bg-card lg:flex">
+        <div className="flex h-12 items-center border-b border-border px-4">
+          <Brand />
+        </div>
+
+        <nav className="flex flex-col gap-0.5 px-2 py-3">
           {navItems.map((item) => (
             <NavButton key={item.id} {...item} />
           ))}
         </nav>
-        <div className="mt-auto rounded-2xl bg-accent/70 p-4.5 ring-1 ring-border/50">
-          <Sparkles className="mb-2.5 size-5 text-primary" />
-          <p className="text-sm font-semibold">Small steps add up.</p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Your money picture gets clearer with every entry.
+
+        <div className="mt-auto border-t border-border px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span
+              className={`size-1.5 shrink-0 rounded-full ${
+                online ? 'bg-positive' : 'bg-faint'
+              }`}
+            />
+            <span className="text-[11px] font-medium text-muted-foreground">
+              {syncLabel}
+            </span>
+          </div>
+          <p className="font-mono-numbers mt-1.5 text-[11px] text-faint">
+            {formatIndianMobileDisplay(userId)}
           </p>
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="pb-[calc(5.25rem+env(safe-area-inset-bottom))] sm:pb-24 lg:ml-64 lg:pb-8">
-        <header className="flex items-center justify-between px-4 py-4 sm:px-8 sm:py-6 lg:px-12 lg:py-8">
-          <div>
-            <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase sm:text-xs">
-              {new Intl.DateTimeFormat('en-IN', {
-                weekday: 'long',
-                month: 'short',
-                day: 'numeric',
-              }).format(new Date())}
-            </p>
-            <h1 className="mt-0.5 text-xl font-extrabold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
-              {pageTitle}
-            </h1>
-          </div>
-          <div className="flex items-center gap-2.5 sm:gap-3">
+      {/* Main */}
+      <main className="pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:ml-56 lg:pb-10">
+        <header className="sticky top-0 z-30 flex h-12 items-center justify-between border-b border-border bg-background/85 px-4 backdrop-blur-md sm:px-6 lg:px-8">
+          <h1 className="text-[14px] font-semibold tracking-tight text-foreground">
+            {pageTitle}
+          </h1>
+
+          <div className="flex items-center gap-1">
+            <span className="mr-1 hidden items-center gap-1.5 text-[11px] font-medium text-muted-foreground sm:flex lg:hidden">
+              <span
+                className={`size-1.5 rounded-full ${online ? 'bg-positive' : 'bg-faint'}`}
+              />
+              {syncLabel}
+            </span>
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-              className="flex cursor-pointer items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-xs transition hover:bg-muted active:scale-95 sm:px-3.5"
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+              className="grid size-7 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             >
               {theme === 'dark' ? (
-                <Sun className="size-3.5 text-amber-400" />
+                <Sun className="size-4" strokeWidth={1.9} />
               ) : (
-                <Moon className="size-3.5 text-primary" />
+                <Moon className="size-4" strokeWidth={1.9} />
               )}
-              <span className="hidden sm:inline">
-                {theme === 'dark' ? 'Light' : 'Dark'}
-              </span>
             </button>
-            <span className="hidden items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-medium text-muted-foreground shadow-xs sm:flex">
-              {online ? (
-                <Wifi className="size-3.5 text-primary" />
-              ) : (
-                <WifiOff className="size-3.5" />
-              )}
-              {syncing ? 'Syncing' : online ? 'Synced' : 'Offline mode'}
-            </span>
             <button
               onClick={() => void logout()}
               title="Log out"
-              className="hidden cursor-pointer items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-xs transition hover:bg-muted hover:text-destructive active:scale-95 lg:flex lg:px-3.5"
+              aria-label="Log out"
+              className="hidden size-7 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-destructive lg:grid"
             >
-              <LogOut className="size-3.5" />
-              Log out
+              <LogOut className="size-4" strokeWidth={1.9} />
             </button>
           </div>
         </header>
 
-        <div className="px-4 sm:px-8 lg:px-12">
+        <div className="px-4 py-5 sm:px-6 lg:px-8">
           {children}
           {error && (
-            <p className="mx-auto mt-5 max-w-3xl rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-[13px] text-destructive">
               {error}
             </p>
           )}
         </div>
       </main>
 
-      {/* Mobile floating tab bar */}
+      {/* Mobile tab bar */}
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-50 px-3 pt-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] lg:hidden"
       >
-        <div className="mx-auto flex h-14 max-w-md items-stretch rounded-2xl border border-border/70 bg-card/90 px-1 shadow-lg shadow-black/10 ring-1 ring-black/5 backdrop-blur-xl dark:shadow-black/40 dark:ring-white/5">
+        <div className="mx-auto flex h-14 max-w-md items-stretch rounded-xl border border-border bg-card/95 px-1 shadow-lg shadow-black/5 backdrop-blur-xl dark:shadow-black/30">
           {navItems.map((item) => (
             <NavButton key={item.id} {...item} mobile />
           ))}

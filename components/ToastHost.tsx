@@ -76,27 +76,27 @@ const ToastCard = ({
   return (
     <div
       role={isError ? 'alert' : 'status'}
-      className={`pointer-events-auto flex w-full max-w-md items-start gap-2.5 rounded-xl border px-3.5 py-3 shadow-lg transition-[transform,opacity] duration-200 ease-[var(--ease-drawer)] lg:max-w-sm ${
+      className={`pointer-events-auto flex w-full max-w-sm items-start gap-2.5 rounded-lg border border-border bg-card px-3 py-2.5 shadow-lg shadow-black/5 transition-[transform,opacity] duration-200 ease-[var(--ease-drawer)] dark:shadow-black/30 ${
         visible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
-      } ${
-        isError
-          ? 'border-destructive/30 bg-card text-destructive'
-          : 'border-primary/25 bg-card text-foreground'
       }`}
     >
       {isError ? (
-        <XCircle className="mt-0.5 size-4.5 shrink-0" />
+        <XCircle
+          className="mt-px size-4 shrink-0 text-destructive"
+          strokeWidth={1.9}
+        />
       ) : (
-        <CheckCircle2 className="mt-0.5 size-4.5 shrink-0 text-primary" />
+        <CheckCircle2
+          className="mt-px size-4 shrink-0 text-positive"
+          strokeWidth={1.9}
+        />
       )}
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold leading-5">{item.title}</p>
+        <p className="text-[13px] leading-tight font-medium text-foreground">
+          {item.title}
+        </p>
         {item.message ? (
-          <p
-            className={`mt-0.5 text-xs font-medium leading-4 ${
-              isError ? 'text-destructive/80' : 'text-muted-foreground'
-            }`}
-          >
+          <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">
             {item.message}
           </p>
         ) : null}
@@ -105,9 +105,9 @@ const ToastCard = ({
         type="button"
         aria-label="Dismiss"
         onClick={startExit}
-        className="cursor-pointer rounded-sm p-0.5 text-muted-foreground transition hover:text-foreground active:scale-90"
+        className="grid size-5 shrink-0 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-secondary hover:text-foreground"
       >
-        <X className="size-4" />
+        <X className="size-3.5" strokeWidth={2} />
       </button>
     </div>
   );

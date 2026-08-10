@@ -1,4 +1,4 @@
-import { Check, Download, Eye, EyeOff, Hand, LogOut, Moon, Sun } from 'lucide-react';
+import { Download, Eye, EyeOff, Hand, LogOut, Moon, Sun } from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
 import {
   downloadCsv,
@@ -29,6 +29,134 @@ interface SettingsProps {
   onOpenBackTapGuide?: () => void;
 }
 
+/** A labelled settings row: description on the left, control on the right. */
+const Row = ({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: React.ReactNode;
+  children: React.ReactNode;
+}) => (
+  <div className="flex flex-col gap-2.5 px-3 py-3 transition-colors hover:bg-primary/[0.035] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-4 sm:py-3.5">
+    <div className="min-w-0">
+      <p className="text-[13px] font-medium text-foreground">{title}</p>
+      {description && (
+        <p className="mt-0.5 text-[12px] leading-relaxed text-muted-foreground">
+          {description}
+        </p>
+      )}
+    </div>
+    <div className="shrink-0 sm:min-w-[220px]">{children}</div>
+  </div>
+);
+
+const Section = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
+  <section className="mt-5 first:mt-0">
+    <h2 className="label mb-2 px-1">{title}</h2>
+    <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+      {children}
+    </div>
+  </section>
+);
+
+/** Segmented control — active state uses primary like Expenses filters */
+const Segment = ({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: string; label: React.ReactNode }[];
+  value: string;
+  onChange: (v: string) => void;
+}) => (
+  <div className="inline-flex w-full rounded-lg border border-border bg-card p-0.5 sm:w-auto">
+    {options.map((opt) => {
+      const active = value === opt.value;
+      return (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={`flex h-7 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 text-[12px] font-medium transition-colors sm:flex-none ${
+            active
+              ? 'bg-primary/12 text-primary'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          {opt.label}
+        </button>
+      );
+    })}
+  </div>
+);
+
+const GhostButton = ({
+  onClick,
+  children,
+  className = '',
+}: {
+  onClick: () => void;
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-[12px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary sm:w-auto ${className}`}
+  >
+    {children}
+  </button>
+);
+
+const AmountField = ({
+  label,
+  value,
+  onChange,
+  onSave,
+  placeholder,
+  readOnly,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  onSave: () => void;
+  placeholder: string;
+  readOnly: boolean;
+}) => (
+  <div className="flex gap-1.5">
+    <div className="field-shell flex h-8 flex-1 items-center rounded-lg border border-border bg-background px-2.5">
+      <span className="font-mono-numbers text-[13px] text-faint">₹</span>
+      <input
+        aria-label={label}
+        inputMode="decimal"
+        value={value}
+        readOnly={readOnly}
+        onChange={(e) => onChange(formatIndianNumber(e.target.value))}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') onSave();
+        }}
+        placeholder={placeholder}
+        className="font-mono-numbers w-full min-w-0 bg-transparent px-1.5 text-[13px] text-foreground outline-none placeholder:text-faint"
+      />
+    </div>
+    <button
+      type="button"
+      onClick={onSave}
+      className="h-8 shrink-0 cursor-pointer rounded-lg bg-primary px-3 text-[12px] font-medium text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80"
+    >
+      Save
+    </button>
+  </div>
+);
+
 export const Settings = ({
   incomeDraft,
   setIncomeDraft,
@@ -51,249 +179,185 @@ export const Settings = ({
   onOpenBackTapGuide,
 }: SettingsProps) => {
   return (
-    <section className="mx-auto max-w-3xl">
-      <div className="rounded-2xl border border-border/90 bg-card p-5 shadow-xs sm:p-8 md:p-9">
-        <h2 className="text-base font-bold tracking-tight text-foreground sm:text-lg">
-          Your money profile
-        </h2>
-        <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-          Your mobile number identifies your private expense space.
-        </p>
+    <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-2xl">
+        <Section title="Account">
+          <Row title="Mobile number" description="Identifies your expense data.">
+            <p className="font-mono-numbers text-[13px] text-primary sm:text-right">
+              {formatIndianMobileDisplay(userId)}
+            </p>
+          </Row>
+          <Row
+            title="Sync"
+            description="Push local changes to the cloud and pull the latest."
+          >
+            <div className="flex gap-1.5">
+              <GhostButton onClick={() => sync()}>Sync now</GhostButton>
+              <GhostButton onClick={onChangeIdentity}>Change number</GhostButton>
+            </div>
+          </Row>
+        </Section>
 
-        <div className="mt-6 sm:mt-8 flex flex-col gap-2">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
-            Appearance & Theme
-          </label>
-          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3">
-            <button
-              onClick={() => setTheme('dark')}
-              className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-3.5 text-xs font-bold transition active:scale-[0.97] sm:p-4 sm:text-sm ${
-                theme === 'dark'
-                  ? 'border-primary bg-primary/15 text-primary'
-                  : 'border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`}
-            >
-              <Moon className="size-4 shrink-0" /> Dark Mode (Default)
-            </button>
-            <button
-              onClick={() => setTheme('light')}
-              className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-3.5 text-xs font-bold transition active:scale-[0.97] sm:p-4 sm:text-sm ${
-                theme === 'light'
-                  ? 'border-primary bg-primary/15 text-primary'
-                  : 'border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`}
-            >
-              <Sun className="size-4 shrink-0" /> Warm Light Mode
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-6 sm:mt-8 flex flex-col gap-2">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
-            Mobile account ID
-          </label>
-          <div className="flex h-11 overflow-hidden rounded-xl border border-input bg-muted/60 sm:h-12">
-            <span className="flex shrink-0 items-center border-r border-input px-3 text-xs font-bold text-muted-foreground sm:text-sm">
-              +91
-            </span>
-            <input
-              readOnly
-              value={userId}
-              className="font-mono-numbers h-full w-full cursor-not-allowed bg-transparent px-3 text-xs font-semibold tracking-wide text-foreground outline-none sm:text-sm"
-              aria-label={formatIndianMobileDisplay(userId)}
+        <Section title="Targets">
+          <Row
+            title="Monthly income"
+            description="Used as the fallback target when no budget is set."
+          >
+            <AmountField
+              label="Monthly income"
+              value={
+                hideAmounts ? '••••••' : formatIndianNumber(incomeDraft || '')
+              }
+              onChange={setIncomeDraft}
+              onSave={onSaveIncome}
+              placeholder="50,000"
+              readOnly={hideAmounts}
             />
-          </div>
-        </div>
+          </Row>
+          <Row
+            title="Monthly budget"
+            description="Analytics target only — you can still log past it."
+          >
+            <AmountField
+              label="Monthly spend budget"
+              value={
+                hideAmounts ? '••••••' : formatIndianNumber(budgetDraft || '')
+              }
+              onChange={setBudgetDraft}
+              onSave={onSaveBudget}
+              placeholder="30,000"
+              readOnly={hideAmounts}
+            />
+          </Row>
+        </Section>
 
-        <div className="mt-3.5 flex flex-wrap gap-2.5 sm:mt-4 sm:gap-3">
-          <button
-            onClick={() => sync()}
-            className="h-10.5 cursor-pointer rounded-xl bg-primary px-4.5 text-xs font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98] sm:h-11 sm:px-5 sm:text-sm"
-          >
-            Sync data
-          </button>
-          <button
-            onClick={onChangeIdentity}
-            className="h-10.5 cursor-pointer rounded-xl border border-border/80 bg-card px-4.5 text-xs font-bold text-foreground transition hover:bg-muted active:scale-[0.98] sm:h-11 sm:px-5 sm:text-sm"
-          >
-            Change number
-          </button>
-        </div>
+        <Section title="Appearance">
+          <Row title="Theme" description="Applies on this device.">
+            <Segment
+              value={theme}
+              onChange={(v) => setTheme(v as 'dark' | 'light')}
+              options={[
+                {
+                  value: 'dark',
+                  label: (
+                    <>
+                      <Moon className="size-3.5" strokeWidth={1.9} /> Dark
+                    </>
+                  ),
+                },
+                {
+                  value: 'light',
+                  label: (
+                    <>
+                      <Sun className="size-3.5" strokeWidth={1.9} /> Light
+                    </>
+                  ),
+                },
+              ]}
+            />
+          </Row>
+        </Section>
 
-        <div className="mt-6 sm:mt-8 flex flex-col gap-2">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
-            Privacy
-          </label>
-          <p className="text-xs text-muted-foreground">
-            Hide rupee amounts with bullets when showing your phone. Preference
-            syncs with your account. App switcher previews are covered
-            automatically.
-          </p>
-          <button
-            type="button"
-            onClick={() => setHideAmounts(!hideAmounts)}
-            className={`mt-1 flex h-11 cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 text-xs font-bold transition active:scale-[0.98] sm:h-12 sm:text-sm ${
-              hideAmounts
-                ? 'border-primary/40 bg-primary/15 text-primary'
-                : 'border-border/80 bg-card text-foreground hover:bg-muted'
-            }`}
+        <Section title="Privacy">
+          <Row
+            title="Hide amounts"
+            description="Masks every figure with bullets. App switcher previews are covered automatically."
           >
-            <span className="flex items-center gap-2">
+            <div className="flex items-center gap-2 sm:justify-end">
               {hideAmounts ? (
-                <EyeOff className="size-4" />
+                <EyeOff
+                  className="size-3.5 shrink-0 text-primary"
+                  strokeWidth={1.9}
+                />
               ) : (
-                <Eye className="size-4" />
+                <Eye
+                  className="size-3.5 shrink-0 text-muted-foreground"
+                  strokeWidth={1.9}
+                />
               )}
-              Hide amounts
-            </span>
-            <span className="text-[11px] font-semibold opacity-80">
-              {hideAmounts ? 'On' : 'Off'}
-            </span>
-          </button>
-        </div>
-
-        <div className="mt-6 sm:mt-8 flex flex-col gap-2">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
-            Monthly income
-          </label>
-          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
-            <div className="flex h-11 flex-1 items-center rounded-xl border border-input bg-background px-4 focus-within:ring-2 focus-within:ring-ring sm:h-12">
-              <span className="text-xs font-bold text-muted-foreground sm:text-sm">
-                ₹
-              </span>
-              <input
-                aria-label="Monthly income"
-                inputMode="decimal"
-                value={
-                  hideAmounts
-                    ? '••••••'
-                    : formatIndianNumber(incomeDraft || '')
-                }
-                readOnly={hideAmounts}
-                onChange={(e) =>
-                  setIncomeDraft(formatIndianNumber(e.target.value))
-                }
-                placeholder="e.g. 50,000"
-                className="font-mono-numbers w-full bg-transparent px-3 text-xs font-bold text-foreground outline-none placeholder:text-muted-foreground/60 sm:text-sm"
+              <Segment
+                value={hideAmounts ? 'on' : 'off'}
+                onChange={(v) => setHideAmounts(v === 'on')}
+                options={[
+                  { value: 'off', label: 'Off' },
+                  { value: 'on', label: 'On' },
+                ]}
               />
             </div>
-            <button
-              onClick={onSaveIncome}
-              className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98] sm:h-12 sm:text-sm"
-            >
-              <Check className="size-4" /> Save Income
-            </button>
-          </div>
-        </div>
+          </Row>
+        </Section>
 
-        <div className="mt-6 sm:mt-8 flex flex-col gap-2">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
-            Monthly spend budget
-          </label>
-          <p className="text-xs text-muted-foreground">
-            Target for analytics only — you can still log expenses past this
-            amount.
-          </p>
-          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
-            <div className="flex h-11 flex-1 items-center rounded-xl border border-input bg-background px-4 focus-within:ring-2 focus-within:ring-ring sm:h-12">
-              <span className="text-xs font-bold text-muted-foreground sm:text-sm">
-                ₹
-              </span>
-              <input
-                aria-label="Monthly spend budget"
-                inputMode="decimal"
-                value={
-                  hideAmounts
-                    ? '••••••'
-                    : formatIndianNumber(budgetDraft || '')
-                }
-                readOnly={hideAmounts}
-                onChange={(e) =>
-                  setBudgetDraft(formatIndianNumber(e.target.value))
-                }
-                placeholder="e.g. 30,000"
-                className="font-mono-numbers w-full bg-transparent px-3 text-xs font-bold text-foreground outline-none placeholder:text-muted-foreground/60 sm:text-sm"
-              />
-            </div>
-            <button
-              onClick={onSaveBudget}
-              className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98] sm:h-12 sm:text-sm"
-            >
-              <Check className="size-4" /> Save Budget
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-6 border-t border-border/60 pt-6 sm:mt-8 sm:pt-8">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm">
-            Quick open
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Double-tap the back of your phone to open Pocket. This is controlled
-            by your phone — turning it on opens the system setting so you can
-            finish in one step.
-          </p>
-          <button
-            type="button"
-            onClick={() => setBackTapEnabled(!backTapEnabled)}
-            className={`mt-3.5 flex h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 text-xs font-bold transition active:scale-[0.98] sm:h-12 sm:text-sm ${
-              backTapEnabled
-                ? 'border-primary/40 bg-primary/15 text-primary'
-                : 'border-border/80 bg-card text-foreground hover:bg-muted'
-            }`}
+        <Section title="Shortcuts">
+          <Row
+            title="Open with double tap"
+            description="Double-tap the back of your phone to open Pocket. Controlled by your phone's system settings."
           >
-            <span className="flex items-center gap-2">
-              <Hand className="size-4" />
-              Open with double tap
-            </span>
-            <span className="text-[11px] font-semibold opacity-80">
-              {backTapEnabled ? 'On' : 'Off'}
-            </span>
-          </button>
+            <div className="flex items-center gap-2 sm:justify-end">
+              <Hand
+                className={`size-3.5 shrink-0 ${
+                  backTapEnabled ? 'text-primary' : 'text-muted-foreground'
+                }`}
+                strokeWidth={1.9}
+              />
+              <Segment
+                value={backTapEnabled ? 'on' : 'off'}
+                onChange={(v) => setBackTapEnabled(v === 'on')}
+                options={[
+                  { value: 'off', label: 'Off' },
+                  { value: 'on', label: 'On' },
+                ]}
+              />
+            </div>
+          </Row>
           {onOpenBackTapGuide && (
+            <Row
+              title="Setup guide"
+              description="Step-by-step for iPhone, Android, and Motorola."
+            >
+              <GhostButton onClick={onOpenBackTapGuide}>View guide</GhostButton>
+            </Row>
+          )}
+        </Section>
+
+        <Section title="Data">
+          <Row
+            title="Export"
+            description={
+              <>
+                Download all{' '}
+                <span className="font-mono-numbers text-primary">
+                  {expenses.length}
+                </span>{' '}
+                expenses as a CSV file.
+              </>
+            }
+          >
+            <GhostButton
+              onClick={() => {
+                downloadCsv(expenses, categories);
+                toast.success(
+                  'CSV downloaded',
+                  `${expenses.length} expenses exported`
+                );
+              }}
+            >
+              <Download className="size-3.5" strokeWidth={1.9} /> Export CSV
+            </GhostButton>
+          </Row>
+          <Row
+            title="Log out"
+            description="Sign out on this device. Synced data stays in the cloud."
+          >
             <button
               type="button"
-              onClick={onOpenBackTapGuide}
-              className="mt-2 cursor-pointer text-left text-xs font-semibold text-muted-foreground underline-offset-2 transition hover:text-foreground hover:underline"
+              onClick={onLogout}
+              className="flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-destructive/30 px-3 text-[12px] font-medium text-destructive transition-colors hover:bg-destructive/10 sm:w-auto"
             >
-              Show setup guide
+              <LogOut className="size-3.5" strokeWidth={1.9} /> Log out
             </button>
-          )}
-        </div>
-
-        <div className="mt-6 border-t border-border/60 pt-6 sm:mt-8 sm:pt-8">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm">
-            Export Data
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Download your full expense history as a CSV file.
-          </p>
-          <button
-            onClick={() => {
-              downloadCsv(expenses, categories);
-              toast.success('CSV downloaded', `${expenses.length} expenses exported`);
-            }}
-            className="mt-3.5 flex h-10.5 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border/80 bg-card px-4.5 text-xs font-bold text-foreground transition hover:bg-muted active:scale-[0.98] sm:h-11 sm:px-5 sm:text-sm"
-          >
-            <Download className="size-4" /> Download CSV ({expenses.length})
-          </button>
-        </div>
-
-        <div className="mt-6 border-t border-border/60 pt-6 lg:hidden sm:mt-8 sm:pt-8">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm">
-            Account
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Sign out on this device. Your synced data stays in the cloud.
-          </p>
-          <button
-            onClick={onLogout}
-            className="mt-3.5 flex h-10.5 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4.5 text-xs font-bold text-destructive transition hover:bg-destructive/15 active:scale-[0.98] sm:h-11 sm:text-sm"
-          >
-            <LogOut className="size-4" /> Log out
-          </button>
-        </div>
+          </Row>
+        </Section>
       </div>
-    </section>
+    </div>
   );
 };

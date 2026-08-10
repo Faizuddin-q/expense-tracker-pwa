@@ -83,84 +83,86 @@ export const getCategoryIcon = (category: Partial<Category>): LucideIcon => {
 };
 
 // Chalk-stick palette — dustier, less saturated than screen-native brights,
-// Clean, modern tag-style palette — clear and legible on both light and dark surfaces.
+// Muted, mid-lightness palette tuned to read as one family rather than a
+// rainbow. Every value stays legible as a small dot or bar on both the dark
+// and light surfaces, and none of them compete with the primary action color.
 export const pastelPalette: string[] = [
-  '#10B981', // Mint
-  '#0D9488', // Teal
-  '#06B6D4', // Cyan
-  '#0EA5E9', // Sky
-  '#3B82F6', // Blue
-  '#6366F1', // Indigo
-  '#1D4ED8', // Navy
-  '#8B5CF6', // Lavender
-  '#A855F7', // Purple
-  '#7C3AED', // Plum
-  '#D946EF', // Magenta
-  '#EC4899', // Pink
-  '#F43F5E', // Rose
-  '#F97316', // Coral
-  '#EA580C', // Apricot
-  '#D97706', // Amber
-  '#84CC16', // Lime
-  '#16A34A', // Sage
-  '#B45309', // Bronze
-  '#64748B', // Gray
+  '#4FA97F', // Mint
+  '#3F9E96', // Teal
+  '#4BA3B8', // Cyan
+  '#5A9BD4', // Sky
+  '#5B85D6', // Blue
+  '#6D75CE', // Indigo
+  '#5A6BB0', // Navy
+  '#8E7CC8', // Lavender
+  '#9B72C4', // Purple
+  '#8A63A8', // Plum
+  '#B26AAE', // Magenta
+  '#C4708F', // Pink
+  '#C86B70', // Rose
+  '#D07B5E', // Coral
+  '#C98A55', // Apricot
+  '#B99548', // Amber
+  '#8FA84F', // Lime
+  '#6D9A63', // Sage
+  '#A5824F', // Bronze
+  '#7E848F', // Gray
 ];
 
 export const categoryColorMap: Record<string, string> = {
-  mint: '#10B981',
-  teal: '#0D9488',
-  cyan: '#06B6D4',
-  sky: '#0EA5E9',
-  blue: '#3B82F6',
-  indigo: '#6366F1',
-  navy: '#1D4ED8',
-  lavender: '#8B5CF6',
-  purple: '#A855F7',
-  plum: '#7C3AED',
-  magenta: '#D946EF',
-  pink: '#EC4899',
-  rose: '#F43F5E',
-  coral: '#F97316',
-  apricot: '#EA580C',
-  amber: '#D97706',
-  lime: '#84CC16',
-  sage: '#16A34A',
-  bronze: '#B45309',
-  gray: '#64748B',
+  mint: '#4FA97F',
+  teal: '#3F9E96',
+  cyan: '#4BA3B8',
+  sky: '#5A9BD4',
+  blue: '#5B85D6',
+  indigo: '#6D75CE',
+  navy: '#5A6BB0',
+  lavender: '#8E7CC8',
+  purple: '#9B72C4',
+  plum: '#8A63A8',
+  magenta: '#B26AAE',
+  pink: '#C4708F',
+  rose: '#C86B70',
+  coral: '#D07B5E',
+  apricot: '#C98A55',
+  amber: '#B99548',
+  lime: '#8FA84F',
+  sage: '#6D9A63',
+  bronze: '#A5824F',
+  gray: '#7E848F',
   // Backward compatibility alias keys for built-in categories
-  food: '#F97316',
-  transport: '#0EA5E9',
-  shopping: '#8B5CF6',
-  bills: '#EA580C',
-  health: '#EC4899',
-  butter: '#84CC16',
-  peach: '#EA580C',
-  blush: '#EC4899',
-  violet: '#A855F7',
+  food: '#D07B5E',
+  transport: '#5A9BD4',
+  shopping: '#8E7CC8',
+  bills: '#C98A55',
+  health: '#C4708F',
+  butter: '#8FA84F',
+  peach: '#C98A55',
+  blush: '#C4708F',
+  violet: '#9B72C4',
 };
 
 export const categoryColorOptions = [
-  { key: 'mint', color: '#10B981', label: 'Mint' },
-  { key: 'teal', color: '#0D9488', label: 'Teal' },
-  { key: 'cyan', color: '#06B6D4', label: 'Cyan' },
-  { key: 'sky', color: '#0EA5E9', label: 'Sky' },
-  { key: 'blue', color: '#3B82F6', label: 'Blue' },
-  { key: 'indigo', color: '#6366F1', label: 'Indigo' },
-  { key: 'navy', color: '#1D4ED8', label: 'Navy' },
-  { key: 'lavender', color: '#8B5CF6', label: 'Lavender' },
-  { key: 'purple', color: '#A855F7', label: 'Purple' },
-  { key: 'plum', color: '#7C3AED', label: 'Plum' },
-  { key: 'magenta', color: '#D946EF', label: 'Magenta' },
-  { key: 'pink', color: '#EC4899', label: 'Pink' },
-  { key: 'rose', color: '#F43F5E', label: 'Rose' },
-  { key: 'coral', color: '#F97316', label: 'Coral' },
-  { key: 'apricot', color: '#EA580C', label: 'Apricot' },
-  { key: 'amber', color: '#D97706', label: 'Amber' },
-  { key: 'lime', color: '#84CC16', label: 'Lime' },
-  { key: 'sage', color: '#16A34A', label: 'Sage' },
-  { key: 'bronze', color: '#B45309', label: 'Bronze' },
-  { key: 'gray', color: '#64748B', label: 'Gray' },
+  { key: 'mint', color: '#4FA97F', label: 'Mint' },
+  { key: 'teal', color: '#3F9E96', label: 'Teal' },
+  { key: 'cyan', color: '#4BA3B8', label: 'Cyan' },
+  { key: 'sky', color: '#5A9BD4', label: 'Sky' },
+  { key: 'blue', color: '#5B85D6', label: 'Blue' },
+  { key: 'indigo', color: '#6D75CE', label: 'Indigo' },
+  { key: 'navy', color: '#5A6BB0', label: 'Navy' },
+  { key: 'lavender', color: '#8E7CC8', label: 'Lavender' },
+  { key: 'purple', color: '#9B72C4', label: 'Purple' },
+  { key: 'plum', color: '#8A63A8', label: 'Plum' },
+  { key: 'magenta', color: '#B26AAE', label: 'Magenta' },
+  { key: 'pink', color: '#C4708F', label: 'Pink' },
+  { key: 'rose', color: '#C86B70', label: 'Rose' },
+  { key: 'coral', color: '#D07B5E', label: 'Coral' },
+  { key: 'apricot', color: '#C98A55', label: 'Apricot' },
+  { key: 'amber', color: '#B99548', label: 'Amber' },
+  { key: 'lime', color: '#8FA84F', label: 'Lime' },
+  { key: 'sage', color: '#6D9A63', label: 'Sage' },
+  { key: 'bronze', color: '#A5824F', label: 'Bronze' },
+  { key: 'gray', color: '#7E848F', label: 'Gray' },
 ];
 
 export const getCategoryColor = (tone: string): string => {
@@ -330,6 +332,16 @@ export const money = (n: number, hidden = false): string => {
   if (hidden) return MASKED_MONEY;
   if (!Number.isFinite(n)) return '₹0';
   return `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+};
+
+/** Always two decimals, so figures line up in a column. Use in tables. */
+export const moneyExact = (n: number, hidden = false): string => {
+  if (hidden) return MASKED_MONEY;
+  if (!Number.isFinite(n)) return '₹0.00';
+  return `₹${n.toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 };
 
 export const downloadCsv = (

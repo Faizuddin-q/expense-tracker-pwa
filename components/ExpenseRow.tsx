@@ -1,7 +1,8 @@
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
-import { categoryFor, getCategoryColor } from '@/lib/utils';
+import { categoryFor, getCategoryColor, getCategoryIcon } from '@/lib/utils';
 import { Money } from '@/components/Money';
+import { CategoryIcon } from '@/components/CategoryIcon';
 import { builtInCategories } from '@/lib/constants';
 
 interface ExpenseRowProps {
@@ -18,57 +19,51 @@ export const ExpenseRow = ({
   categories = builtInCategories,
 }: ExpenseRowProps) => {
   const c = categoryFor(expense.category, categories);
-  const IconComponent = c.Icon || Plus;
   const color = getCategoryColor(c.tone);
+  const Icon = getCategoryIcon(c);
 
   return (
-    <div className="group flex items-center justify-between gap-3 py-2.5 transition-colors duration-150 sm:py-3">
+    <div className="group -mx-1 flex items-center gap-3 rounded-md px-1 py-2 transition-colors hover:bg-primary/[0.04]">
+      <CategoryIcon color={color} icon={Icon} size="xs" />
+
       <button
         type="button"
         onClick={() => onEdit?.(expense)}
-        className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left transition active:opacity-60"
+        disabled={!onEdit}
+        className="flex min-w-0 flex-1 items-baseline gap-2 text-left outline-none focus-visible:outline-none disabled:cursor-default"
       >
-        <div
-          className="grid size-8 shrink-0 place-items-center rounded-lg transition-transform duration-200 group-hover:scale-105 sm:size-9.5"
-          style={{
-            backgroundColor: `${color}1f`,
-            color: color,
-          }}
-        >
-          <IconComponent className="size-4 sm:size-4.5" />
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-xs font-bold text-foreground sm:text-sm">
-            {expense.note || c.label}
-          </p>
-          <p className="mt-0.5 truncate text-[11px] font-medium text-muted-foreground sm:text-xs">
-            {c.label} ·{' '}
-            {new Date(expense.date).toLocaleDateString('en-IN', {
-              day: 'numeric',
-              month: 'short',
-            })}
-          </p>
-        </div>
-      </button>
-      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-        <span className="font-mono-numbers text-xs font-extrabold tracking-tight text-foreground sm:text-base">
-          <Money value={expense.amount} />
+        <span className="truncate text-[13px] font-medium text-foreground">
+          {expense.note || c.label}
         </span>
+        {expense.note && (
+          <span className="shrink-0 truncate text-[11px] text-faint">
+            {c.label}
+          </span>
+        )}
+      </button>
+
+      <span className="font-mono-numbers shrink-0 text-[13px] font-medium text-foreground tabular-nums">
+        <Money value={expense.amount} />
+      </span>
+
+      <div className="flex shrink-0 items-center gap-0.5">
         {onEdit && (
           <button
+            type="button"
             aria-label="Edit expense"
             onClick={() => onEdit(expense)}
-            className="cursor-pointer rounded-lg p-1.5 text-muted-foreground transition hover:bg-accent hover:text-primary active:scale-95 sm:opacity-0 sm:group-hover:opacity-100"
+            className="grid size-6 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-primary/12 hover:text-primary sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
           >
-            <Pencil className="size-3.5 sm:size-4" />
+            <Pencil className="size-3.5" strokeWidth={1.9} />
           </button>
         )}
         <button
+          type="button"
           aria-label="Delete expense"
           onClick={() => remove(expense.id)}
-          className="cursor-pointer rounded-lg p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive active:scale-95 sm:opacity-0 sm:group-hover:opacity-100"
+          className="grid size-6 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-destructive/10 hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
         >
-          <Trash2 className="size-3.5 sm:size-4" />
+          <Trash2 className="size-3.5" strokeWidth={1.9} />
         </button>
       </div>
     </div>

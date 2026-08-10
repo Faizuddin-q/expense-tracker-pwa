@@ -29,25 +29,20 @@ export const NavButton = ({
       <Link
         href={href}
         aria-current={active ? 'page' : undefined}
-        className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 py-1.5 transition-colors duration-150 active:scale-[0.96] ${
+        className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg py-1.5 transition-colors ${
           active
             ? 'text-primary'
-            : 'text-muted-foreground active:text-foreground'
+            : 'text-faint active:text-muted-foreground'
         }`}
       >
         <span
-          className={`grid size-8 place-items-center rounded-xl transition-colors duration-150 ${
-            active ? 'bg-primary/15' : 'bg-transparent'
+          className={`grid size-7 place-items-center rounded-lg ${
+            active ? 'bg-primary/12' : ''
           }`}
         >
-          <Icon
-            className={`size-5 transition-transform duration-150 ${
-              active ? 'scale-105' : ''
-            }`}
-            strokeWidth={active ? 2.25 : 1.75}
-          />
+          <Icon className="size-[18px]" strokeWidth={active ? 2.2 : 1.8} />
         </span>
-        <span className="max-w-full truncate px-0.5 text-[10px] font-semibold leading-none tracking-wide">
+        <span className="max-w-full truncate text-[10px] leading-none font-medium">
           {displayLabel}
         </span>
       </Link>
@@ -58,18 +53,17 @@ export const NavButton = ({
     <Link
       href={href}
       aria-current={active ? 'page' : undefined}
-      className={`group relative flex w-full cursor-pointer items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition duration-200 active:scale-[0.96] ${
+      className={`group flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-[13px] font-medium transition-colors ${
         active
-          ? 'bg-primary text-primary-foreground'
-          : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'
+          ? 'bg-secondary text-foreground'
+          : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
       }`}
     >
       <Icon
-        className={`size-4.5 shrink-0 transition-transform duration-200 ${
-          active ? 'scale-105' : 'group-hover:scale-110'
-        }`}
+        className={`size-4 shrink-0 ${active ? 'text-primary' : 'text-faint group-hover:text-muted-foreground'}`}
+        strokeWidth={1.9}
       />
-      <span>{displayLabel}</span>
+      <span className="truncate">{displayLabel}</span>
     </Link>
   );
 };

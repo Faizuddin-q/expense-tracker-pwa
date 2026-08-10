@@ -1,4 +1,5 @@
-import { Check, IndianRupee } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { Brand } from '@/components/Brand';
 import { formatIndianNumber, parseRawNumber } from '@/lib/utils';
 
 interface IncomeSetupProps {
@@ -16,54 +17,55 @@ export const IncomeSetup = ({
 }: IncomeSetupProps) => {
   return (
     <main className="grid min-h-screen place-items-center bg-background px-5 py-10">
-      <section className="w-full max-w-md rounded-3xl bg-card p-8 shadow-sm ring-1 ring-border sm:p-10">
-        <div className="grid size-11 place-items-center rounded-2xl bg-primary text-primary-foreground">
-          <IndianRupee className="size-5" />
-        </div>
-        <div className="mt-8">
-          <p className="text-xs font-semibold tracking-wider text-primary uppercase">
-            One-time setup
-          </p>
-          <h1 className="mt-2.5 text-3xl font-bold tracking-tight text-balance text-foreground">
-            What is your monthly income?
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            We&apos;ll use this to make your spending picture useful. You
-            won&apos;t be asked again on another device.
-          </p>
-          <label className="mt-8 flex flex-col gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-            Monthly income
-            <div className="flex h-12 items-center rounded-xl border border-input bg-background px-4 focus-within:ring-2 focus-within:ring-ring">
-              <span className="text-sm font-semibold text-muted-foreground">
-                ₹
-              </span>
-              <input
-                autoFocus
-                inputMode="decimal"
-                value={formatIndianNumber(value)}
-                onChange={(e) =>
-                  setValue(formatIndianNumber(parseRawNumber(e.target.value)))
-                }
-                onKeyDown={(e) => {
-                  if (
-                    e.key === 'Enter' &&
-                    !e.nativeEvent.isComposing &&
-                    e.keyCode !== 229
-                  )
-                    onSave();
-                }}
-                className="font-mono-numbers w-full bg-transparent px-2 text-sm font-semibold text-foreground outline-none"
-              />
-            </div>
+      <section className="w-full max-w-[380px]">
+        <Brand />
+
+        <h1 className="mt-8 text-[22px] leading-tight font-semibold tracking-tight text-foreground">
+          Monthly income
+        </h1>
+        <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+          Sets the baseline your spending is measured against. You can change it
+          later in Settings, and you won&apos;t be asked again on another
+          device.
+        </p>
+
+        <div className="mt-7 rounded-xl border border-border bg-card p-4">
+          <label htmlFor="income" className="label mb-1.5 block">
+            Amount
           </label>
+          <div className="field-shell flex h-9 items-center rounded-lg border border-border bg-background px-2.5">
+            <span className="font-mono-numbers text-[13px] text-faint">₹</span>
+            <input
+              id="income"
+              autoFocus
+              inputMode="decimal"
+              value={formatIndianNumber(value)}
+              onChange={(e) =>
+                setValue(formatIndianNumber(parseRawNumber(e.target.value)))
+              }
+              onKeyDown={(e) => {
+                if (
+                  e.key === 'Enter' &&
+                  !e.nativeEvent.isComposing &&
+                  e.keyCode !== 229
+                )
+                  onSave();
+              }}
+              placeholder="50,000"
+              className="font-mono-numbers w-full min-w-0 bg-transparent px-1.5 text-[13px] text-foreground outline-none placeholder:text-faint"
+            />
+          </div>
+
           {error && (
-            <p className="mt-3 text-xs font-medium text-destructive">{error}</p>
+            <p className="mt-2 text-[12px] text-destructive">{error}</p>
           )}
+
           <button
             onClick={onSave}
-            className="mt-6 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 active:scale-[0.98]"
+            className="mt-3 flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-primary text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80"
           >
-            Save income <Check className="size-4" />
+            Continue
+            <ArrowRight className="size-3.5" strokeWidth={2.2} />
           </button>
         </div>
       </section>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Check, Hand, Home, Smartphone, Sparkles, X } from 'lucide-react';
+import { Check, Home, Smartphone, X } from 'lucide-react';
 import {
   getPwaPlatform,
   isPwaInstalled,
@@ -100,110 +100,116 @@ export const BackTapSetupDialog = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-foreground/30 p-0 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in sm:items-center sm:p-5">
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-background/70 p-0 backdrop-blur-sm duration-150 animate-in fade-in sm:items-center sm:p-5">
+      <button
+        type="button"
+        aria-label="Close"
+        className="absolute inset-0 cursor-default"
+        onClick={onClose}
+      />
+
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="back-tap-guide-title"
-        className="w-full max-w-md rounded-t-3xl bg-card p-5 shadow-2xl ring-1 ring-border duration-200 ease-[var(--ease-drawer)] animate-in slide-in-from-bottom-5 sm:rounded-3xl sm:p-7 sm:zoom-in-95"
+        className="relative z-10 flex max-h-[88vh] w-full max-w-md flex-col rounded-t-xl border border-border bg-card duration-200 ease-[var(--ease-drawer)] animate-in slide-in-from-bottom-4 sm:rounded-xl sm:zoom-in-[0.98] sm:slide-in-from-bottom-0"
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary/15 text-primary">
-              <Hand className="size-5" />
-            </div>
-            <div>
-              <h2
-                id="back-tap-guide-title"
-                className="text-base font-bold tracking-tight text-foreground sm:text-lg"
-              >
-                {title}
-              </h2>
-              <p className="mt-0.5 text-xs font-medium text-muted-foreground">
-                Couldn’t open the system switch automatically — follow these
-                steps once.
-              </p>
-            </div>
-          </div>
+        <div className="flex h-11 shrink-0 items-center justify-between border-b border-border px-4">
+          <h2
+            id="back-tap-guide-title"
+            className="text-[13px] font-semibold text-foreground"
+          >
+            {title}
+          </h2>
           <button
             type="button"
             aria-label="Close"
             onClick={onClose}
-            className="cursor-pointer rounded-xl p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground active:scale-95"
+            className="grid size-6 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-secondary hover:text-foreground"
           >
-            <X className="size-4" />
+            <X className="size-3.5" strokeWidth={2} />
           </button>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          <span
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold ${
-              installed
-                ? 'bg-primary/15 text-primary'
-                : 'bg-muted text-muted-foreground'
-            }`}
-          >
-            {installed ? (
-              <Check className="size-3" />
-            ) : (
-              <Home className="size-3" />
-            )}
-            {installed ? 'On home screen' : 'Not installed yet'}
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
-            <Smartphone className="size-3" />
-            {platform === 'ios'
-              ? 'iPhone'
-              : platform === 'android'
-                ? 'Android'
-                : 'Desktop'}
-          </span>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex items-center gap-1.5 rounded border border-border px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+              <Smartphone className="size-3" strokeWidth={2} />
+              {platform === 'ios'
+                ? 'iPhone'
+                : platform === 'android'
+                  ? 'Android'
+                  : 'Desktop'}
+            </span>
+            <span
+              className={`inline-flex items-center gap-1.5 rounded border px-1.5 py-0.5 text-[11px] font-medium ${
+                installed
+                  ? 'border-positive/30 text-positive'
+                  : 'border-border text-muted-foreground'
+              }`}
+            >
+              {installed ? (
+                <Check className="size-3" strokeWidth={2.4} />
+              ) : (
+                <Home className="size-3" strokeWidth={2} />
+              )}
+              {installed ? 'Installed' : 'Not installed'}
+            </span>
+          </div>
+
+          <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
+            The system switch couldn&apos;t be opened automatically. Follow
+            these steps once.
+          </p>
+
+          {!installed && deferredInstall && (
+            <button
+              type="button"
+              disabled={installing}
+              onClick={() => void handleInstall()}
+              className="mt-3 h-9 w-full cursor-pointer rounded-lg bg-primary text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-50"
+            >
+              {installing ? 'Installing…' : 'Install Pocket'}
+            </button>
+          )}
+
+          {!installed && platform === 'ios' && !deferredInstall && (
+            <p className="mt-3 rounded-lg border border-border bg-background px-3 py-2.5 text-[12px] leading-relaxed text-muted-foreground">
+              On iPhone: Safari →{' '}
+              <span className="font-medium text-foreground">Share</span> →{' '}
+              <span className="font-medium text-foreground">
+                Add to Home Screen
+              </span>
+              .
+            </p>
+          )}
+
+          <ol className="mt-4 space-y-0">
+            {steps.map((step, i) => (
+              <li
+                key={step}
+                className="flex gap-3 border-t border-border py-2.5 first:border-t-0 first:pt-0"
+              >
+                <span className="font-mono-numbers w-4 shrink-0 text-[12px] text-faint">
+                  {i + 1}
+                </span>
+                <p className="text-[12px] leading-relaxed text-foreground">
+                  {step}
+                </p>
+              </li>
+            ))}
+          </ol>
         </div>
 
-        {!installed && deferredInstall && (
+        <div className="shrink-0 border-t border-border px-4 py-3">
           <button
             type="button"
-            disabled={installing}
-            onClick={() => void handleInstall()}
-            className="mt-4 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
+            onClick={onClose}
+            className="h-9 w-full cursor-pointer rounded-lg bg-primary text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80"
           >
-            <Sparkles className="size-4" />
-            {installing ? 'Installing…' : 'Install Pocket'}
+            Done
           </button>
-        )}
-
-        {!installed && platform === 'ios' && !deferredInstall && (
-          <p className="mt-4 rounded-xl border border-border/80 bg-background/60 px-3.5 py-3 text-xs font-medium leading-relaxed text-muted-foreground">
-            On iPhone: Safari →{' '}
-            <span className="font-bold text-foreground">Share</span> →{' '}
-            <span className="font-bold text-foreground">Add to Home Screen</span>
-            .
-          </p>
-        )}
-
-        <ol className="mt-4 max-h-[50vh] space-y-2.5 overflow-y-auto pr-0.5">
-          {steps.map((step, i) => (
-            <li
-              key={step}
-              className="flex gap-3 rounded-2xl border border-border/70 bg-background/50 px-3.5 py-3"
-            >
-              <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-foreground text-[11px] font-extrabold text-background">
-                {i + 1}
-              </span>
-              <p className="text-xs font-medium leading-relaxed text-foreground sm:text-sm">
-                {step}
-              </p>
-            </li>
-          ))}
-        </ol>
-
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-5 h-11 w-full cursor-pointer rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98] sm:text-sm"
-        >
-          Got it
-        </button>
+        </div>
       </div>
     </div>
   );

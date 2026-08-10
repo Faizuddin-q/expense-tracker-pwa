@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400..800;1,400..800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
@@ -16,14 +16,17 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-faint: var(--faint);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-positive: var(--positive);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
   /* Friendly, conventional radius scale, dont touch radius i like them like this only. */
   --radius-xs: 2px;
   --radius-sm: 3px;
@@ -38,30 +41,38 @@
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   /* Applies to every bare `transition`/`transition-*` utility app-wide */
   --default-transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+  --default-transition-duration: 150ms;
 }
 
-/* Clean modern SaaS: neutral surfaces, one consistent accent color in both themes. */
+/*
+  Near-monochrome chrome. Color is reserved for encoding data — category
+  identity, over/under budget, the single primary action. Nothing is
+  colored for decoration.
+*/
 
 :root {
   color-scheme: dark;
 
-  --background: oklch(0.15 0.006 250);
-  --foreground: oklch(0.96 0.003 250);
-  --card: oklch(0.19 0.007 250);
-  --card-foreground: oklch(0.96 0.003 250);
-  --primary: oklch(0.64 0.19 258);
-  --primary-foreground: oklch(0.99 0.002 250);
-  --secondary: oklch(0.24 0.008 250);
-  --secondary-foreground: oklch(0.92 0.004 250);
-  --muted: oklch(0.22 0.007 250);
-  --muted-foreground: oklch(0.63 0.01 250);
-  --accent: oklch(0.26 0.035 258);
-  --accent-foreground: oklch(0.88 0.02 258);
-  --destructive: oklch(0.62 0.19 25);
-  --border: oklch(0.28 0.008 250);
-  --input: oklch(0.28 0.008 250);
-  --ring: oklch(0.64 0.19 258);
-  --radius: 10px;
+  --background: oklch(0.145 0.004 265);
+  --foreground: oklch(0.965 0.002 265);
+  --card: oklch(0.178 0.005 265);
+  --card-foreground: oklch(0.965 0.002 265);
+  --primary: oklch(0.62 0.16 255);
+  --primary-foreground: oklch(0.99 0.002 265);
+  --secondary: oklch(0.225 0.006 265);
+  --secondary-foreground: oklch(0.93 0.003 265);
+  --muted: oklch(0.215 0.006 265);
+  --muted-foreground: oklch(0.66 0.008 265);
+  --faint: oklch(0.52 0.008 265);
+  --accent: oklch(0.245 0.02 255);
+  --accent-foreground: oklch(0.9 0.02 255);
+  --destructive: oklch(0.645 0.17 25);
+  --positive: oklch(0.7 0.13 158);
+  --border: oklch(0.255 0.006 265);
+  --border-strong: oklch(0.32 0.007 265);
+  --input: oklch(0.275 0.006 265);
+  --ring: oklch(0.62 0.16 255);
+  --radius: 6px;
 
   /* iOS-style drawer/sheet curve, for bottom-sheet dialogs */
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
@@ -70,22 +81,25 @@
 :root.light,
 html.light {
   color-scheme: light;
-  --background: oklch(0.985 0.002 250);
-  --foreground: oklch(0.2 0.01 250);
+  --background: oklch(0.988 0.001 265);
+  --foreground: oklch(0.185 0.008 265);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.01 250);
-  --primary: oklch(0.56 0.2 258);
-  --primary-foreground: oklch(0.99 0.002 250);
-  --secondary: oklch(0.96 0.004 250);
-  --secondary-foreground: oklch(0.28 0.01 250);
-  --muted: oklch(0.96 0.004 250);
-  --muted-foreground: oklch(0.5 0.012 250);
-  --accent: oklch(0.94 0.03 258);
-  --accent-foreground: oklch(0.4 0.1 258);
-  --destructive: oklch(0.58 0.21 25);
-  --border: oklch(0.9 0.005 250);
-  --input: oklch(0.9 0.005 250);
-  --ring: oklch(0.56 0.2 258);
+  --card-foreground: oklch(0.185 0.008 265);
+  --primary: oklch(0.53 0.17 255);
+  --primary-foreground: oklch(0.99 0.002 265);
+  --secondary: oklch(0.965 0.003 265);
+  --secondary-foreground: oklch(0.26 0.008 265);
+  --muted: oklch(0.968 0.003 265);
+  --muted-foreground: oklch(0.485 0.01 265);
+  --faint: oklch(0.62 0.01 265);
+  --accent: oklch(0.955 0.018 255);
+  --accent-foreground: oklch(0.4 0.11 255);
+  --destructive: oklch(0.56 0.19 25);
+  --positive: oklch(0.55 0.13 158);
+  --border: oklch(0.915 0.004 265);
+  --border-strong: oklch(0.855 0.005 265);
+  --input: oklch(0.9 0.004 265);
+  --ring: oklch(0.53 0.17 255);
 }
 
 * {
@@ -94,11 +108,8 @@ html.light {
 
 html {
   overflow-x: hidden;
-  font-family:
-    'Plus Jakarta Sans',
-    system-ui,
-    -apple-system,
-    sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -109,11 +120,9 @@ body {
   max-width: 100vw;
   background-color: var(--background);
   color: var(--foreground);
-  font-family:
-    'Plus Jakarta Sans',
-    system-ui,
-    -apple-system,
-    sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 button,
@@ -123,16 +132,35 @@ textarea {
   font: inherit;
 }
 
-/* Tabular numerals for monetary figures */
-.font-mono-numbers {
-  font-family: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+/* Every monetary figure aligns in a column and never reflows on digit change */
+.font-mono-numbers,
+.tnum {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* Section label — the one place small-caps tracking is earned */
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/* Keeps a sticky table header opaque while rows scroll under it */
+.sticky-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--card);
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -140,10 +168,93 @@ textarea {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
+  background: var(--border-strong);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 99px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--muted-foreground);
+  background: var(--faint);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+/* One consistent, visible focus ring for keyboard users on buttons/links */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/*
+  Form controls use these utilities instead of the generic outline —
+  a soft ring + ring-colored border reads clearly on bordered fields.
+*/
+.field {
+  outline: none;
+  transition:
+    border-color 150ms var(--ease-out),
+    box-shadow 150ms var(--ease-out);
+}
+.field:focus,
+.field:focus-visible {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 28%, transparent);
+}
+
+/* Prefixed / icon shells: the wrapper owns the focus ring */
+.field-shell {
+  transition:
+    border-color 150ms var(--ease-out),
+    box-shadow 150ms var(--ease-out);
+}
+.field-shell:focus-within {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 28%, transparent);
+}
+.field-shell :is(input, textarea, select):focus,
+.field-shell :is(input, textarea, select):focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Borderless composer fields (home amount / note) */
+.field-plain {
+  outline: none;
+  border-radius: var(--radius-md);
+  transition:
+    background-color 150ms var(--ease-out),
+    box-shadow 150ms var(--ease-out);
+}
+.field-plain:focus,
+.field-plain:focus-visible {
+  outline: none;
+  background-color: color-mix(in oklch, var(--ring) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--ring) 50%, transparent);
+}
+
+/* Home category pills — border tinted by each category's color */
+.cat-pill {
+  border-color: color-mix(in srgb, var(--cat-color) 55%, transparent) !important;
+  transition:
+    border-color 150ms var(--ease-out),
+    background-color 150ms var(--ease-out);
+}
+.cat-pill:hover {
+  border-color: color-mix(in srgb, var(--cat-color) 85%, transparent) !important;
+  background-color: color-mix(in srgb, var(--cat-color) 12%, transparent);
+}
+.cat-pill:active {
+  background-color: color-mix(in srgb, var(--cat-color) 16%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

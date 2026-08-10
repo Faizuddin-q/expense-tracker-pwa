@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Category, CategoryId, Expense } from '@/types/expense';
 import { builtInCategories, quickRelogItems } from '@/lib/constants';
-import { getCategoryColor } from '@/lib/utils';
 import { useApp } from '@/lib/app-context';
 import { Money } from '@/components/Money';
+import { CategoryIcon } from '@/components/CategoryIcon';
 import { ExpenseRow } from '@/components/ExpenseRow';
 import { ExpenseEditDialog } from '@/components/ExpenseEditDialog';
 import { toast } from '@/components/ToastHost';
+import { getCategoryColor, getCategoryIcon } from '@/lib/utils';
 
 interface HomeProps {
   amount: string;
@@ -56,26 +57,29 @@ export const Home = ({
     (s: number, e: Expense) => s + e.amount,
     0
   );
+  const hasAmount = Number(amount.replace(/,/g, '')) > 0;
 
   return (
-    <section className="mx-auto max-w-5xl">
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
-        <div>
-          {/* Quick-add hero card */}
-          <div className="rounded-2xl border border-border/90 bg-card p-5 shadow-xs sm:rounded-3xl sm:p-7">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase sm:text-xs">
-                Log new expense
+    <section className="mx-auto max-w-6xl">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
+        <div className="min-w-0">
+          {/* Composer */}
+          <div
+            className={`rounded-xl border bg-card ${
+              hasAmount ? 'border-primary/40' : 'border-border'
+            }`}
+          >
+            <div className="field-shell relative z-0 flex items-baseline gap-2 rounded-t-[calc(0.75rem-1px)] border-0 border-b border-border px-4 py-4 focus-within:z-10">
+              <span
+                className={`font-mono-numbers text-2xl font-medium ${
+                  hasAmount ? 'text-primary' : 'text-faint'
+                }`}
+              >
+                ₹
               </span>
-              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary ring-1 ring-primary/20 sm:px-3 sm:py-1 sm:text-[11px]">
-                Quick entry
-              </span>
-            </div>
-
-            <div className="mt-3.5 flex items-center gap-2 sm:mt-4">
               {hideAmounts ? (
-                <p className="font-mono-numbers w-full text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl md:text-6xl">
-                  ₹ ••••
+                <p className="font-mono-numbers text-3xl font-semibold tracking-tight text-foreground">
+                  ••••
                 </p>
               ) : (
                 <input
@@ -83,109 +87,113 @@ export const Home = ({
                   inputMode="decimal"
                   value={amount}
                   onChange={(e) => parseAmount(e.target.value)}
-                  placeholder="₹ 0"
-                  className="font-mono-numbers w-full truncate bg-transparent text-4xl font-extrabold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/30 sm:text-5xl md:text-6xl"
+                  placeholder="0"
+                  className="font-mono-numbers w-full min-w-0 bg-transparent px-1 py-0.5 text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-faint/50"
                 />
-              )}
-              {hideAmounts && (
-                <p className="mt-2 text-xs font-medium text-muted-foreground">
-                  Amounts hidden — turn off Hide amounts in Settings to show
-                  &amp; log.
-                </p>
               )}
             </div>
 
-            <div className="mt-4 pt-1 sm:mt-5 sm:pt-2">
+            <div className="field-shell relative z-0 rounded-b-[calc(0.75rem-1px)] border-0 px-4 py-3 focus-within:z-10">
               <input
                 aria-label="Note"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="What was it for? (optional note)"
-                className="w-full rounded-xl border border-border/80 bg-background px-3.5 py-2.5 text-xs font-semibold text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary/60 focus:ring-2 focus:ring-primary/20 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm"
+                placeholder="Add a note (optional)"
+                className="w-full bg-transparent px-1 py-0.5 text-[13px] text-foreground outline-none placeholder:text-faint"
               />
             </div>
+
+            {hideAmounts && (
+              <p className="border-t border-border px-4 py-2.5 text-[12px] text-muted-foreground">
+                Amounts are hidden. Turn off Hide amounts in Settings to log.
+              </p>
+            )}
           </div>
 
-          {/* Category Picker */}
-          <div className="mt-6 sm:mt-7">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <h2 className="text-xs font-bold tracking-tight text-foreground sm:text-sm">
-                  Select category
-                </h2>
-                <p className="text-[11px] text-muted-foreground sm:text-xs">
-                  Tap to record expense immediately
-                </p>
-              </div>
+          {/* Categories */}
+          <div className="mt-6">
+            <div className="mb-2.5 flex items-baseline justify-between">
+              <h2 className="label">Category</h2>
               <button
+                type="button"
                 onClick={onAddCategory}
-                className="flex cursor-pointer items-center gap-1 text-[11px] font-bold text-primary transition hover:underline sm:text-xs"
+                className="cursor-pointer text-[12px] font-medium text-primary transition-opacity hover:opacity-70"
               >
-                <Plus className="size-3 sm:size-3.5" /> Customize / Add
+                Manage
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-2.5 md:grid-cols-5">
-              {categories.map(({ id, label, tone, Icon }) => {
-                const IconComponent = Icon || Plus;
-                const color = getCategoryColor(tone);
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
+              {categories.map((cat) => {
+                const color = getCategoryColor(cat.tone);
+                const Icon = getCategoryIcon(cat);
                 return (
                   <button
-                    key={id}
-                    onClick={() => addExpense(id)}
-                    className="group flex cursor-pointer flex-col items-center gap-1.5 rounded-xl p-2.5 text-xs font-bold text-white shadow-xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:scale-[0.95] sm:gap-2 sm:rounded-2xl sm:p-3"
-                    style={{ backgroundColor: color }}
+                    key={cat.id}
+                    type="button"
+                    onClick={() => addExpense(cat.id)}
+                    style={
+                      {
+                        '--cat-color': color,
+                        borderColor:
+                          color.startsWith('#') && color.length === 7
+                            ? `${color}8F`
+                            : color,
+                      } as React.CSSProperties
+                    }
+                    className="cat-pill flex h-9 cursor-pointer items-center gap-2 rounded-lg border bg-card px-2.5 text-left"
                   >
-                    <div className="grid size-7 place-items-center rounded-lg bg-white/20 transition-transform duration-200 group-hover:scale-110 sm:size-8 sm:rounded-xl">
-                      <IconComponent className="size-4 text-white sm:size-5" />
-                    </div>
-                    <span className="max-w-full truncate text-[12px] sm:text-[12px]">
-                      {label}
+                    <CategoryIcon color={color} icon={Icon} size="xs" />
+                    <span className="truncate text-[13px] font-medium text-foreground">
+                      {cat.label}
                     </span>
                   </button>
                 );
               })}
 
-              {/* Add Custom Category Card */}
               <button
+                type="button"
                 onClick={onAddCategory}
-                className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-primary/40 bg-card p-2.5 text-xs font-bold text-primary transition duration-200 hover:border-primary hover:bg-primary/5 active:scale-[0.95] sm:rounded-2xl sm:p-3"
+                className="flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-2.5 text-left text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary"
               >
-                <div className="grid size-7 place-items-center rounded-lg bg-primary/10 sm:size-8 sm:rounded-xl">
-                  <Plus className="size-3.5 text-primary sm:size-4" />
-                </div>
-                <span className="text-[10px] sm:text-[11px]">Add Custom</span>
+                <Plus className="size-3.5 shrink-0" strokeWidth={2} />
+                <span className="truncate text-[13px] font-medium">New</span>
               </button>
             </div>
+            {hasAmount && (
+              <p className="mt-2 text-[12px] font-medium text-primary">
+                Pick a category to save this expense.
+              </p>
+            )}
           </div>
 
-          {/* Quick Re-log Items */}
-          <div className="mt-6 sm:mt-7">
-            <div className="mb-2.5 flex items-center justify-between">
-              <h2 className="text-xs font-bold tracking-tight text-foreground sm:text-sm">
-                Quick re-log
-              </h2>
-              <span className="text-[11px] font-medium text-muted-foreground sm:text-xs">
-                Frequent picks
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2 sm:gap-2.5">
+          {/* Quick re-log */}
+          <div className="mt-6">
+            <h2 className="label mb-2.5">Frequent</h2>
+            <div className="flex flex-wrap gap-1.5">
               {quickRelogItems.map((item) => {
-                const QuickIcon = item.Icon || Plus;
+                const cat =
+                  categories.find((c) => c.id === item.category) ??
+                  builtInCategories.find((c) => c.id === item.category);
+                const color = getCategoryColor(cat?.tone ?? 'gray');
+                const Icon = getCategoryIcon(cat ?? { iconName: 'plus' });
                 return (
                   <button
                     key={item.label}
+                    type="button"
                     onClick={() =>
                       addExpense(item.category, {
                         amount: item.amount,
                         note: item.label,
                       })
                     }
-                    className="flex cursor-pointer items-center gap-2 rounded-xl border border-border/80 bg-card px-3 py-2 text-[11px] font-bold transition duration-200 hover:border-primary/40 hover:bg-accent/40 active:scale-[0.97] sm:gap-2.5 sm:rounded-2xl sm:px-4 sm:py-2.5 sm:text-xs"
+                    className="flex h-8 cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-2.5 text-[12px] transition-colors hover:border-primary/50 hover:bg-primary/[0.06]"
                   >
-                    <QuickIcon className="size-3.5 shrink-0 text-primary sm:size-4" />
-                    <span>{item.label}</span>
-                    <span className="font-mono-numbers font-semibold text-muted-foreground">
+                    <CategoryIcon color={color} icon={Icon} size="xs" />
+                    <span className="font-medium text-foreground">
+                      {item.label}
+                    </span>
+                    <span className="font-mono-numbers text-muted-foreground">
                       <Money value={item.amount} />
                     </span>
                   </button>
@@ -195,58 +203,93 @@ export const Home = ({
           </div>
         </div>
 
-        {/* Right Column: activity feed */}
-        <div className="rounded-2xl border border-border/90 bg-card p-5 shadow-xs sm:rounded-3xl sm:p-7">
-          <div className="flex items-center justify-between border-b border-border/60 pb-4 sm:pb-5">
-            <div>
-              <p className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase sm:text-xs">
-                {showAll ? 'Total activity' : 'Spent today'}
-              </p>
-              <h2 className="font-mono-numbers mt-1 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-                <Money value={displayedTotal} />
-              </h2>
+        {/* Recent activity */}
+        <aside className="min-w-0">
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
+            <div className="flex items-center justify-between border-b border-border px-3 py-2 sm:px-4 sm:py-2.5">
+              <div className="inline-flex rounded-lg border border-border bg-background p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setShowAll(false)}
+                  className={`h-7 cursor-pointer rounded-md px-2.5 text-[12px] font-medium transition-colors ${
+                    !showAll
+                      ? 'bg-primary/12 text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAll(true)}
+                  className={`h-7 cursor-pointer rounded-md px-2.5 text-[12px] font-medium transition-colors ${
+                    showAll
+                      ? 'bg-primary/12 text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  All
+                </button>
+              </div>
+              <span className="font-mono-numbers text-[12px] text-muted-foreground">
+                <span
+                  className={
+                    displayed.length > 0 ? 'text-primary' : 'text-foreground'
+                  }
+                >
+                  {displayed.length}
+                </span>
+              </span>
             </div>
-            <button
-              onClick={() => setShowAll(!showAll)}
-              className="cursor-pointer rounded-full border border-border/80 bg-background px-3 py-1.5 text-[11px] font-bold text-foreground transition hover:bg-muted active:scale-[0.97] sm:px-3.5 sm:py-2 sm:text-xs"
-            >
-              {showAll ? 'Today only' : 'See all'}
-            </button>
-          </div>
 
-          <div className="mt-4 flex flex-col gap-2.5 sm:mt-5 sm:gap-3">
-            {displayed.slice(0, 6).map((expense: Expense) => (
-              <ExpenseRow
-                key={expense.id}
-                expense={expense}
-                remove={remove}
-                onEdit={hideAmounts ? undefined : setEditing}
-                categories={categories}
-              />
-            ))}
-            {!displayed.length && (
-              <div className="rounded-2xl border border-dashed border-border/80 p-7 text-center text-xs font-medium text-muted-foreground sm:p-9 sm:text-sm">
-                Your saved expenses will appear here.
+            <div className="px-3 sm:px-4">
+              {displayed.length ? (
+                <div className="divide-y divide-border">
+                  {displayed.slice(0, 8).map((expense: Expense) => (
+                    <ExpenseRow
+                      key={expense.id}
+                      expense={expense}
+                      remove={remove}
+                      onEdit={hideAmounts ? undefined : setEditing}
+                      categories={categories}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="py-8 text-center text-[13px] text-muted-foreground">
+                  No expenses yet.
+                </p>
+              )}
+            </div>
+
+            {displayed.length > 0 && (
+              <div className="flex items-baseline justify-between border-t border-primary/25 bg-primary/[0.07] px-3 py-2.5 sm:px-4">
+                <span className="text-[11px] font-semibold tracking-[0.04em] text-primary uppercase">
+                  Total
+                </span>
+                <span className="font-mono-numbers text-[14px] font-semibold tracking-tight text-foreground">
+                  <Money value={displayedTotal} precise />
+                </span>
               </div>
             )}
           </div>
 
-          {/* Undo confirmation */}
           {undo && (
-            <div className="mt-4 flex animate-in fade-in slide-in-from-bottom-2 items-center justify-between rounded-xl border border-border/60 bg-accent/80 px-4 py-3 text-xs font-semibold shadow-md duration-200 sm:rounded-2xl sm:px-4.5 sm:py-3.5 sm:text-sm">
-              <span className="text-foreground">Expense added.</span>
+            <div className="mt-2 flex items-center justify-between rounded-lg border border-primary/25 bg-primary/[0.06] px-3 py-2 text-[12px]">
+              <span className="text-muted-foreground">Expense added</span>
               <button
+                type="button"
                 onClick={() => {
                   remove(undo.id);
                   setUndo(null);
                 }}
-                className="cursor-pointer font-bold text-primary transition hover:underline active:scale-95"
+                className="cursor-pointer font-medium text-primary transition-opacity hover:opacity-70"
               >
                 Undo
               </button>
             </div>
           )}
-        </div>
+        </aside>
       </div>
 
       {editing && (
@@ -256,7 +299,10 @@ export const Home = ({
           onClose={() => setEditing(null)}
           onSave={(patch) => {
             if (patch.amount <= 0) {
-              toast.error('Invalid amount', 'Enter a valid amount greater than zero');
+              toast.error(
+                'Invalid amount',
+                'Enter a valid amount greater than zero'
+              );
               return;
             }
             updateExpense(editing.id, patch);
