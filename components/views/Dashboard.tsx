@@ -37,11 +37,13 @@ const Stat = ({
   children,
   tone,
   emphasize,
+  hint,
 }: {
   label: string;
   children: React.ReactNode;
   tone?: 'default' | 'positive' | 'destructive';
   emphasize?: boolean;
+  hint?: string;
 }) => (
   <div className="px-3 py-2.5 sm:px-4 sm:py-3">
     <p className="label">{label}</p>
@@ -58,6 +60,11 @@ const Stat = ({
     >
       {children}
     </p>
+    {hint && (
+      <p className="mt-0.5 text-[11px] font-medium text-muted-foreground">
+        {hint}
+      </p>
+    )}
   </div>
 );
 
@@ -202,6 +209,31 @@ export const Dashboard = ({
   const remaining = (target || 0) - activeSpend;
   const over = showTargets && remaining < 0;
 
+  const pctOf = (value: number, base: number) =>
+    base > 0 ? Math.round((Math.abs(value) / base) * 100) : null;
+
+  const vsTargets = (value: number) => {
+    if (!showTargets) return undefined;
+    const parts: string[] = [];
+    if (hasBudget) {
+      const p = pctOf(value, budget);
+      if (p != null) parts.push(`${p}% of budget`);
+    }
+    if (income > 0) {
+      const p = pctOf(value, income);
+      if (p != null) parts.push(`${p}% of salary`);
+    }
+    return parts.length ? parts.join(' · ') : undefined;
+  };
+
+  const budgetOfSalaryHint =
+    hasBudget && income > 0
+      ? `${pctOf(budget, income)}% of salary`
+      : undefined;
+
+  const spendOfSalaryPercent =
+    showTargets && income > 0 ? pctOf(activeSpend, income) : null;
+
   const dailyAverage = useMemo(() => {
     if (!filteredExpenses.length) return 0;
     const days = new Set(
@@ -321,19 +353,23 @@ export const Dashboard = ({
 
       {/* Stat strip */}
       <div className="mt-3 grid grid-cols-2 divide-x divide-y divide-border overflow-hidden rounded-xl border border-border bg-card sm:mt-4 sm:grid-cols-4 sm:divide-y-0">
-        <Stat label="Spent" emphasize={activeSpend > 0}>
+        <Stat label="Spent" emphasize={activeSpend > 0} hint={vsTargets(activeSpend)}>
           <Money value={activeSpend} />
         </Stat>
-        <Stat label={hasBudget ? 'Budget' : 'Income'}>
+        <Stat
+          label={hasBudget ? 'Budget' : 'Income'}
+          hint={budgetOfSalaryHint}
+        >
           {showTargets ? <Money value={target} /> : '—'}
         </Stat>
         <Stat
           label={over ? 'Over by' : 'Remaining'}
           tone={showTargets ? (over ? 'destructive' : 'positive') : 'default'}
+          hint={showTargets ? vsTargets(remaining) : undefined}
         >
           {showTargets ? <Money value={Math.abs(remaining)} /> : '—'}
         </Stat>
-        <Stat label="Daily avg">
+        <Stat label="Daily avg" hint={vsTargets(dailyAverage)}>
           <Money value={dailyAverage} />
         </Stat>
       </div>
@@ -345,16 +381,21 @@ export const Dashboard = ({
             over ? 'border-destructive/30' : 'border-border'
           }`}
         >
-          <div className="flex items-baseline justify-between">
+          <div className="flex items-baseline justify-between gap-2">
             <span className="label">
               {hasBudget ? 'Budget used' : 'Income used'}
             </span>
             <span
-              className={`font-mono-numbers text-[12px] font-medium ${
+              className={`font-mono-numbers shrink-0 text-[12px] font-medium ${
                 over ? 'text-destructive' : 'text-primary'
               }`}
             >
-              {targetPercent}%
+              {hasBudget
+                ? `${targetPercent}% of budget`
+                : `${targetPercent}% of salary`}
+              {hasBudget && spendOfSalaryPercent != null
+                ? ` · ${spendOfSalaryPercent}% of salary`
+                : ''}
             </span>
           </div>
           <Bar
