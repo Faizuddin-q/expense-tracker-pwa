@@ -37,13 +37,13 @@ const Stat = ({
   children,
   tone,
   emphasize,
-  hint,
+  meter,
 }: {
   label: string;
   children: React.ReactNode;
   tone?: 'default' | 'positive' | 'destructive';
   emphasize?: boolean;
-  hint?: string;
+  meter?: { value: number; color?: string; caption: string } | null;
 }) => (
   <div className="px-3 py-2.5 sm:px-4 sm:py-3">
     <p className="label">{label}</p>
@@ -60,11 +60,50 @@ const Stat = ({
     >
       {children}
     </p>
-    {hint && (
-      <p className="mt-0.5 text-[11px] font-medium text-muted-foreground">
-        {hint}
-      </p>
+    {meter && (
+      <div className="mt-2">
+        <Bar
+          value={meter.value}
+          color={meter.color}
+          className="h-1.5"
+        />
+        <p className="font-mono-numbers mt-1 text-[11px] text-muted-foreground">
+          {meter.caption}
+        </p>
+      </div>
     )}
+  </div>
+);
+
+/** Labeled % meter — used for spend vs budget / salary. */
+const PercentMeter = ({
+  label,
+  percent,
+  over,
+  detail,
+}: {
+  label: string;
+  percent: number;
+  over?: boolean;
+  detail: React.ReactNode;
+}) => (
+  <div className="min-w-0">
+    <div className="flex items-baseline justify-between gap-2">
+      <span className="label">{label}</span>
+      <span
+        className={`font-mono-numbers text-[18px] font-semibold tracking-tight ${
+          over ? 'text-destructive' : 'text-primary'
+        }`}
+      >
+        {percent}%
+      </span>
+    </div>
+    <Bar
+      value={percent}
+      className="mt-2 h-2"
+      color={over ? 'var(--destructive)' : 'var(--primary)'}
+    />
+    <p className="mt-1.5 text-[11px] text-muted-foreground">{detail}</p>
   </div>
 );
 
@@ -210,29 +249,16 @@ export const Dashboard = ({
   const over = showTargets && remaining < 0;
 
   const pctOf = (value: number, base: number) =>
-    base > 0 ? Math.round((Math.abs(value) / base) * 100) : null;
+    base > 0 ? Math.round((Math.abs(value) / base) * 100) : 0;
 
-  const vsTargets = (value: number) => {
-    if (!showTargets) return undefined;
-    const parts: string[] = [];
-    if (hasBudget) {
-      const p = pctOf(value, budget);
-      if (p != null) parts.push(`${p}% of budget`);
-    }
-    if (income > 0) {
-      const p = pctOf(value, income);
-      if (p != null) parts.push(`${p}% of salary`);
-    }
-    return parts.length ? parts.join(' · ') : undefined;
-  };
-
-  const budgetOfSalaryHint =
-    hasBudget && income > 0
-      ? `${pctOf(budget, income)}% of salary`
-      : undefined;
-
+  const spendOfBudgetPercent = hasBudget ? pctOf(activeSpend, budget) : 0;
   const spendOfSalaryPercent =
-    showTargets && income > 0 ? pctOf(activeSpend, income) : null;
+    showTargets && income > 0 ? pctOf(activeSpend, income) : 0;
+  const budgetOfSalaryPercent =
+    hasBudget && income > 0 ? pctOf(budget, income) : 0;
+  const remainOfTargetPercent = showTargets
+    ? pctOf(remaining, target || 1)
+    : 0;
 
   const dailyAverage = useMemo(() => {
     if (!filteredExpenses.length) return 0;
@@ -353,56 +379,128 @@ export const Dashboard = ({
 
       {/* Stat strip */}
       <div className="mt-3 grid grid-cols-2 divide-x divide-y divide-border overflow-hidden rounded-xl border border-border bg-card sm:mt-4 sm:grid-cols-4 sm:divide-y-0">
-        <Stat label="Spent" emphasize={activeSpend > 0} hint={vsTargets(activeSpend)}>
+        <Stat
+          label="Spent"
+          emphasize={activeSpend > 0}
+          meter={
+            showTargets && target > 0
+              ? {
+                  value: targetPercent,
+                  color: over ? 'var(--destructive)' : 'var(--primary)',
+                  caption: hasBudget
+                    ? `${spendOfBudgetPercent}% budget`
+                    : `${spendOfSalaryPercent}% salary`,
+                }
+              : null
+          }
+        >
           <Money value={activeSpend} />
         </Stat>
         <Stat
           label={hasBudget ? 'Budget' : 'Income'}
-          hint={budgetOfSalaryHint}
+          meter={
+            hasBudget && income > 0
+              ? {
+                  value: budgetOfSalaryPercent,
+                  caption: `${budgetOfSalaryPercent}% of salary`,
+                }
+              : null
+          }
         >
           {showTargets ? <Money value={target} /> : '—'}
         </Stat>
         <Stat
           label={over ? 'Over by' : 'Remaining'}
           tone={showTargets ? (over ? 'destructive' : 'positive') : 'default'}
-          hint={showTargets ? vsTargets(remaining) : undefined}
+          meter={
+            showTargets && target > 0
+              ? {
+                  value: remainOfTargetPercent,
+                  color: over ? 'var(--destructive)' : 'var(--positive)',
+                  caption: `${remainOfTargetPercent}% ${hasBudget ? 'budget' : 'salary'}`,
+                }
+              : null
+          }
         >
           {showTargets ? <Money value={Math.abs(remaining)} /> : '—'}
         </Stat>
-        <Stat label="Daily avg" hint={vsTargets(dailyAverage)}>
+        <Stat label="Daily avg">
           <Money value={dailyAverage} />
         </Stat>
       </div>
 
-      {/* Budget progress */}
-      {showTargets && (
+      {/* Spend vs budget / salary — visual meters */}
+      {showTargets && (hasBudget || income > 0) && (
         <div
-          className={`mt-3 rounded-xl border bg-card px-3 py-3 sm:px-4 ${
+          className={`mt-3 rounded-xl border bg-card px-3 py-3.5 sm:px-4 sm:py-4 ${
             over ? 'border-destructive/30' : 'border-border'
           }`}
         >
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="label">
-              {hasBudget ? 'Budget used' : 'Income used'}
-            </span>
-            <span
-              className={`font-mono-numbers shrink-0 text-[12px] font-medium ${
-                over ? 'text-destructive' : 'text-primary'
-              }`}
-            >
-              {hasBudget
-                ? `${targetPercent}% of budget`
-                : `${targetPercent}% of salary`}
-              {hasBudget && spendOfSalaryPercent != null
-                ? ` · ${spendOfSalaryPercent}% of salary`
-                : ''}
-            </span>
+          <div
+            className={`grid gap-4 ${
+              hasBudget && income > 0 ? 'sm:grid-cols-2' : ''
+            }`}
+          >
+            {hasBudget ? (
+              <PercentMeter
+                label="Of budget"
+                percent={spendOfBudgetPercent}
+                over={over}
+                detail={
+                  <>
+                    <Money value={activeSpend} /> of{' '}
+                    <Money value={budget} />
+                  </>
+                }
+              />
+            ) : (
+              <PercentMeter
+                label="Of salary"
+                percent={spendOfSalaryPercent}
+                over={over}
+                detail={
+                  <>
+                    <Money value={activeSpend} /> of{' '}
+                    <Money value={income} />
+                  </>
+                }
+              />
+            )}
+
+            {hasBudget && income > 0 && (
+              <PercentMeter
+                label="Of salary"
+                percent={spendOfSalaryPercent}
+                over={spendOfSalaryPercent > 100}
+                detail={
+                  <>
+                    <Money value={activeSpend} /> of{' '}
+                    <Money value={income} />
+                  </>
+                }
+              />
+            )}
           </div>
-          <Bar
-            value={targetPercent}
-            className="mt-2"
-            color={over ? 'var(--destructive)' : 'var(--primary)'}
-          />
+
+          {hasBudget && income > 0 && (
+            <div className="mt-4 border-t border-border pt-3.5">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="label">Budget vs salary</span>
+                <span className="font-mono-numbers text-[13px] font-semibold text-foreground">
+                  {budgetOfSalaryPercent}%
+                </span>
+              </div>
+              <Bar
+                value={budgetOfSalaryPercent}
+                className="mt-2 h-1.5"
+                color="var(--primary)"
+              />
+              <p className="mt-1.5 text-[11px] text-muted-foreground">
+                <Money value={budget} /> reserved from{' '}
+                <Money value={income} /> salary
+              </p>
+            </div>
+          )}
         </div>
       )}
 

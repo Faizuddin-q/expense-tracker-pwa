@@ -19,8 +19,8 @@ interface MonthSummary {
   label: string;
   total: number;
   count: number;
-  topCategory: (Category & { total: number }) | null;
-  byCategory: (Category & { total: number })[];
+  byCategory: (Category & { total: number; count: number })[];
+  topCategory: (Category & { total: number; count: number }) | null;
   targetPercent: number;
   remaining: number;
   isCurrent: boolean;
@@ -69,9 +69,11 @@ export const MonthlySummary = ({
         const total = list.reduce((sum, e) => sum + amountOf(e), 0);
 
         const totals = new Map<string, number>();
+        const counts = new Map<string, number>();
         list.forEach((e) => {
           const id = e.category || 'other';
           totals.set(id, (totals.get(id) ?? 0) + amountOf(e));
+          counts.set(id, (counts.get(id) ?? 0) + 1);
         });
 
         const byCategory = Array.from(totals.entries())
@@ -85,7 +87,11 @@ export const MonthlySummary = ({
                 tone: 'gray',
                 Icon: Plus,
               } satisfies Category);
-            return { ...meta, total: catTotal };
+            return {
+              ...meta,
+              total: catTotal,
+              count: counts.get(id) ?? 0,
+            };
           })
           .filter((c) => c.total > 0)
           .sort((a, b) => b.total - a.total);
@@ -251,7 +257,7 @@ export const MonthlySummary = ({
                                 key={c.id}
                                 className="flex items-center gap-3"
                               >
-                                <div className="flex w-28 min-w-0 shrink-0 items-center gap-2 sm:w-32">
+                                <div className="flex w-28 min-w-0 shrink-0 items-center gap-2 sm:w-36">
                                   <CategoryIcon
                                     color={color}
                                     icon={getCategoryIcon(c)}
@@ -259,6 +265,9 @@ export const MonthlySummary = ({
                                   />
                                   <span className="truncate text-[12px] font-medium text-foreground">
                                     {c.label}
+                                  </span>
+                                  <span className="font-mono-numbers shrink-0 text-[11px] text-primary">
+                                    {c.count}
                                   </span>
                                 </div>
                                 <Bar

@@ -77,20 +77,14 @@ export const Home = ({
               >
                 ₹
               </span>
-              {hideAmounts ? (
-                <p className="font-mono-numbers text-3xl font-semibold tracking-tight text-foreground">
-                  ••••
-                </p>
-              ) : (
-                <input
-                  aria-label="Amount"
-                  inputMode="decimal"
-                  value={amount}
-                  onChange={(e) => parseAmount(e.target.value)}
-                  placeholder="0"
-                  className="font-mono-numbers w-full min-w-0 bg-transparent px-1 py-0.5 text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-faint/50"
-                />
-              )}
+              <input
+                aria-label="Amount"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => parseAmount(e.target.value)}
+                placeholder="0"
+                className="font-mono-numbers w-full min-w-0 bg-transparent px-1 py-0.5 text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-faint/50"
+              />
             </div>
 
             <div className="field-shell relative z-0 rounded-b-[calc(0.75rem-1px)] border-0 px-4 py-3 focus-within:z-10">
@@ -102,12 +96,6 @@ export const Home = ({
                 className="w-full bg-transparent px-1 py-0.5 text-[13px] text-foreground outline-none placeholder:text-faint"
               />
             </div>
-
-            {hideAmounts && (
-              <p className="border-t border-border px-4 py-2.5 text-[12px] text-muted-foreground">
-                Amounts are hidden. Turn off Hide amounts in Settings to log.
-              </p>
-            )}
           </div>
 
           {/* Categories */}
