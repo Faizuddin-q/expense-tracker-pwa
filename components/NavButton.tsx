@@ -29,7 +29,7 @@ export const NavButton = ({
       <Link
         href={href}
         aria-current={active ? 'page' : undefined}
-        className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg py-1.5 transition-colors duration-150 active:scale-[0.96] ${
+        className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 py-1.5 transition-colors duration-150 active:scale-[0.96] ${
           active
             ? 'text-primary'
             : 'text-muted-foreground active:text-foreground'
@@ -58,9 +58,9 @@ export const NavButton = ({
     <Link
       href={href}
       aria-current={active ? 'page' : undefined}
-      className={`group relative flex w-full cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.96] ${
+      className={`group relative flex w-full cursor-pointer items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.96] ${
         active
-          ? 'bg-primary text-primary-foreground shadow-2xs'
+          ? 'bg-primary text-primary-foreground'
           : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'
       }`}
     >

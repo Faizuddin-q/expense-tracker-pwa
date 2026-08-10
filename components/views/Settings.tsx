@@ -52,7 +52,7 @@ export const Settings = ({
 }: SettingsProps) => {
   return (
     <section className="mx-auto max-w-3xl">
-      <div className="rounded-2xl border border-border/90 bg-card p-5 shadow-xs sm:rounded-3xl sm:p-8 md:p-9">
+      <div className="rounded-2xl border border-border/90 bg-card p-5 shadow-xs sm:p-8 md:p-9">
         <h2 className="text-base font-bold tracking-tight text-foreground sm:text-lg">
           Your money profile
         </h2>
@@ -69,7 +69,7 @@ export const Settings = ({
               onClick={() => setTheme('dark')}
               className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-3.5 text-xs font-bold transition-all active:scale-[0.97] sm:p-4 sm:text-sm ${
                 theme === 'dark'
-                  ? 'border-primary bg-primary/15 text-primary shadow-xs ring-1 ring-primary/40'
+                  ? 'border-primary bg-primary/15 text-primary'
                   : 'border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
@@ -79,7 +79,7 @@ export const Settings = ({
               onClick={() => setTheme('light')}
               className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-3.5 text-xs font-bold transition-all active:scale-[0.97] sm:p-4 sm:text-sm ${
                 theme === 'light'
-                  ? 'border-primary bg-primary/15 text-primary shadow-xs ring-1 ring-primary/40'
+                  ? 'border-primary bg-primary/15 text-primary'
                   : 'border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
@@ -108,7 +108,7 @@ export const Settings = ({
         <div className="mt-3.5 flex flex-wrap gap-2.5 sm:mt-4 sm:gap-3">
           <button
             onClick={() => sync()}
-            className="h-10.5 cursor-pointer rounded-xl bg-primary px-4.5 text-xs font-bold text-primary-foreground shadow-2xs transition-all hover:opacity-90 active:scale-[0.98] sm:h-11 sm:px-5 sm:text-sm"
+            className="h-10.5 cursor-pointer rounded-xl bg-primary px-4.5 text-xs font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98] sm:h-11 sm:px-5 sm:text-sm"
           >
             Sync data
           </button>
@@ -179,7 +179,7 @@ export const Settings = ({
             </div>
             <button
               onClick={onSaveIncome}
-              className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground shadow-2xs transition-all hover:opacity-90 active:scale-[0.98] sm:h-12 sm:text-sm"
+              className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98] sm:h-12 sm:text-sm"
             >
               <Check className="size-4" /> Save Income
             </button>
@@ -217,7 +217,7 @@ export const Settings = ({
             </div>
             <button
               onClick={onSaveBudget}
-              className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground shadow-2xs transition-all hover:opacity-90 active:scale-[0.98] sm:h-12 sm:text-sm"
+              className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98] sm:h-12 sm:text-sm"
             >
               <Check className="size-4" /> Save Budget
             </button>

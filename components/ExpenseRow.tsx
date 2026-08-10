@@ -22,20 +22,20 @@ export const ExpenseRow = ({
   const color = getCategoryColor(c.tone);
 
   return (
-    <div className="group flex items-center justify-between gap-3 rounded-2xl border border-border/80 bg-card p-3 transition-all duration-200 hover:border-primary/30 hover:bg-muted/20 sm:p-4">
+    <div className="group flex items-center justify-between gap-3 py-2.5 transition-colors duration-150 sm:py-3">
       <button
         type="button"
         onClick={() => onEdit?.(expense)}
         className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left"
       >
         <div
-          className="grid size-9 shrink-0 place-items-center rounded-xl transition-transform duration-200 group-hover:scale-105 sm:size-10.5"
+          className="grid size-8 shrink-0 place-items-center rounded-lg transition-transform duration-200 group-hover:scale-105 sm:size-9.5"
           style={{
-            backgroundColor: `${color}18`,
+            backgroundColor: `${color}1f`,
             color: color,
           }}
         >
-          <IconComponent className="size-4 sm:size-5" />
+          <IconComponent className="size-4 sm:size-4.5" />
         </div>
         <div className="min-w-0">
           <p className="truncate text-xs font-bold text-foreground sm:text-sm">
@@ -58,7 +58,7 @@ export const ExpenseRow = ({
           <button
             aria-label="Edit expense"
             onClick={() => onEdit(expense)}
-            className="cursor-pointer rounded-xl p-1.5 text-muted-foreground transition hover:bg-accent hover:text-primary active:scale-95 sm:opacity-0 sm:group-hover:opacity-100"
+            className="cursor-pointer rounded-lg p-1.5 text-muted-foreground transition hover:bg-accent hover:text-primary active:scale-95 sm:opacity-0 sm:group-hover:opacity-100"
           >
             <Pencil className="size-3.5 sm:size-4" />
           </button>
@@ -66,7 +66,7 @@ export const ExpenseRow = ({
         <button
           aria-label="Delete expense"
           onClick={() => remove(expense.id)}
-          className="cursor-pointer rounded-xl p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive active:scale-95 sm:opacity-0 sm:group-hover:opacity-100"
+          className="cursor-pointer rounded-lg p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive active:scale-95 sm:opacity-0 sm:group-hover:opacity-100"
         >
           <Trash2 className="size-3.5 sm:size-4" />
         </button>

@@ -82,83 +82,85 @@ export const getCategoryIcon = (category: Partial<Category>): LucideIcon => {
   return Plus;
 };
 
+// Chalk-stick palette — dustier, less saturated than screen-native brights,
+// Clean, modern tag-style palette — clear and legible on both light and dark surfaces.
 export const pastelPalette: string[] = [
-  '#059669', // Mint Green
-  '#0d9488', // Deep Teal
-  '#0284c7', // Cyan Aqua
-  '#38bdf8', // Sky Blue
-  '#2563eb', // Electric Blue
-  '#4338ca', // Royal Indigo
-  '#1e3a8a', // Midnight Navy
-  '#a855f7', // Lavender
-  '#7e22ce', // Royal Purple
-  '#581c87', // Plum Violet
-  '#c026d3', // Electric Magenta
-  '#db2777', // Hot Pink
-  '#dc2626', // Crimson Red
-  '#f97316', // Coral Orange
-  '#ea580c', // Terracotta
-  '#d97706', // Sunset Gold
-  '#65a30d', // Lime Green
-  '#15803d', // Forest Sage
-  '#92400e', // Warm Copper
-  '#475569', // Cool Slate
+  '#10B981', // Mint
+  '#0D9488', // Teal
+  '#06B6D4', // Cyan
+  '#0EA5E9', // Sky
+  '#3B82F6', // Blue
+  '#6366F1', // Indigo
+  '#1D4ED8', // Navy
+  '#8B5CF6', // Lavender
+  '#A855F7', // Purple
+  '#7C3AED', // Plum
+  '#D946EF', // Magenta
+  '#EC4899', // Pink
+  '#F43F5E', // Rose
+  '#F97316', // Coral
+  '#EA580C', // Apricot
+  '#D97706', // Amber
+  '#84CC16', // Lime
+  '#16A34A', // Sage
+  '#B45309', // Bronze
+  '#64748B', // Gray
 ];
 
 export const categoryColorMap: Record<string, string> = {
-  mint: '#059669',
-  teal: '#0d9488',
-  cyan: '#0284c7',
-  sky: '#38bdf8',
-  blue: '#2563eb',
-  indigo: '#4338ca',
-  navy: '#1e3a8a',
-  lavender: '#a855f7',
-  purple: '#7e22ce',
-  plum: '#581c87',
-  magenta: '#c026d3',
-  pink: '#db2777',
-  rose: '#dc2626',
-  coral: '#f97316',
-  apricot: '#ea580c',
-  amber: '#d97706',
-  lime: '#65a30d',
-  sage: '#15803d',
-  bronze: '#92400e',
-  gray: '#475569',
+  mint: '#10B981',
+  teal: '#0D9488',
+  cyan: '#06B6D4',
+  sky: '#0EA5E9',
+  blue: '#3B82F6',
+  indigo: '#6366F1',
+  navy: '#1D4ED8',
+  lavender: '#8B5CF6',
+  purple: '#A855F7',
+  plum: '#7C3AED',
+  magenta: '#D946EF',
+  pink: '#EC4899',
+  rose: '#F43F5E',
+  coral: '#F97316',
+  apricot: '#EA580C',
+  amber: '#D97706',
+  lime: '#84CC16',
+  sage: '#16A34A',
+  bronze: '#B45309',
+  gray: '#64748B',
   // Backward compatibility alias keys for built-in categories
-  food: '#059669',
-  transport: '#0284c7',
-  shopping: '#a855f7',
-  bills: '#f97316',
-  health: '#db2777',
-  butter: '#d97706',
-  peach: '#ea580c',
-  blush: '#db2777',
-  violet: '#7e22ce',
+  food: '#F97316',
+  transport: '#0EA5E9',
+  shopping: '#8B5CF6',
+  bills: '#EA580C',
+  health: '#EC4899',
+  butter: '#84CC16',
+  peach: '#EA580C',
+  blush: '#EC4899',
+  violet: '#A855F7',
 };
 
 export const categoryColorOptions = [
-  { key: 'mint', color: '#059669', label: 'Mint Green' },
-  { key: 'teal', color: '#0d9488', label: 'Deep Teal' },
-  { key: 'cyan', color: '#0284c7', label: 'Cyan Aqua' },
-  { key: 'sky', color: '#38bdf8', label: 'Sky Blue' },
-  { key: 'blue', color: '#2563eb', label: 'Electric Blue' },
-  { key: 'indigo', color: '#4338ca', label: 'Royal Indigo' },
-  { key: 'navy', color: '#1e3a8a', label: 'Midnight Navy' },
-  { key: 'lavender', color: '#a855f7', label: 'Lavender' },
-  { key: 'purple', color: '#7e22ce', label: 'Royal Purple' },
-  { key: 'plum', color: '#581c87', label: 'Plum Violet' },
-  { key: 'magenta', color: '#c026d3', label: 'Electric Magenta' },
-  { key: 'pink', color: '#db2777', label: 'Hot Pink' },
-  { key: 'rose', color: '#dc2626', label: 'Crimson Red' },
-  { key: 'coral', color: '#f97316', label: 'Coral Orange' },
-  { key: 'apricot', color: '#ea580c', label: 'Terracotta' },
-  { key: 'amber', color: '#d97706', label: 'Sunset Gold' },
-  { key: 'lime', color: '#65a30d', label: 'Lime Green' },
-  { key: 'sage', color: '#15803d', label: 'Forest Sage' },
-  { key: 'bronze', color: '#92400e', label: 'Warm Copper' },
-  { key: 'gray', color: '#475569', label: 'Cool Slate' },
+  { key: 'mint', color: '#10B981', label: 'Mint' },
+  { key: 'teal', color: '#0D9488', label: 'Teal' },
+  { key: 'cyan', color: '#06B6D4', label: 'Cyan' },
+  { key: 'sky', color: '#0EA5E9', label: 'Sky' },
+  { key: 'blue', color: '#3B82F6', label: 'Blue' },
+  { key: 'indigo', color: '#6366F1', label: 'Indigo' },
+  { key: 'navy', color: '#1D4ED8', label: 'Navy' },
+  { key: 'lavender', color: '#8B5CF6', label: 'Lavender' },
+  { key: 'purple', color: '#A855F7', label: 'Purple' },
+  { key: 'plum', color: '#7C3AED', label: 'Plum' },
+  { key: 'magenta', color: '#D946EF', label: 'Magenta' },
+  { key: 'pink', color: '#EC4899', label: 'Pink' },
+  { key: 'rose', color: '#F43F5E', label: 'Rose' },
+  { key: 'coral', color: '#F97316', label: 'Coral' },
+  { key: 'apricot', color: '#EA580C', label: 'Apricot' },
+  { key: 'amber', color: '#D97706', label: 'Amber' },
+  { key: 'lime', color: '#84CC16', label: 'Lime' },
+  { key: 'sage', color: '#16A34A', label: 'Sage' },
+  { key: 'bronze', color: '#B45309', label: 'Bronze' },
+  { key: 'gray', color: '#64748B', label: 'Gray' },
 ];
 
 export const getCategoryColor = (tone: string): string => {
@@ -187,46 +189,51 @@ export const categoryFor = (
   };
 };
 
-/** Rebuild custom categories for expense IDs that no longer have a profile entry. */
-export const recoverOrphanCategories = (
-  expenses: Expense[],
-  existingCustom: Category[] = []
-): { categories: Category[]; added: Category[] } => {
-  const known = new Set([
-    ...builtInCategories.map((c) => c.id),
-    ...existingCustom.map((c) => c.id),
-  ]);
-  const orphanIds = [
-    ...new Set(
-      expenses
-        .map((e) => e.category)
-        .filter((id): id is string => Boolean(id) && !known.has(id))
-    ),
-  ];
-  if (!orphanIds.length) {
-    return { categories: existingCustom, added: [] };
-  }
-
-  let n = 1;
-  const added = orphanIds.map((id) => {
-    const noteHint = expenses
-      .filter((e) => e.category === id && e.note?.trim())
-      .map((e) => e.note!.trim())[0];
-    const label = noteHint
-      ? `Recovered · ${noteHint.slice(0, 28)}`
-      : `Recovered category ${n++}`;
-    return {
-      id,
-      label,
-      tone: 'gray',
-      iconName: 'plus',
-      custom: true,
-      Icon: getCategoryIcon({ iconName: 'plus' }),
-    } satisfies Category;
-  });
-
-  return { categories: [...existingCustom, ...added], added };
-};
+// Disabled: was fabricating "Recovered category N" / "Recovered · <note>"
+// placeholder categories for expense category IDs that didn't match any
+// known category. Turned off because it was surfacing spurious "Recovered"
+// categories/expenses in the UI. Kept here in case the orphan-recovery
+// behavior needs to be revisited.
+// /** Rebuild custom categories for expense IDs that no longer have a profile entry. */
+// export const recoverOrphanCategories = (
+//   expenses: Expense[],
+//   existingCustom: Category[] = []
+// ): { categories: Category[]; added: Category[] } => {
+//   const known = new Set([
+//     ...builtInCategories.map((c) => c.id),
+//     ...existingCustom.map((c) => c.id),
+//   ]);
+//   const orphanIds = [
+//     ...new Set(
+//       expenses
+//         .map((e) => e.category)
+//         .filter((id): id is string => Boolean(id) && !known.has(id))
+//     ),
+//   ];
+//   if (!orphanIds.length) {
+//     return { categories: existingCustom, added: [] };
+//   }
+//
+//   let n = 1;
+//   const added = orphanIds.map((id) => {
+//     const noteHint = expenses
+//       .filter((e) => e.category === id && e.note?.trim())
+//       .map((e) => e.note!.trim())[0];
+//     const label = noteHint
+//       ? `Recovered · ${noteHint.slice(0, 28)}`
+//       : `Recovered category ${n++}`;
+//     return {
+//       id,
+//       label,
+//       tone: 'gray',
+//       iconName: 'plus',
+//       custom: true,
+//       Icon: getCategoryIcon({ iconName: 'plus' }),
+//     } satisfies Category;
+//   });
+//
+//   return { categories: [...existingCustom, ...added], added };
+// };
 
 /** Merge cloud + local category defs. Prefer non-default local styles, else cloud. */
 export const mergeCategoryDefs = (
@@ -240,12 +247,15 @@ export const mergeCategoryDefs = (
       custom: true,
     };
   }
-  const cloudRecovered = /^Recovered\b/i.test(cloud.label);
-  const localRecovered = /^Recovered\b/i.test(local.label);
-  const label =
-    cloudRecovered && !localRecovered
-      ? local.label
-      : cloud.label || local.label;
+  // Disabled along with recoverOrphanCategories above — was preferring a
+  // non-"Recovered" label over a "Recovered ..." one when merging.
+  // const cloudRecovered = /^Recovered\b/i.test(cloud.label);
+  // const localRecovered = /^Recovered\b/i.test(local.label);
+  // const label =
+  //   cloudRecovered && !localRecovered
+  //     ? local.label
+  //     : cloud.label || local.label;
+  const label = cloud.label || local.label;
 
   const pick = (
     localVal: string | undefined,

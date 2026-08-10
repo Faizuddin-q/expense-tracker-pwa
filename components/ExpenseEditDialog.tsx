@@ -147,7 +147,7 @@ export const ExpenseEditDialog = ({
                   onClick={() => setCategory(c.id)}
                   className={`cursor-pointer truncate rounded-xl px-2 py-2 text-[11px] font-bold transition active:scale-[0.97] ${
                     active
-                      ? 'text-white shadow-2xs ring-2 ring-offset-1 ring-offset-card'
+                      ? 'text-white ring-2 ring-offset-1 ring-offset-card'
                       : 'border border-border/80 bg-background text-foreground hover:bg-muted'
                   }`}
                   style={
@@ -174,7 +174,7 @@ export const ExpenseEditDialog = ({
           <button
             type="button"
             onClick={handleSave}
-            className="flex h-11 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-2xs transition hover:opacity-90 active:scale-[0.98]"
+            className="flex h-11 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98]"
           >
             <Check className="size-4" /> Save
           </button>

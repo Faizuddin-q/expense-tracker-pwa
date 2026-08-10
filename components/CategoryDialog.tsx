@@ -76,7 +76,7 @@ export const CategoryDialog = ({
             onClick={() => setActiveTab('manage')}
             className={`flex-1 cursor-pointer rounded-lg py-2 transition-all duration-200 active:scale-95 sm:py-2.5 ${
               activeTab === 'manage'
-                ? 'bg-card text-foreground shadow-2xs'
+                ? 'bg-card text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -86,7 +86,7 @@ export const CategoryDialog = ({
             onClick={() => setActiveTab('add')}
             className={`flex-1 cursor-pointer rounded-lg py-2 transition-all duration-200 active:scale-95 sm:py-2.5 ${
               activeTab === 'add'
-                ? 'bg-card text-foreground shadow-2xs'
+                ? 'bg-card text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -110,7 +110,7 @@ export const CategoryDialog = ({
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex min-w-0 flex-1 items-center gap-2.5">
                         <div
-                          className="grid size-7.5 shrink-0 place-items-center rounded-lg text-white shadow-2xs"
+                          className="grid size-7.5 shrink-0 place-items-center rounded-lg text-white"
                           style={{ backgroundColor: currentColor }}
                         >
                           <IconComponent className="size-4 text-white" />
@@ -239,22 +239,19 @@ export const CategoryDialog = ({
               <div className="flex-1 space-y-4 overflow-y-auto pr-1.5 pb-2">
                 {/* Live Button Preview Card */}
                 <div className="rounded-2xl border border-border/80 bg-background/80 p-3.5 ring-1 ring-border/50">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Live Category Button Preview
+                  <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                    Live category button preview
                   </p>
                   <div className="mt-2 flex items-center gap-3.5">
                     <div
                       className="flex min-w-24 shrink-0 flex-col items-center gap-2 rounded-2xl px-4 py-3 text-xs font-bold text-white shadow-sm transition-all"
-                      style={{
-                        backgroundColor: previewColor,
-                        color: '#ffffff',
-                      }}
+                      style={{ backgroundColor: previewColor }}
                     >
                       <PreviewIcon className="size-5 text-white" />
                       <span>{name.trim() || 'Category'}</span>
                     </div>
-                    <p className="text-xs font-medium leading-relaxed text-muted-foreground">
-                      Solid background with pure white icon and text.
+                    <p className="text-xs leading-relaxed font-medium text-muted-foreground">
+                      Solid background with white icon and text.
                     </p>
                   </div>
                 </div>
@@ -348,7 +345,7 @@ export const CategoryDialog = ({
               <div className="shrink-0 border-t border-border/60 pt-3">
                 <button
                   onClick={onAdd}
-                  className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-2xs transition-all hover:opacity-90 active:scale-[0.98]"
+                  className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
                 >
                   Add Category <Plus className="size-4" />
                 </button>

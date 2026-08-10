@@ -19,7 +19,7 @@ import {
   parseRawNumber,
   formatIndianNumber,
   money,
-  recoverOrphanCategories,
+  // recoverOrphanCategories, // disabled — see lib/utils.ts
   mergeCategoryDefs,
 } from '@/lib/utils';
 import { useExpenses } from '@/lib/store';
@@ -185,7 +185,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [pendingDeletedIds, setPendingDeletedIds] = useState<string[]>([]);
   const [profileHydrated, setProfileHydrated] = useState(false);
   const initialSyncDoneFor = useRef<string | null>(null);
-  const recoveringCategories = useRef(false);
+  // const recoveringCategories = useRef(false); // disabled — see lib/utils.ts
 
   useEffect(() => {
     customCategoriesRef.current = customCategories;
@@ -321,7 +321,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
       hydrate(savedExpenses ?? []);
 
-      let nextCategories: Category[] = Array.isArray(savedCategories)
+      const nextCategories: Category[] = Array.isArray(savedCategories)
         ? savedCategories.map((c) => ({
             ...c,
             Icon: getCategoryIcon(c),
@@ -329,18 +329,21 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           }))
         : [];
 
-      const { categories: recovered, added } = recoverOrphanCategories(
-        savedExpenses ?? [],
-        nextCategories
-      );
-      nextCategories = recovered;
+      // Disabled: was fabricating "Recovered category N" placeholder
+      // categories for orphaned expense category IDs — turned off, see
+      // recoverOrphanCategories in lib/utils.ts.
+      // const { categories: recovered, added } = recoverOrphanCategories(
+      //   savedExpenses ?? [],
+      //   nextCategories
+      // );
+      // nextCategories = recovered;
       await persistCustomCategories(userId, nextCategories);
-      if (added.length > 0) {
-        toast.success(
-          'Categories restored',
-          `${added.length} missing ${added.length === 1 ? 'category' : 'categories'} recovered from your expenses — rename them in Categories`
-        );
-      }
+      // if (added.length > 0) {
+      //   toast.success(
+      //     'Categories restored',
+      //     `${added.length} missing ${added.length === 1 ? 'category' : 'categories'} recovered from your expenses — rename them in Categories`
+      //   );
+      // }
 
       if (typeof savedIncome === 'number' && savedIncome > 0) {
         setIncome(savedIncome);
@@ -543,43 +546,48 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           );
         }
 
-        const { categories: withOrphans, added } = recoverOrphanCategories(
-          activeExpenses,
-          Array.from(mergedById.values())
-        );
-        await persistCustomCategories(id, withOrphans);
-
-        // Push recovered categories + styles so cloud stays complete
-        if (added.length > 0 && !recoveringCategories.current) {
-          recoveringCategories.current = true;
-          try {
-            await fetch('/api/expenses/sync', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                userId: id,
-                expenses: [],
-                categories: bakeCategoryStyles(withOrphans).map(
-                  ({ id: catId, label, tone, iconName, custom }) => ({
-                    id: catId,
-                    label,
-                    tone,
-                    iconName,
-                    custom,
-                  })
-                ),
-                categoryOverrides: categoryOverridesRef.current,
-                categoryIconOverrides: categoryIconOverridesRef.current,
-              }),
-            });
-            toast.success(
-              'Categories restored',
-              `${added.length} missing ${added.length === 1 ? 'category' : 'categories'} recovered — rename them in Categories`
-            );
-          } finally {
-            recoveringCategories.current = false;
-          }
-        }
+        // Disabled: was fabricating "Recovered category N" placeholder
+        // categories for orphaned expense category IDs and pushing them
+        // back to the cloud — turned off, see recoverOrphanCategories in
+        // lib/utils.ts.
+        // const { categories: withOrphans, added } = recoverOrphanCategories(
+        //   activeExpenses,
+        //   Array.from(mergedById.values())
+        // );
+        // await persistCustomCategories(id, withOrphans);
+        //
+        // // Push recovered categories + styles so cloud stays complete
+        // if (added.length > 0 && !recoveringCategories.current) {
+        //   recoveringCategories.current = true;
+        //   try {
+        //     await fetch('/api/expenses/sync', {
+        //       method: 'POST',
+        //       headers: { 'Content-Type': 'application/json' },
+        //       body: JSON.stringify({
+        //         userId: id,
+        //         expenses: [],
+        //         categories: bakeCategoryStyles(withOrphans).map(
+        //           ({ id: catId, label, tone, iconName, custom }) => ({
+        //             id: catId,
+        //             label,
+        //             tone,
+        //             iconName,
+        //             custom,
+        //           })
+        //         ),
+        //         categoryOverrides: categoryOverridesRef.current,
+        //         categoryIconOverrides: categoryIconOverridesRef.current,
+        //       }),
+        //     });
+        //     toast.success(
+        //       'Categories restored',
+        //       `${added.length} missing ${added.length === 1 ? 'category' : 'categories'} recovered — rename them in Categories`
+        //     );
+        //   } finally {
+        //     recoveringCategories.current = false;
+        //   }
+        // }
+        await persistCustomCategories(id, Array.from(mergedById.values()));
 
         return true;
       } catch (err: unknown) {

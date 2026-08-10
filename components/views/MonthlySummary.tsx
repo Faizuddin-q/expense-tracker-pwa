@@ -12,6 +12,23 @@ import { builtInCategories } from '@/lib/constants';
 import { getCategoryColor } from '@/lib/utils';
 import { Money } from '@/components/Money';
 
+const ProgressBar = ({
+  value,
+  color,
+  className = '',
+}: {
+  value: number;
+  color: string;
+  className?: string;
+}) => (
+  <div className={`h-1.5 overflow-hidden rounded-full bg-muted ${className}`}>
+    <div
+      className="h-full rounded-full transition-all duration-300"
+      style={{ width: `${Math.min(100, Math.max(0, value))}%`, backgroundColor: color }}
+    />
+  </div>
+);
+
 interface MonthlySummaryProps {
   expenses: Expense[];
   income: number;
@@ -125,24 +142,24 @@ export const MonthlySummary = ({
     <section className="mx-auto max-w-4xl">
       {/* Overview strip */}
       <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-2xs sm:p-5">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5">
+          <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
             Months tracked
           </p>
           <p className="font-mono-numbers mt-1.5 text-2xl font-extrabold text-foreground">
             {totals.months}
           </p>
         </div>
-        <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-2xs sm:p-5">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5">
+          <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
             Total spent
           </p>
           <p className="font-mono-numbers mt-1.5 text-2xl font-extrabold text-foreground">
             <Money value={totals.spent} />
           </p>
         </div>
-        <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-2xs sm:p-5">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5">
+          <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
             Avg / month
           </p>
           <p className="font-mono-numbers mt-1.5 text-2xl font-extrabold text-foreground">
@@ -161,7 +178,7 @@ export const MonthlySummary = ({
           return (
             <article
               key={m.key}
-              className="rounded-2xl border border-border/80 bg-card shadow-2xs sm:rounded-3xl"
+              className="rounded-2xl border border-border/80 bg-card sm:rounded-3xl"
             >
               <button
                 type="button"
@@ -178,7 +195,7 @@ export const MonthlySummary = ({
                       {m.label}
                     </h3>
                     {m.isCurrent && (
-                      <span className="rounded-md bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                      <span className="rounded-md bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-primary uppercase">
                         Current
                       </span>
                     )}
@@ -199,16 +216,11 @@ export const MonthlySummary = ({
                             {m.budgetPercent}%
                           </span>
                         </div>
-                        <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-muted">
-                          <div
-                            className={`h-full rounded-sm ${
-                              overBudget ? 'bg-destructive' : 'bg-primary'
-                            }`}
-                            style={{
-                              width: `${Math.min(100, m.budgetPercent)}%`,
-                            }}
-                          />
-                        </div>
+                        <ProgressBar
+                          value={m.budgetPercent}
+                          className="mt-1"
+                          color={overBudget ? 'var(--destructive)' : 'var(--primary)'}
+                        />
                       </div>
                     )}
                     <div>
@@ -218,16 +230,11 @@ export const MonthlySummary = ({
                           {m.incomePercent}%
                         </span>
                       </div>
-                      <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-muted">
-                        <div
-                          className={`h-full rounded-sm ${
-                            overIncome ? 'bg-destructive' : 'bg-primary'
-                          }`}
-                          style={{
-                            width: `${Math.min(100, m.incomePercent)}%`,
-                          }}
-                        />
-                      </div>
+                      <ProgressBar
+                        value={m.incomePercent}
+                        className="mt-1"
+                        color={overIncome ? 'var(--destructive)' : 'var(--primary)'}
+                      />
                     </div>
                   </div>
                 </div>
@@ -269,11 +276,11 @@ export const MonthlySummary = ({
               </button>
 
               {isOpen && (
-                <div className="border-t border-border/60 px-4 pb-4 pt-3 sm:px-5 sm:pb-5">
+                <div className="border-t border-border/60 px-4 pt-3 pb-4 sm:px-5 sm:pb-5">
                   <div className="grid gap-2 sm:grid-cols-2">
                     {hasBudget && (
                       <div className="rounded-xl bg-muted/50 px-3 py-2.5">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                           vs Budget
                         </p>
                         <p className="font-mono-numbers mt-0.5 text-sm font-bold text-foreground">
@@ -290,7 +297,7 @@ export const MonthlySummary = ({
                       </div>
                     )}
                     <div className="rounded-xl bg-muted/50 px-3 py-2.5">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                         vs Income
                       </p>
                       <p className="font-mono-numbers mt-0.5 text-sm font-bold text-foreground">
@@ -309,7 +316,7 @@ export const MonthlySummary = ({
 
                   {m.byCategory.length > 0 ? (
                     <div className="mt-3 flex flex-col gap-2">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                         Category breakdown
                       </p>
                       {m.byCategory.map((c) => {
@@ -334,15 +341,7 @@ export const MonthlySummary = ({
                             <span className="w-20 shrink-0 text-xs font-semibold text-foreground sm:w-24">
                               {c.label}
                             </span>
-                            <div className="h-1.5 flex-1 overflow-hidden rounded-sm bg-muted">
-                              <div
-                                className="h-full rounded-sm"
-                                style={{
-                                  width: `${catPercent}%`,
-                                  backgroundColor: color,
-                                }}
-                              />
-                            </div>
+                            <ProgressBar value={catPercent} color={color} className="flex-1" />
                             <span className="font-mono-numbers w-16 shrink-0 text-right text-xs font-bold text-foreground sm:w-20">
                               <Money value={c.total} />
                             </span>

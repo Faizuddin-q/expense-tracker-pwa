@@ -165,7 +165,7 @@ export const BackTapSetupDialog = ({
             type="button"
             disabled={installing}
             onClick={() => void handleInstall()}
-            className="mt-4 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-2xs transition hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
+            className="mt-4 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
           >
             <Sparkles className="size-4" />
             {installing ? 'Installing…' : 'Install Pocket'}
@@ -200,7 +200,7 @@ export const BackTapSetupDialog = ({
         <button
           type="button"
           onClick={onClose}
-          className="mt-5 h-11 w-full cursor-pointer rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground shadow-2xs transition hover:opacity-90 active:scale-[0.98] sm:text-sm"
+          className="mt-5 h-11 w-full cursor-pointer rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98] sm:text-sm"
         >
           Got it
         </button>

@@ -61,13 +61,13 @@ export const Home = ({
     <section className="mx-auto max-w-5xl">
       <div className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
         <div>
-          {/* Modern Fintech Hero Card - Mobile Optimized */}
+          {/* Quick-add hero card */}
           <div className="rounded-2xl border border-border/90 bg-card p-5 shadow-xs sm:rounded-3xl sm:p-7">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
-                Log New Expense
+              <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase sm:text-xs">
+                Log new expense
               </span>
-              <span className="rounded-lg bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary ring-1 ring-primary/20 sm:px-3 sm:py-1 sm:text-[11px]">
+              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary ring-1 ring-primary/20 sm:px-3 sm:py-1 sm:text-[11px]">
                 Quick entry
               </span>
             </div>
@@ -87,13 +87,13 @@ export const Home = ({
                   className="font-mono-numbers w-full truncate bg-transparent text-4xl font-extrabold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/30 sm:text-5xl md:text-6xl"
                 />
               )}
+              {hideAmounts && (
+                <p className="mt-2 text-xs font-medium text-muted-foreground">
+                  Amounts hidden — turn off Hide amounts in Settings to show
+                  &amp; log.
+                </p>
+              )}
             </div>
-            {hideAmounts && (
-              <p className="mt-2 text-xs font-medium text-muted-foreground">
-                Amounts hidden — turn off Hide amounts in Settings to show
-                &amp; log.
-              </p>
-            )}
 
             <div className="mt-4 pt-1 sm:mt-5 sm:pt-2">
               <input
@@ -106,12 +106,12 @@ export const Home = ({
             </div>
           </div>
 
-          {/* Category Picker Section - Responsive Grid Layout */}
+          {/* Category Picker */}
           <div className="mt-6 sm:mt-7">
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <h2 className="text-xs font-bold tracking-tight text-foreground sm:text-sm">
-                  Select Category
+                  Select category
                 </h2>
                 <p className="text-[11px] text-muted-foreground sm:text-xs">
                   Tap to record expense immediately
@@ -125,7 +125,6 @@ export const Home = ({
               </button>
             </div>
 
-            {/* Clean Responsive Fintech Grid */}
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-2.5 md:grid-cols-5">
               {categories.map(({ id, label, tone, Icon }) => {
                 const IconComponent = Icon || Plus;
@@ -134,16 +133,13 @@ export const Home = ({
                   <button
                     key={id}
                     onClick={() => addExpense(id)}
-                    className="group flex cursor-pointer flex-col items-center gap-1.5 rounded-xl p-2.5 text-xs font-bold text-white shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:scale-[0.95] sm:gap-2 sm:rounded-2xl sm:p-3"
-                    style={{
-                      backgroundColor: color,
-                      color: '#ffffff',
-                    }}
+                    className="group flex cursor-pointer flex-col items-center gap-1.5 rounded-xl p-2.5 text-xs font-bold text-white shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:scale-[0.95] sm:gap-2 sm:rounded-2xl sm:p-3"
+                    style={{ backgroundColor: color }}
                   >
                     <div className="grid size-7 place-items-center rounded-lg bg-white/20 transition-transform duration-200 group-hover:scale-110 sm:size-8 sm:rounded-xl">
-                      <IconComponent className="size-4 text-white sm:size-4.5" />
+                      <IconComponent className="size-4 text-white sm:size-5" />
                     </div>
-                    <span className="truncate max-w-full text-[10px] sm:text-[11px]">
+                    <span className="max-w-full truncate text-[12px] sm:text-[12px]">
                       {label}
                     </span>
                   </button>
@@ -167,7 +163,7 @@ export const Home = ({
           <div className="mt-6 sm:mt-7">
             <div className="mb-2.5 flex items-center justify-between">
               <h2 className="text-xs font-bold tracking-tight text-foreground sm:text-sm">
-                Quick Re-log
+                Quick re-log
               </h2>
               <span className="text-[11px] font-medium text-muted-foreground sm:text-xs">
                 Frequent picks
@@ -187,7 +183,7 @@ export const Home = ({
                     }
                     className="flex cursor-pointer items-center gap-2 rounded-xl border border-border/80 bg-card px-3 py-2 text-[11px] font-bold transition-all duration-200 hover:border-primary/40 hover:bg-accent/40 active:scale-[0.97] sm:gap-2.5 sm:rounded-2xl sm:px-4 sm:py-2.5 sm:text-xs"
                   >
-                    <QuickIcon className="size-3.5 text-primary shrink-0 sm:size-4" />
+                    <QuickIcon className="size-3.5 shrink-0 text-primary sm:size-4" />
                     <span>{item.label}</span>
                     <span className="font-mono-numbers font-semibold text-muted-foreground">
                       <Money value={item.amount} />
@@ -199,12 +195,12 @@ export const Home = ({
           </div>
         </div>
 
-        {/* Right Column: Fintech Activity Feed Card */}
+        {/* Right Column: activity feed */}
         <div className="rounded-2xl border border-border/90 bg-card p-5 shadow-xs sm:rounded-3xl sm:p-7">
           <div className="flex items-center justify-between border-b border-border/60 pb-4 sm:pb-5">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
-                {showAll ? 'Total Activity' : 'Spent Today'}
+              <p className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase sm:text-xs">
+                {showAll ? 'Total activity' : 'Spent today'}
               </p>
               <h2 className="font-mono-numbers mt-1 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
                 <Money value={displayedTotal} />
@@ -212,7 +208,7 @@ export const Home = ({
             </div>
             <button
               onClick={() => setShowAll(!showAll)}
-              className="cursor-pointer rounded-xl border border-border/80 bg-background px-3 py-1.5 text-[11px] font-bold text-foreground transition hover:bg-muted active:scale-[0.97] sm:px-3.5 sm:py-2 sm:text-xs"
+              className="cursor-pointer rounded-full border border-border/80 bg-background px-3 py-1.5 text-[11px] font-bold text-foreground transition hover:bg-muted active:scale-[0.97] sm:px-3.5 sm:py-2 sm:text-xs"
             >
               {showAll ? 'Today only' : 'See all'}
             </button>
@@ -235,7 +231,7 @@ export const Home = ({
             )}
           </div>
 
-          {/* Undo Toast */}
+          {/* Undo confirmation */}
           {undo && (
             <div className="mt-4 flex animate-in fade-in slide-in-from-bottom-2 items-center justify-between rounded-xl border border-border/60 bg-accent/80 px-4 py-3 text-xs font-semibold shadow-md duration-200 sm:rounded-2xl sm:px-4.5 sm:py-3.5 sm:text-sm">
               <span className="text-foreground">Expense added.</span>

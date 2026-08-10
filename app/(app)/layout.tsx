@@ -14,7 +14,7 @@ import { navItems } from '@/lib/constants';
 // ─── Page title map ───────────────────────────────────────────────────────────
 
 const PAGE_TITLES: Record<string, string> = {
-  '/': 'Good morning, there.',
+  '/': 'Good to see you.',
   '/dashboard': 'Your month at a glance',
   '/summary': 'Month by month',
   '/expenses': 'All expenses',
@@ -122,7 +122,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
       {/* Desktop Sidebar */}
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r border-border bg-card px-5 py-7 lg:flex">
         <Brand />
-        <nav className="mt-14 flex flex-col gap-2">
+        <nav className="mt-14 flex flex-col gap-1.5">
           {navItems.map((item) => (
             <NavButton key={item.id} {...item} />
           ))}
@@ -140,7 +140,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
       <main className="pb-[calc(5.25rem+env(safe-area-inset-bottom))] sm:pb-24 lg:ml-64 lg:pb-8">
         <header className="flex items-center justify-between px-4 py-4 sm:px-8 sm:py-6 lg:px-12 lg:py-8">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
+            <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase sm:text-xs">
               {new Intl.DateTimeFormat('en-IN', {
                 weekday: 'long',
                 month: 'short',
@@ -155,7 +155,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-              className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border/80 bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-2xs transition hover:bg-muted active:scale-95 sm:px-3.5"
+              className="flex cursor-pointer items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-xs transition hover:bg-muted active:scale-95 sm:px-3.5"
             >
               {theme === 'dark' ? (
                 <Sun className="size-3.5 text-amber-400" />
@@ -166,7 +166,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
                 {theme === 'dark' ? 'Light' : 'Dark'}
               </span>
             </button>
-            <span className="hidden items-center gap-2 rounded-lg border border-border/80 bg-card px-3.5 py-1.5 text-xs font-medium text-muted-foreground shadow-2xs sm:flex">
+            <span className="hidden items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-medium text-muted-foreground shadow-xs sm:flex">
               {online ? (
                 <Wifi className="size-3.5 text-primary" />
               ) : (
@@ -177,7 +177,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
             <button
               onClick={() => void logout()}
               title="Log out"
-              className="hidden cursor-pointer items-center gap-1.5 rounded-lg border border-border/80 bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-2xs transition hover:bg-muted hover:text-destructive active:scale-95 lg:flex lg:px-3.5"
+              className="hidden cursor-pointer items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-xs transition hover:bg-muted hover:text-destructive active:scale-95 lg:flex lg:px-3.5"
             >
               <LogOut className="size-3.5" />
               Log out
@@ -188,7 +188,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
         <div className="px-4 sm:px-8 lg:px-12">
           {children}
           {error && (
-            <p className="mx-auto mt-5 max-w-3xl rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <p className="mx-auto mt-5 max-w-3xl rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {error}
             </p>
           )}
