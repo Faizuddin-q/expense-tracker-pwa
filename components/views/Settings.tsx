@@ -363,6 +363,10 @@ export const Settings = ({
             </button>
           </Row>
         </Section>
+
+        <p className="mt-5 text-center text-[11px] text-faint">
+          Pocket version: v{process.env.NEXT_PUBLIC_APP_VERSION ?? '0.0.0'}
+        </p>
       </div>
     </div>
   );
