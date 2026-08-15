@@ -37,6 +37,12 @@ export default function LoginPage() {
     return <div className="min-h-screen bg-background" />;
   }
 
+  // Already signed in — about to redirect home via the effect above. Render
+  // a blank placeholder instead of flashing the sign-in form.
+  if (userId && profileHydrated && !needsIncome) {
+    return <div className="min-h-screen bg-background" />;
+  }
+
   if (needsIncome) {
     return (
       <IncomeSetup

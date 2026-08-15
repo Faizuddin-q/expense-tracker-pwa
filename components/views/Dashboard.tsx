@@ -31,6 +31,14 @@ const RANGES: { key: TimeRangeOption; label: string }[] = [
   { key: 'custom', label: 'Custom' },
 ];
 
+const expenseAmount = (e: Expense) => {
+  const n = Number(e.amount);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const pctOf = (value: number, base: number) =>
+  base > 0 ? Math.round((Math.abs(value) / base) * 100) : 0;
+
 /** One figure in the top stat strip. */
 const Stat = ({
   label,
@@ -201,11 +209,6 @@ export const Dashboard = ({
     });
   }, [expenses, timeRange, activeMonthKey, startDate, endDate]);
 
-  const expenseAmount = (e: Expense) => {
-    const n = Number(e.amount);
-    return Number.isFinite(n) ? n : 0;
-  };
-
   const activeSpend = useMemo(
     () => filteredExpenses.reduce((sum, e) => sum + expenseAmount(e), 0),
     [filteredExpenses]
@@ -213,6 +216,8 @@ export const Dashboard = ({
 
   const activeByCategory = useMemo(() => {
     const catMeta = categories.length ? categories : builtInCategories;
+    const catMetaById = new Map(catMeta.map((c) => [c.id, c]));
+    const builtInById = new Map(builtInCategories.map((c) => [c.id, c]));
     const totals = new Map<string, number>();
     const counts = new Map<string, number>();
 
@@ -222,26 +227,26 @@ export const Dashboard = ({
       counts.set(id, (counts.get(id) ?? 0) + 1);
     });
 
-    return Array.from(totals.entries())
-      .map(([id, total]) => {
-        const meta =
-          catMeta.find((c) => c.id === id) ??
-          builtInCategories.find((c) => c.id === id) ??
-          ({
-            id,
-            label:
-              id === 'other'
-                ? 'Other'
-                : id.startsWith('custom-')
-                  ? 'Missing category'
-                  : id,
-            tone: 'gray',
-            Icon: Plus,
-          } satisfies Category);
-        return { ...meta, total, count: counts.get(id) ?? 0 };
-      })
-      .filter((c) => c.total > 0)
-      .sort((a, b) => b.total - a.total);
+    const breakdown: CategoryBreakdown[] = [];
+    for (const [id, total] of totals.entries()) {
+      if (total <= 0) continue;
+      const meta =
+        catMetaById.get(id) ??
+        builtInById.get(id) ??
+        ({
+          id,
+          label:
+            id === 'other'
+              ? 'Other'
+              : id.startsWith('custom-')
+                ? 'Missing category'
+                : id,
+          tone: 'gray',
+          Icon: Plus,
+        } satisfies Category);
+      breakdown.push({ ...meta, total, count: counts.get(id) ?? 0 });
+    }
+    return breakdown.sort((a, b) => b.total - a.total);
   }, [categories, filteredExpenses]);
 
   const showTargets = timeRange === 'month';
@@ -252,9 +257,6 @@ export const Dashboard = ({
     : 0;
   const remaining = (target || 0) - activeSpend;
   const over = showTargets && remaining < 0;
-
-  const pctOf = (value: number, base: number) =>
-    base > 0 ? Math.round((Math.abs(value) / base) * 100) : 0;
 
   const spendOfBudgetPercent = hasBudget ? pctOf(activeSpend, budget) : 0;
   const spendOfSalaryPercent =
@@ -294,7 +296,10 @@ export const Dashboard = ({
     if (timeRange === '14d') return 'Last 14 days';
     if (timeRange === '30d') return 'Last 30 days';
     if (timeRange === 'month')
-      return availableMonths.find((m) => m.key === activeMonthKey)?.label ?? '';
+      return (
+        availableMonths.find((m) => m.key === activeMonthKey)?.label ??
+        'Select month'
+      );
     if (timeRange === 'custom') return 'Custom range';
     return 'All time';
   }, [timeRange, activeMonthKey, availableMonths]);

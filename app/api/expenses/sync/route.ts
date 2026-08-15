@@ -126,21 +126,24 @@ export const POST = async (request: Request) => {
       profileUpdate.onboardingComplete = onboardingComplete;
     }
     if (Array.isArray(categories)) {
-      profileUpdate.categories = categories
-        .filter(
-          (category) =>
-            typeof category?.id === 'string' &&
-            typeof category?.label === 'string'
+      const cleanedCategories = [];
+      for (const category of categories) {
+        if (cleanedCategories.length >= 100) break;
+        if (
+          typeof category?.id !== 'string' ||
+          typeof category?.label !== 'string'
         )
-        .map((category) => ({
+          continue;
+        cleanedCategories.push({
           id: category.id,
           label: category.label,
           tone: typeof category.tone === 'string' ? category.tone : 'gray',
           iconName:
             typeof category.iconName === 'string' ? category.iconName : 'plus',
           custom: category.custom !== false,
-        }))
-        .slice(0, 100);
+        });
+      }
+      profileUpdate.categories = cleanedCategories;
     }
 
     const toneOverrides = asStringRecord(categoryOverrides);

@@ -39,7 +39,6 @@ export const Login = ({ phone, setPhone, onContinue, error }: LoginProps) => {
             </span>
             <input
               id="phone"
-              autoFocus
               type="tel"
               inputMode="numeric"
               autoComplete="tel-national"
