@@ -1,14 +1,7 @@
 import { NextResponse } from 'next/server';
-import { MongoClient } from 'mongodb';
-
-let client: MongoClient | null = null;
-async function db() {
-  if (!process.env.MONGODB_URI)
-    throw new Error('MONGODB_URI is not configured');
-  client ??= new MongoClient(process.env.MONGODB_URI);
-  await client.connect();
-  return client.db('pocket');
-}
+import { getDb } from '@/lib/db';
+import { getSessionUserId } from '@/lib/auth';
+import { rateLimitOrResponse } from '@/lib/rate-limit';
 
 const asStringRecord = (value: unknown): Record<string, string> | null => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -30,6 +23,16 @@ const asStringRecord = (value: unknown): Record<string, string> | null => {
 
 export const POST = async (request: Request) => {
   try {
+    const sessionUserId = await getSessionUserId();
+    if (!sessionUserId)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    // Not a credential-guessing endpoint — this is normal app traffic (every
+    // add/edit/delete triggers a sync), so the cap is generous and keyed to
+    // the authenticated session rather than IP.
+    const limited = rateLimitOrResponse(`sync:${sessionUserId}`, 120, 60 * 1000);
+    if (limited) return limited;
+
     const {
       userId,
       expenses,
@@ -49,7 +52,9 @@ export const POST = async (request: Request) => {
       !Array.isArray(expenses)
     )
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
-    const database = await db();
+    if (userId !== sessionUserId)
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const database = await getDb();
     const collection = database.collection('expenses');
     const profiles = database.collection('profiles');
 

@@ -1,11 +1,19 @@
 import { NextResponse } from 'next/server';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { adminDb } from '@/lib/admin-db';
+import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
 
 /** GET /api/admin/users — every account, with lightweight totals for the table. */
-export const GET = async () => {
+export const GET = async (request: Request) => {
   if (!(await isAdminAuthenticated()))
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const limited = rateLimitOrResponse(
+    `admin-users-list:${clientIp(request)}`,
+    60,
+    60 * 1000
+  );
+  if (limited) return limited;
 
   try {
     const db = await adminDb();

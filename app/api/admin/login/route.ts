@@ -6,6 +6,7 @@ import {
   createAdminSessionToken,
   verifyAdminCredentials,
 } from '@/lib/admin-auth';
+import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
 
 export const POST = async (request: Request) => {
   const body = await request.json().catch(() => null);
@@ -17,6 +18,16 @@ export const POST = async (request: Request) => {
       { error: 'Enter a username and password' },
       { status: 400 }
     );
+
+  // Same brute-force guard as the regular user login: at most 8 attempts
+  // per IP every 15 minutes — the admin password is a fixed value, so this
+  // is the one door worth throttling hard.
+  const limited = rateLimitOrResponse(
+    `admin-login:${clientIp(request)}`,
+    8,
+    15 * 60 * 1000
+  );
+  if (limited) return limited;
 
   if (!verifyAdminCredentials(username, password))
     return NextResponse.json(

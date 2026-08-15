@@ -31,9 +31,15 @@ interface AppContextValue {
   userId: string;
   phone: string;
   setPhone: (v: string) => void;
+  password: string;
+  setPassword: (v: string) => void;
   initializing: boolean;
   needsIncome: boolean;
   continueWithPhone: () => Promise<void>;
+  changePassword: (
+    currentPassword: string,
+    newPassword: string
+  ) => Promise<boolean>;
 
   // Expenses
   expenses: Expense[];
@@ -158,6 +164,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const [userId, setUserId] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [initializing, setInitializing] = useState(true);
   const [needsIncome, setNeedsIncome] = useState(false);
 
@@ -305,10 +312,31 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   // ── Session restore ───────────────────────────────────────────────────────
 
   useEffect(() => {
-    get<string>('pocket-user-id').then((saved) => {
-      if (saved) setUserId(saved);
+    (async () => {
+      const saved = await get<string>('pocket-user-id');
+      if (saved) {
+        try {
+          const res = await fetch('/api/auth/session');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.authenticated) {
+              setUserId(saved);
+            } else {
+              // Cookie is gone/expired — this device needs to sign in again.
+              await del('pocket-user-id');
+            }
+          } else {
+            // Server error while checking — trust the local session so
+            // degraded/offline use still works; sync() will recover later.
+            setUserId(saved);
+          }
+        } catch {
+          // Offline or unreachable — trust the local session.
+          setUserId(saved);
+        }
+      }
       setInitializing(false);
-    });
+    })();
   }, []);
 
   useEffect(() => {
@@ -398,7 +426,21 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           body: JSON.stringify(payload),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error);
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            // Session cookie is missing/invalid/stale — this device needs to
+            // sign in again, so stop retrying and send it back to login.
+            initialSyncDoneFor.current = null;
+            setProfileHydrated(false);
+            await del('pocket-user-id');
+            setUserId('');
+            const msg = 'Your session expired. Please sign in again.';
+            setError(msg);
+            toast.error('Signed out', msg);
+            return false;
+          }
+          throw new Error(data.error);
+        }
 
         const deletedIdSet = new Set(deletedIds);
 
@@ -790,17 +832,54 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       toast.error('Invalid mobile number', msg);
       return;
     }
+    if (!password) {
+      const msg = 'Enter your password.';
+      setError(msg);
+      toast.error('Password required', msg);
+      return;
+    }
     setError('');
+
+    let data: {
+      error?: string;
+      isNewUser?: boolean;
+      passwordIsDefault?: boolean;
+    };
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: normalized, password }),
+      });
+      data = await response.json();
+      if (!response.ok) {
+        const msg = data.error || 'Could not sign in';
+        setError(msg);
+        toast.error('Could not sign in', msg);
+        return;
+      }
+    } catch {
+      const msg =
+        'Could not reach the server. Check your connection and try again.';
+      setError(msg);
+      toast.error('Sign in failed', msg);
+      return;
+    }
+
+    setPassword('');
     setUserId(normalized);
     await set('pocket-user-id', normalized);
     const ok = await bootstrapUser(normalized);
-    if (ok) {
-      toast.success('Signed in', `Account +91 ${normalized}`);
-    } else if (!navigator.onLine) {
+
+    if (data.passwordIsDefault) {
       toast.success(
-        'Signed in offline',
-        'Using data saved on this device until you’re back online'
+        'Signed in',
+        'You used your phone number as a temporary password — set a real one in Settings.'
       );
+    } else if (data.isNewUser) {
+      toast.success('Account created', `Signed in as +91 ${normalized}`);
+    } else if (ok) {
+      toast.success('Signed in', `Account +91 ${normalized}`);
     } else {
       toast.success(
         'Signed in',
@@ -809,12 +888,43 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const changePassword = async (
+    currentPassword: string,
+    newPassword: string
+  ): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        toast.error(
+          'Could not update password',
+          data.error || 'Try again'
+        );
+        return false;
+      }
+      toast.success('Password updated', 'Use it next time you sign in');
+      return true;
+    } catch {
+      toast.error(
+        'Could not update password',
+        'Check your connection and try again'
+      );
+      return false;
+    }
+  };
+
   const logout = async () => {
     initialSyncDoneFor.current = null;
     setProfileHydrated(false);
+    void fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     await del('pocket-user-id');
     setUserId('');
     setPhone('');
+    setPassword('');
     hydrate([]);
     setIncome(0);
     setIncomeDraft('');
@@ -1356,9 +1466,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     userId,
     phone,
     setPhone,
+    password,
+    setPassword,
     initializing,
     needsIncome,
     continueWithPhone,
+    changePassword,
     expenses,
     add,
     handleDeleteExpense,

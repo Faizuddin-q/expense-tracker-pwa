@@ -1,13 +1,21 @@
 import { NextResponse } from 'next/server';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { adminDb } from '@/lib/admin-db';
+import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
 
 type Params = { params: Promise<{ userId: string }> };
 
 /** GET /api/admin/users/:userId — full profile + active expenses for the expanded row. */
-export const GET = async (_request: Request, { params }: Params) => {
+export const GET = async (request: Request, { params }: Params) => {
   if (!(await isAdminAuthenticated()))
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const limited = rateLimitOrResponse(
+    `admin-user-detail:${clientIp(request)}`,
+    60,
+    60 * 1000
+  );
+  if (limited) return limited;
 
   const { userId } = await params;
 
@@ -76,6 +84,13 @@ export const PATCH = async (request: Request, { params }: Params) => {
   if (!(await isAdminAuthenticated()))
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const limited = rateLimitOrResponse(
+    `admin-user-write:${clientIp(request)}`,
+    30,
+    60 * 1000
+  );
+  if (limited) return limited;
+
   const { userId } = await params;
   const body = await request.json().catch(() => null);
   if (!body)
@@ -113,9 +128,18 @@ export const PATCH = async (request: Request, { params }: Params) => {
 };
 
 /** DELETE /api/admin/users/:userId — permanently remove the account and all of its expenses. */
-export const DELETE = async (_request: Request, { params }: Params) => {
+export const DELETE = async (request: Request, { params }: Params) => {
   if (!(await isAdminAuthenticated()))
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // Tighter cap — irreversible, so this is the one write worth throttling
+  // harder than the general 30/min admin-write budget.
+  const limited = rateLimitOrResponse(
+    `admin-user-delete:${clientIp(request)}`,
+    10,
+    15 * 60 * 1000
+  );
+  if (limited) return limited;
 
   const { userId } = await params;
 
