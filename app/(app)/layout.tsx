@@ -29,9 +29,13 @@ function AppShell({ children }: { children: React.ReactNode }) {
     userId,
     initializing,
     needsIncome,
+    profileHydrated,
     incomeDraft,
     setIncomeDraft,
-    saveIncome,
+    budgetDraft,
+    setBudgetDraft,
+    completeOnboarding,
+    skipOnboarding,
     error,
     theme,
     setTheme,
@@ -66,18 +70,19 @@ function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [initializing, userId, router]);
 
-  if (initializing) {
+  if (initializing || (userId && !profileHydrated)) {
     return <div className="min-h-screen bg-background" />;
   }
 
   if (userId && needsIncome) {
     return (
       <IncomeSetup
-        value={incomeDraft}
-        setValue={setIncomeDraft}
-        onSave={async () => {
-          await saveIncome();
-        }}
+        income={incomeDraft}
+        setIncome={setIncomeDraft}
+        budget={budgetDraft}
+        setBudget={setBudgetDraft}
+        onContinue={() => void completeOnboarding()}
+        onSkip={() => void skipOnboarding()}
         error={error}
       />
     );

@@ -7,6 +7,7 @@ import { Money } from '@/components/Money';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { ExpenseRow } from '@/components/ExpenseRow';
 import { ExpenseEditDialog } from '@/components/ExpenseEditDialog';
+import { ExpenseDeleteDialog } from '@/components/ExpenseDeleteDialog';
 import { toast } from '@/components/ToastHost';
 import { getCategoryColor, getCategoryIcon } from '@/lib/utils';
 
@@ -53,6 +54,7 @@ export const Home = ({
 }: HomeProps) => {
   const { hideAmounts } = useApp();
   const [editing, setEditing] = useState<Expense | null>(null);
+  const [deleting, setDeleting] = useState<Expense | null>(null);
   const displayedTotal = displayed.reduce(
     (s: number, e: Expense) => s + e.amount,
     0
@@ -237,7 +239,7 @@ export const Home = ({
                     <ExpenseRow
                       key={expense.id}
                       expense={expense}
-                      remove={remove}
+                      onDelete={setDeleting}
                       onEdit={hideAmounts ? undefined : setEditing}
                       categories={categories}
                     />
@@ -295,6 +297,18 @@ export const Home = ({
             }
             updateExpense(editing.id, patch);
             setEditing(null);
+          }}
+        />
+      )}
+
+      {deleting && (
+        <ExpenseDeleteDialog
+          expense={deleting}
+          categories={categories}
+          onClose={() => setDeleting(null)}
+          onConfirm={() => {
+            remove(deleting.id);
+            setDeleting(null);
           }}
         />
       )}

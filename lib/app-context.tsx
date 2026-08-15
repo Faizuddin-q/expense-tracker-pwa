@@ -73,6 +73,10 @@ interface AppContextValue {
   budgetDraft: string;
   setBudgetDraft: (v: string) => void;
   saveBudget: () => Promise<void>;
+  /** First-run onboarding: save income (+ optional budget) and dismiss */
+  completeOnboarding: () => Promise<void>;
+  /** First-run onboarding: dismiss without setting targets */
+  skipOnboarding: () => Promise<void>;
 
   // Categories
   allCategories: Category[];
@@ -105,6 +109,8 @@ interface AppContextValue {
   // Sync / network
   online: boolean;
   syncing: boolean;
+  /** False until Mongo (or offline IndexedDB fallback) has been applied */
+  profileHydrated: boolean;
   error: string;
   sync: (
     id?: string,
@@ -121,7 +127,9 @@ interface AppContextValue {
     /** Pass a record to push color overrides; null to leave unchanged */
     profileCategoryOverrides?: Record<string, string> | null,
     /** Pass a record to push icon overrides; null to leave unchanged */
-    profileCategoryIconOverrides?: Record<string, string> | null
+    profileCategoryIconOverrides?: Record<string, string> | null,
+    /** Pass true when first-run onboarding is finished or skipped */
+    profileOnboardingComplete?: boolean | null
   ) => Promise<boolean>;
 
   // Derived
@@ -185,6 +193,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [pendingDeletedIds, setPendingDeletedIds] = useState<string[]>([]);
   const [profileHydrated, setProfileHydrated] = useState(false);
   const initialSyncDoneFor = useRef<string | null>(null);
+  const bootstrapInflight = useRef<Promise<boolean> | null>(null);
+  const bootstrapInflightFor = useRef<string | null>(null);
+  const expensesRef = useRef(expenses);
+  const pendingDeletedIdsRef = useRef(pendingDeletedIds);
   // const recoveringCategories = useRef(false); // disabled — see lib/utils.ts
 
   useEffect(() => {
@@ -198,6 +210,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     categoryIconOverridesRef.current = categoryIconOverrides;
   }, [categoryIconOverrides]);
+
+  useEffect(() => {
+    expensesRef.current = expenses;
+  }, [expenses]);
+
+  useEffect(() => {
+    pendingDeletedIdsRef.current = pendingDeletedIds;
+  }, [pendingDeletedIds]);
 
   const persistCustomCategories = useCallback(
     async (id: string, next: Category[]) => {
@@ -281,7 +301,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     return () => document.removeEventListener('visibilitychange', onVisibility);
   }, []);
 
-  // ── Init from IndexedDB ───────────────────────────────────────────────────
+  // ── Session restore ───────────────────────────────────────────────────────
 
   useEffect(() => {
     get<string>('pocket-user-id').then((saved) => {
@@ -291,103 +311,16 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (!userId) {
-      setProfileHydrated(false);
-      return;
-    }
-
-    let cancelled = false;
-
-    const loadLocal = async () => {
-      const [
-        savedExpenses,
-        savedCategories,
-        savedIncome,
-        savedBudget,
-        savedOverrides,
-        savedIconOverrides,
-        savedHideAmounts,
-      ] = await Promise.all([
-        get<Expense[]>(`pocket-expenses-${userId}`),
-        get<Category[]>(`pocket-categories-${userId}`),
-        get<number>(`pocket-income-${userId}`),
-        get<number>(`pocket-budget-${userId}`),
-        get<Record<string, string>>(`pocket-cat-overrides-${userId}`),
-        get<Record<string, string>>(`pocket-cat-icon-overrides-${userId}`),
-        get<boolean>(`pocket-hide-amounts-${userId}`),
-      ]);
-
-      if (cancelled) return;
-
-      hydrate(savedExpenses ?? []);
-
-      const nextCategories: Category[] = Array.isArray(savedCategories)
-        ? savedCategories.map((c) => ({
-            ...c,
-            Icon: getCategoryIcon(c),
-            custom: true,
-          }))
-        : [];
-
-      // Disabled: was fabricating "Recovered category N" placeholder
-      // categories for orphaned expense category IDs — turned off, see
-      // recoverOrphanCategories in lib/utils.ts.
-      // const { categories: recovered, added } = recoverOrphanCategories(
-      //   savedExpenses ?? [],
-      //   nextCategories
-      // );
-      // nextCategories = recovered;
-      await persistCustomCategories(userId, nextCategories);
-      // if (added.length > 0) {
-      //   toast.success(
-      //     'Categories restored',
-      //     `${added.length} missing ${added.length === 1 ? 'category' : 'categories'} recovered from your expenses — rename them in Categories`
-      //   );
-      // }
-
-      if (typeof savedIncome === 'number' && savedIncome > 0) {
-        setIncome(savedIncome);
-        setIncomeDraft(String(savedIncome));
-        setNeedsIncome(false);
-      } else {
-        setNeedsIncome(true);
-      }
-
-      if (typeof savedBudget === 'number' && savedBudget > 0) {
-        setBudget(savedBudget);
-        setBudgetDraft(String(savedBudget));
-      } else {
-        setBudget(0);
-        setBudgetDraft('');
-      }
-
-      if (typeof savedHideAmounts === 'boolean') {
-        setHideAmountsState(savedHideAmounts);
-      }
-
-      await persistToneOverrides(userId, savedOverrides ?? {});
-      await persistIconOverrides(userId, savedIconOverrides ?? {});
-      setProfileHydrated(true);
-    };
-
-    void loadLocal();
     setOnline(navigator.onLine);
     const on = () => setOnline(true);
     const off = () => setOnline(false);
     addEventListener('online', on);
     addEventListener('offline', off);
     return () => {
-      cancelled = true;
       removeEventListener('online', on);
       removeEventListener('offline', off);
     };
-  }, [
-    userId,
-    hydrate,
-    persistCustomCategories,
-    persistToneOverrides,
-    persistIconOverrides,
-  ]);
+  }, []);
 
   useEffect(() => {
     if (hydrated && userId) set(`pocket-expenses-${userId}`, expenses);
@@ -398,16 +331,17 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const sync = useCallback(
     async (
       id = userId,
-      local = expenses,
+      local = expensesRef.current,
       // null = do not push (avoids overwriting cloud with defaults / stale local)
       profileIncome: number | null = null,
       // null = do not push categories (avoids wiping cloud customs with [])
       profileCategories: Category[] | null = null,
-      deletedIds = pendingDeletedIds,
+      deletedIds = pendingDeletedIdsRef.current,
       profileBudget: number | null = null,
       profileHideAmounts: boolean | null = null,
       profileCategoryOverrides: Record<string, string> | null = null,
-      profileCategoryIconOverrides: Record<string, string> | null = null
+      profileCategoryIconOverrides: Record<string, string> | null = null,
+      profileOnboardingComplete: boolean | null = null
     ): Promise<boolean> => {
       if (!id) return false;
       setSyncing(true);
@@ -446,6 +380,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         if (typeof profileHideAmounts === 'boolean') {
           payload.hideAmounts = profileHideAmounts;
         }
+        if (typeof profileOnboardingComplete === 'boolean') {
+          payload.onboardingComplete = profileOnboardingComplete;
+        }
 
         const response = await fetch('/api/expenses/sync', {
           method: 'POST',
@@ -461,33 +398,59 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           );
         }
 
-        let activeExpenses = local;
         if (Array.isArray(data.expenses)) {
-          activeExpenses = data.expenses
+          const activeExpenses = data.expenses
             .map((e: Expense) => ({
               ...e,
               id: e.localId ?? e.id,
               amount: Number(e.amount) || 0,
               syncStatus: 'synced' as const,
             }))
-            .filter((e: Expense) => !deletedIds.includes(e.id));
+            .filter(
+              (e: Expense) =>
+                !deletedIds.includes(e.id) && !e.deletedAt
+            );
           hydrate(activeExpenses);
         }
-        // Cloud profile is source of truth after sync
-        if (
+
+        // Mongo is source of truth for income / budget / privacy
+        const cloudIncome =
           typeof data.profile?.monthlyIncome === 'number' &&
           data.profile.monthlyIncome > 0
-        ) {
-          setIncome(data.profile.monthlyIncome);
-          setIncomeDraft(String(data.profile.monthlyIncome));
-          await set(`pocket-income-${id}`, data.profile.monthlyIncome);
+            ? data.profile.monthlyIncome
+            : 0;
+        const cloudExpenseCount = Array.isArray(data.expenses)
+          ? data.expenses.length
+          : 0;
+        const onboardingDone = data.profile?.onboardingComplete === true;
+
+        if (cloudIncome > 0) {
+          setIncome(cloudIncome);
+          setIncomeDraft(String(cloudIncome));
+          await set(`pocket-income-${id}`, cloudIncome);
+          setNeedsIncome(false);
+        } else if (cloudExpenseCount > 0 || onboardingDone) {
+          // Returning user with no income set — stay at ₹0, no onboarding wall
+          setIncome(0);
+          setIncomeDraft('');
+          await set(`pocket-income-${id}`, 0);
           setNeedsIncome(false);
         } else {
-          // Profile missing or has no income — ask once; never fall back to a fake default
           const localIncome = await get<number>(`pocket-income-${id}`);
+          const localDone = await get<boolean>(
+            `pocket-onboarding-complete-${id}`
+          );
+          const localExpenses = await get<Expense[]>(`pocket-expenses-${id}`);
           if (typeof localIncome === 'number' && localIncome > 0) {
             setIncome(localIncome);
             setIncomeDraft(String(localIncome));
+            setNeedsIncome(false);
+          } else if (
+            localDone ||
+            (Array.isArray(localExpenses) && localExpenses.length > 0)
+          ) {
+            setIncome(0);
+            setIncomeDraft('');
             setNeedsIncome(false);
           } else {
             setIncome(0);
@@ -495,6 +458,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             setNeedsIncome(true);
           }
         }
+
+        if (onboardingDone) {
+          await set(`pocket-onboarding-complete-${id}`, true);
+        }
+
         if (
           typeof data.profile?.monthlyBudget === 'number' &&
           data.profile.monthlyBudget > 0
@@ -503,15 +471,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           setBudgetDraft(String(data.profile.monthlyBudget));
           await set(`pocket-budget-${id}`, data.profile.monthlyBudget);
         } else {
-          const localBudget = await get<number>(`pocket-budget-${id}`);
-          if (typeof localBudget === 'number' && localBudget > 0) {
-            setBudget(localBudget);
-            setBudgetDraft(String(localBudget));
-          } else {
-            setBudget(0);
-            setBudgetDraft('');
-          }
+          // No budget in Mongo — clear local so devices don't keep a ghost amount
+          setBudget(0);
+          setBudgetDraft('');
+          await set(`pocket-budget-${id}`, 0);
         }
+
         if (typeof data.profile?.hideAmounts === 'boolean') {
           setHideAmountsState(data.profile.hideAmounts);
           await set(`pocket-hide-amounts-${id}`, data.profile.hideAmounts);
@@ -626,8 +591,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     },
     [
       userId,
-      expenses,
-      pendingDeletedIds,
       hydrate,
       persistCustomCategories,
       persistToneOverrides,
@@ -636,34 +599,197 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     ]
   );
 
-  // After local hydrate: push categories + color/icon styles so other logins match
+  // Mongo first on login / session restore; IndexedDB only if offline or sync fails
+  const bootstrapUser = useCallback(
+    async (id: string): Promise<boolean> => {
+      if (!id) return false;
+
+      if (
+        bootstrapInflightFor.current === id &&
+        bootstrapInflight.current
+      ) {
+        return bootstrapInflight.current;
+      }
+
+      const run = (async () => {
+        const [
+          savedExpenses,
+          savedCategories,
+          savedIncome,
+          savedBudget,
+          savedOverrides,
+          savedIconOverrides,
+          savedHideAmounts,
+        ] = await Promise.all([
+          get<Expense[]>(`pocket-expenses-${id}`),
+          get<Category[]>(`pocket-categories-${id}`),
+          get<number>(`pocket-income-${id}`),
+          get<number>(`pocket-budget-${id}`),
+          get<Record<string, string>>(`pocket-cat-overrides-${id}`),
+          get<Record<string, string>>(`pocket-cat-icon-overrides-${id}`),
+          get<boolean>(`pocket-hide-amounts-${id}`),
+        ]);
+
+        const localExpenses = Array.isArray(savedExpenses) ? savedExpenses : [];
+        const localCategories = Array.isArray(savedCategories)
+          ? savedCategories.map((c) => ({
+              ...c,
+              Icon: getCategoryIcon(c),
+              custom: true as const,
+            }))
+          : [];
+        const localTones = savedOverrides ?? {};
+        const localIcons = savedIconOverrides ?? {};
+        const localDone = await get<boolean>(
+          `pocket-onboarding-complete-${id}`
+        );
+
+        // Seed category refs for merge
+        if (localCategories.length) {
+          customCategoriesRef.current = localCategories;
+          setCustomCategories(localCategories);
+        }
+        if (Object.keys(localTones).length) {
+          categoryOverridesRef.current = localTones;
+          setCategoryOverrides(localTones);
+        }
+        if (Object.keys(localIcons).length) {
+          categoryIconOverridesRef.current = localIcons;
+          setCategoryIconOverrides(localIcons);
+        }
+
+        // Paint local data immediately when available — avoids a full-screen blank flash
+        const hasLocalProfile =
+          localExpenses.length > 0 ||
+          (typeof savedIncome === 'number' && savedIncome > 0) ||
+          Boolean(localDone);
+
+        if (hasLocalProfile) {
+          hydrate(localExpenses);
+          if (typeof savedIncome === 'number' && savedIncome > 0) {
+            setIncome(savedIncome);
+            setIncomeDraft(String(savedIncome));
+            setNeedsIncome(false);
+          } else {
+            setIncome(0);
+            setIncomeDraft('');
+            setNeedsIncome(false);
+          }
+          if (typeof savedBudget === 'number' && savedBudget > 0) {
+            setBudget(savedBudget);
+            setBudgetDraft(String(savedBudget));
+          }
+          if (typeof savedHideAmounts === 'boolean') {
+            setHideAmountsState(savedHideAmounts);
+          }
+          setProfileHydrated(true);
+        } else {
+          setNeedsIncome(false);
+          setProfileHydrated(false);
+        }
+
+        const isOnline = navigator.onLine;
+        setOnline(isOnline);
+
+        if (isOnline) {
+          // Pull Mongo as source of truth.
+          // Never push categories/income/budget on bootstrap — a sparse local
+          // list would overwrite the full cloud profile (wiping customs).
+          const ok = await sync(
+            id,
+            localExpenses,
+            null,
+            null,
+            [],
+            null,
+            null,
+            null,
+            null
+          );
+          if (ok) {
+            initialSyncDoneFor.current = id;
+            setProfileHydrated(true);
+            return true;
+          }
+        }
+
+        // Offline or sync failed → IndexedDB fallback (may already be painted)
+        if (!hasLocalProfile) {
+          hydrate(localExpenses);
+          await persistCustomCategories(id, localCategories);
+          await persistToneOverrides(id, localTones);
+          await persistIconOverrides(id, localIcons);
+
+          if (typeof savedIncome === 'number' && savedIncome > 0) {
+            setIncome(savedIncome);
+            setIncomeDraft(String(savedIncome));
+            setNeedsIncome(false);
+          } else if (localExpenses.length > 0 || localDone) {
+            setIncome(0);
+            setIncomeDraft('');
+            setNeedsIncome(false);
+          } else {
+            setIncome(0);
+            setIncomeDraft('');
+            setNeedsIncome(true);
+          }
+
+          if (typeof savedBudget === 'number' && savedBudget > 0) {
+            setBudget(savedBudget);
+            setBudgetDraft(String(savedBudget));
+          } else {
+            setBudget(0);
+            setBudgetDraft('');
+          }
+
+          if (typeof savedHideAmounts === 'boolean') {
+            setHideAmountsState(savedHideAmounts);
+          }
+        }
+
+        initialSyncDoneFor.current = id;
+        setProfileHydrated(true);
+        return false;
+      })();
+
+      bootstrapInflightFor.current = id;
+      bootstrapInflight.current = run;
+      try {
+        return await run;
+      } finally {
+        if (bootstrapInflight.current === run) {
+          bootstrapInflight.current = null;
+          bootstrapInflightFor.current = null;
+        }
+      }
+    },
+    [
+      sync,
+      hydrate,
+      persistCustomCategories,
+      persistToneOverrides,
+      persistIconOverrides,
+    ]
+  );
+
+  const bootstrapUserRef = useRef(bootstrapUser);
+  bootstrapUserRef.current = bootstrapUser;
+
+  // Only re-bootstrap when the signed-in user changes — not on every sync/expense update
   useEffect(() => {
-    if (!userId || !hydrated || !profileHydrated || !online) return;
-    if (initialSyncDoneFor.current === userId) return;
-    initialSyncDoneFor.current = userId;
-    const localCats = customCategoriesRef.current;
-    const localTones = categoryOverridesRef.current;
-    const localIcons = categoryIconOverridesRef.current;
-    void sync(
-      userId,
-      expenses,
-      null,
-      localCats.length > 0 ? localCats : null,
-      pendingDeletedIds,
-      null,
-      null,
-      Object.keys(localTones).length > 0 ? localTones : null,
-      Object.keys(localIcons).length > 0 ? localIcons : null
-    );
-  }, [
-    userId,
-    hydrated,
-    profileHydrated,
-    online,
-    sync,
-    expenses,
-    pendingDeletedIds,
-  ]);
+    if (!userId) {
+      setProfileHydrated(false);
+      initialSyncDoneFor.current = null;
+      return;
+    }
+    let cancelled = false;
+    void bootstrapUserRef.current(userId).then(() => {
+      if (cancelled) return;
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -679,66 +805,20 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setError('');
     setUserId(normalized);
     await set('pocket-user-id', normalized);
-    const saved = await get<Expense[]>(`pocket-expenses-${normalized}`);
-    const savedIncome = await get<number>(`pocket-income-${normalized}`);
-    const savedBudget = await get<number>(`pocket-budget-${normalized}`);
-    const savedCats = await get<Category[]>(`pocket-categories-${normalized}`);
-    const savedTones = await get<Record<string, string>>(
-      `pocket-cat-overrides-${normalized}`
-    );
-    const savedIcons = await get<Record<string, string>>(
-      `pocket-cat-icon-overrides-${normalized}`
-    );
-    hydrate(saved ?? []);
-
-    const localIncome =
-      typeof savedIncome === 'number' && savedIncome > 0 ? savedIncome : null;
-    const localBudget =
-      typeof savedBudget === 'number' && savedBudget > 0 ? savedBudget : null;
-
-    if (localBudget) {
-      setBudget(localBudget);
-      setBudgetDraft(String(localBudget));
+    const ok = await bootstrapUser(normalized);
+    if (ok) {
+      toast.success('Signed in', `Account +91 ${normalized}`);
+    } else if (!navigator.onLine) {
+      toast.success(
+        'Signed in offline',
+        'Using data saved on this device until you’re back online'
+      );
     } else {
-      setBudget(0);
-      setBudgetDraft('');
+      toast.success(
+        'Signed in',
+        'Cloud sync unavailable — showing data saved on this device'
+      );
     }
-    if (localIncome) {
-      setIncome(localIncome);
-      setIncomeDraft(String(localIncome));
-      setNeedsIncome(false);
-    } else {
-      // Empty until cloud sync fills it — do not keep a placeholder amount
-      setIncome(0);
-      setIncomeDraft('');
-      setNeedsIncome(true);
-    }
-
-    const localCategories = Array.isArray(savedCats)
-      ? savedCats.map((c) => ({
-          ...c,
-          Icon: getCategoryIcon(c),
-          custom: true as const,
-        }))
-      : [];
-    if (localCategories.length) {
-      await persistCustomCategories(normalized, localCategories);
-    }
-    if (savedTones) await persistToneOverrides(normalized, savedTones);
-    if (savedIcons) await persistIconOverrides(normalized, savedIcons);
-
-    const ok = await sync(
-      normalized,
-      saved ?? [],
-      localIncome,
-      localCategories.length > 0 ? localCategories : null,
-      [],
-      localBudget,
-      null,
-      savedTones && Object.keys(savedTones).length > 0 ? savedTones : null,
-      savedIcons && Object.keys(savedIcons).length > 0 ? savedIcons : null
-    );
-    if (ok) toast.success('Signed in', `Account +91 ${normalized}`);
   };
 
   const logout = async () => {
@@ -748,6 +828,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setUserId('');
     setPhone('');
     hydrate([]);
+    setIncome(0);
+    setIncomeDraft('');
+    setBudget(0);
+    setBudgetDraft('');
+    setNeedsIncome(false);
     setHideAmountsState(false);
     toast.success('Logged out', 'Your cloud data is still safe');
   };
@@ -796,7 +881,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       parsed,
       null,
       pendingDeletedIds,
-      null
+      null,
+      null,
+      null,
+      null,
+      true
     );
     if (ok) toast.success('Income updated', `Set to ${money(parsed)}`);
   };
@@ -820,6 +909,78 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       parsed
     );
     if (ok) toast.success('Budget updated', `Set to ${money(parsed)}`);
+  };
+
+  const completeOnboarding = async () => {
+    const incomeParsed = Number(incomeDraft.replace(/[^0-9.]/g, ''));
+    if (!Number.isFinite(incomeParsed) || incomeParsed <= 0) {
+      const msg = 'Enter a monthly income greater than zero, or skip for now.';
+      setError(msg);
+      toast.error('Could not continue', msg);
+      return;
+    }
+    const budgetRaw = budgetDraft.replace(/[^0-9.]/g, '');
+    const budgetParsed = budgetRaw ? Number(budgetRaw) : 0;
+    const budgetValue =
+      Number.isFinite(budgetParsed) && budgetParsed > 0 ? budgetParsed : null;
+
+    setIncome(incomeParsed);
+    setIncomeDraft(String(incomeParsed));
+    await set(`pocket-income-${userId}`, incomeParsed);
+    if (budgetValue) {
+      setBudget(budgetValue);
+      setBudgetDraft(String(budgetValue));
+      await set(`pocket-budget-${userId}`, budgetValue);
+    }
+    await set(`pocket-onboarding-complete-${userId}`, true);
+    setNeedsIncome(false);
+    setError('');
+
+    const ok = await sync(
+      userId,
+      expenses,
+      incomeParsed,
+      null,
+      pendingDeletedIds,
+      budgetValue,
+      null,
+      null,
+      null,
+      true
+    );
+    if (ok) {
+      toast.success(
+        'Targets saved',
+        budgetValue
+          ? `Income ${money(incomeParsed)} · Budget ${money(budgetValue)}`
+          : `Income ${money(incomeParsed)}`
+      );
+    }
+  };
+
+  const skipOnboarding = async () => {
+    setIncome(0);
+    setIncomeDraft('');
+    setBudget(0);
+    setBudgetDraft('');
+    setNeedsIncome(false);
+    setError('');
+    if (userId) {
+      await set(`pocket-onboarding-complete-${userId}`, true);
+      await sync(
+        userId,
+        expenses,
+        null,
+        null,
+        pendingDeletedIds,
+        null,
+        null,
+        null,
+        null,
+        true
+      );
+    }
+    toast.success('Skipped', 'You can set income and budget anytime in Settings');
   };
 
   // ── Categories ────────────────────────────────────────────────────────────
@@ -980,21 +1141,49 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const handleDeleteExpense = (id: string) => {
     const target = expenses.find((e) => e.id === id);
+    if (!target) return;
     remove(id);
     if (undo?.id === id) setUndo(null);
     const nextDeleted = Array.from(new Set([...pendingDeletedIds, id]));
     setPendingDeletedIds(nextDeleted);
     const updatedExpenses = expenses.filter((e) => e.id !== id);
-    void sync(userId, updatedExpenses, null, null, nextDeleted).then(
-      (ok) => {
-        if (ok) {
-          toast.success(
-            'Expense deleted',
-            target ? `${money(target.amount)} removed` : 'Removed from your list'
-          );
-        }
-      }
-    );
+
+    const categoryLabel =
+      allCategories.find((c) => c.id === target.category)?.label ??
+      builtInCategories.find((c) => c.id === target.category)?.label ??
+      'Category';
+    const description = [
+      money(target.amount),
+      categoryLabel,
+      target.note?.trim() || null,
+    ]
+      .filter(Boolean)
+      .join(' · ');
+
+    void sync(userId, updatedExpenses, null, null, nextDeleted).then((ok) => {
+      if (!ok) return;
+      toast.success('Deleted an expense', description, {
+        // Soft-deleted in Mongo — Undo available for ~5s while toast is visible
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            const restored: Expense = {
+              ...target,
+              deletedAt: null,
+              updatedAt: new Date().toISOString(),
+              syncStatus: online ? 'synced' : 'pending',
+            };
+            add(restored);
+            setPendingDeletedIds((prev) => prev.filter((x) => x !== id));
+            void sync(userId, [restored], null, null, []).then((restoredOk) => {
+              if (restoredOk) {
+                toast.success('Expense restored', description);
+              }
+            });
+          },
+        },
+      });
+    });
   };
 
   const addExpense = (category: CategoryId, preset?: Partial<Expense>) => {
@@ -1036,24 +1225,88 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       date: string;
     }
   ) => {
+    const previous = expenses.find((e) => e.id === id);
+    if (!previous) return;
+
     const now = new Date().toISOString();
+    const cleanedNote = patch.note?.trim() || undefined;
     const updated: Partial<Expense> = {
       amount: patch.amount,
-      note: patch.note,
+      note: cleanedNote,
       category: patch.category,
       date: patch.date,
       updatedAt: now,
+      deletedAt: null,
       syncStatus: online ? 'synced' : 'pending',
     };
     update(id, updated);
-    const nextExpenses = expenses.map((e) =>
-      e.id === id ? { ...e, ...updated, id: e.id } : e
+    const next: Expense = {
+      ...previous,
+      ...updated,
+      id: previous.id,
+      note: cleanedNote,
+    };
+
+    const categoryLabel =
+      allCategories.find((c) => c.id === patch.category)?.label ??
+      builtInCategories.find((c) => c.id === patch.category)?.label ??
+      'Category';
+    const description = [
+      money(patch.amount),
+      categoryLabel,
+      cleanedNote || null,
+    ]
+      .filter(Boolean)
+      .join(' · ');
+
+    toast.success('Updated an expense', description, {
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          const restored: Expense = {
+            ...previous,
+            updatedAt: new Date().toISOString(),
+            deletedAt: null,
+            syncStatus: online ? 'synced' : 'pending',
+          };
+          update(id, {
+            amount: restored.amount,
+            note: restored.note,
+            category: restored.category,
+            date: restored.date,
+            updatedAt: restored.updatedAt,
+            deletedAt: null,
+            syncStatus: restored.syncStatus,
+          });
+          void sync(userId, [restored], null, null, []).then((ok) => {
+            if (ok) {
+              const prevLabel =
+                allCategories.find((c) => c.id === previous.category)?.label ??
+                builtInCategories.find((c) => c.id === previous.category)
+                  ?.label ??
+                'Category';
+              const prevDescription = [
+                money(previous.amount),
+                prevLabel,
+                previous.note?.trim() || null,
+              ]
+                .filter(Boolean)
+                .join(' · ');
+              toast.success('Change undone', prevDescription);
+            }
+          });
+        },
+      },
+    });
+
+    // Include note: null so clearing a note is persisted (JSON drops undefined)
+    void sync(
+      userId,
+      [{ ...next, note: cleanedNote ?? null } as Expense],
+      null,
+      null,
+      []
     );
-    toast.success(
-      'Expense updated',
-      `${money(patch.amount)}${patch.note ? ` · ${patch.note}` : ''}`
-    );
-    void sync(userId, nextExpenses.filter((e) => e.id === id));
   };
 
   const parseAmount = (value: string) => {
@@ -1126,6 +1379,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     budgetDraft,
     setBudgetDraft,
     saveBudget,
+    completeOnboarding,
+    skipOnboarding,
     allCategories,
     customCategories,
     categoryOverrides,
@@ -1150,6 +1405,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     screenObscured,
     online,
     syncing,
+    profileHydrated,
     error,
     sync,
     monthSpend,

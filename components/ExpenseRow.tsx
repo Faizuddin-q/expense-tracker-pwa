@@ -7,14 +7,14 @@ import { builtInCategories } from '@/lib/constants';
 
 interface ExpenseRowProps {
   expense: Expense;
-  remove: (id: string) => void;
+  onDelete: (expense: Expense) => void;
   onEdit?: (expense: Expense) => void;
   categories?: Category[];
 }
 
 export const ExpenseRow = ({
   expense,
-  remove,
+  onDelete,
   onEdit,
   categories = builtInCategories,
 }: ExpenseRowProps) => {
@@ -60,7 +60,7 @@ export const ExpenseRow = ({
         <button
           type="button"
           aria-label="Delete expense"
-          onClick={() => remove(expense.id)}
+          onClick={() => onDelete(expense)}
           className="grid size-6 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-destructive/10 hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
         >
           <Trash2 className="size-3.5" strokeWidth={1.9} />

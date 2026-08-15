@@ -16,6 +16,7 @@ import { useApp } from '@/lib/app-context';
 import { Money } from '@/components/Money';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { ExpenseEditDialog } from '@/components/ExpenseEditDialog';
+import { ExpenseDeleteDialog } from '@/components/ExpenseDeleteDialog';
 import { toast } from '@/components/ToastHost';
 
 type SortKey = 'date' | 'category' | 'amount' | 'createdAt' | 'updatedAt';
@@ -129,6 +130,7 @@ export const Expenses = ({
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [editing, setEditing] = useState<Expense | null>(null);
+  const [deleting, setDeleting] = useState<Expense | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const { hideAmounts } = useApp();
@@ -496,7 +498,7 @@ export const Expenses = ({
                         )}
                         <button
                           aria-label="Delete expense"
-                          onClick={() => remove(e.id)}
+                          onClick={() => setDeleting(e)}
                           className="grid size-6 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-destructive/10 hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                         >
                           <Trash2 className="size-3.5" strokeWidth={1.9} />
@@ -556,6 +558,18 @@ export const Expenses = ({
             }
             updateExpense(editing.id, patch);
             setEditing(null);
+          }}
+        />
+      )}
+
+      {deleting && (
+        <ExpenseDeleteDialog
+          expense={deleting}
+          categories={categories}
+          onClose={() => setDeleting(null)}
+          onConfirm={() => {
+            remove(deleting.id);
+            setDeleting(null);
           }}
         />
       )}
