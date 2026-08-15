@@ -19,7 +19,6 @@ import {
   parseRawNumber,
   formatIndianNumber,
   money,
-  // recoverOrphanCategories, // disabled — see lib/utils.ts
   mergeCategoryDefs,
 } from '@/lib/utils';
 import { useExpenses } from '@/lib/store';
@@ -197,7 +196,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const bootstrapInflightFor = useRef<string | null>(null);
   const expensesRef = useRef(expenses);
   const pendingDeletedIdsRef = useRef(pendingDeletedIds);
-  // const recoveringCategories = useRef(false); // disabled — see lib/utils.ts
 
   useEffect(() => {
     customCategoriesRef.current = customCategories;
@@ -359,7 +357,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           expenses: local,
           deletedIds,
         };
-        // Only push categories when explicitly provided (add/delete/rename/recover/styles)
+        // Only push categories when explicitly provided (add/delete/rename/styles)
         if (profileCategories !== null) {
           payload.categories = bakeCategoryStyles(profileCategories).map(
             ({ id: catId, label, tone, iconName, custom }) => ({
@@ -542,47 +540,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           );
         }
 
-        // Disabled: was fabricating "Recovered category N" placeholder
-        // categories for orphaned expense category IDs and pushing them
-        // back to the cloud — turned off, see recoverOrphanCategories in
-        // lib/utils.ts.
-        // const { categories: withOrphans, added } = recoverOrphanCategories(
-        //   activeExpenses,
-        //   Array.from(mergedById.values())
-        // );
-        // await persistCustomCategories(id, withOrphans);
-        //
-        // // Push recovered categories + styles so cloud stays complete
-        // if (added.length > 0 && !recoveringCategories.current) {
-        //   recoveringCategories.current = true;
-        //   try {
-        //     await fetch('/api/expenses/sync', {
-        //       method: 'POST',
-        //       headers: { 'Content-Type': 'application/json' },
-        //       body: JSON.stringify({
-        //         userId: id,
-        //         expenses: [],
-        //         categories: bakeCategoryStyles(withOrphans).map(
-        //           ({ id: catId, label, tone, iconName, custom }) => ({
-        //             id: catId,
-        //             label,
-        //             tone,
-        //             iconName,
-        //             custom,
-        //           })
-        //         ),
-        //         categoryOverrides: categoryOverridesRef.current,
-        //         categoryIconOverrides: categoryIconOverridesRef.current,
-        //       }),
-        //     });
-        //     toast.success(
-        //       'Categories restored',
-        //       `${added.length} missing ${added.length === 1 ? 'category' : 'categories'} recovered — rename them in Categories`
-        //     );
-        //   } finally {
-        //     recoveringCategories.current = false;
-        //   }
-        // }
         await persistCustomCategories(id, Array.from(mergedById.values()));
 
         return true;
@@ -1031,14 +988,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   // Pull the freshest cloud category list right before any category
-  // mutation is computed. Without this, a device whose local cache is
-  // stale (e.g. right after login — profileHydrated can go true from a
-  // local-only paint before the cloud pull finishes — or simply behind a
-  // category added from another device) would compute "next" from an
-  // incomplete list and push it as the full authoritative set, silently
-  // deleting every category the cloud knew about that this device didn't.
-  // That's what was producing "Missing category" for users after their
-  // custom categories vanished.
+  // mutation so a stale local cache cannot overwrite the cloud list.
   const ensureFreshCategories = useCallback(async () => {
     if (!userId) return;
     await sync(userId, expensesRef.current, null, null, pendingDeletedIdsRef.current);
