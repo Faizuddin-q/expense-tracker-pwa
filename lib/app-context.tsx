@@ -988,14 +988,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   // Pull the freshest cloud category list right before any category
-  // mutation is computed. Without this, a device whose local cache is
-  // stale (e.g. right after login — profileHydrated can go true from a
-  // local-only paint before the cloud pull finishes — or simply behind a
-  // category added from another device) would compute "next" from an
-  // incomplete list and push it as the full authoritative set, silently
-  // deleting every category the cloud knew about that this device didn't.
-  // That's what was producing "Missing category" for users after their
-  // custom categories vanished.
+  // mutation so a stale local cache cannot overwrite the cloud list.
   const ensureFreshCategories = useCallback(async () => {
     if (!userId) return;
     await sync(userId, expensesRef.current, null, null, pendingDeletedIdsRef.current);

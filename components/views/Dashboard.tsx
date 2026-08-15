@@ -236,11 +236,7 @@ export const Dashboard = ({
         ({
           id,
           label:
-            id === 'other'
-              ? 'Other'
-              : id.startsWith('custom-')
-                ? 'Missing category'
-                : id,
+            id === 'other' || id.startsWith('custom-') ? 'Other' : id,
           tone: 'gray',
           Icon: Plus,
         } satisfies Category);
