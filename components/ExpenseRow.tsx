@@ -23,7 +23,7 @@ export const ExpenseRow = ({
   const Icon = getCategoryIcon(c);
 
   return (
-    <div className="group relative -mx-1 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 rounded-md px-1 py-2 pr-8 transition-colors hover:bg-primary/[0.04] sm:pr-1">
+    <div className="group relative -mx-1 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 rounded-md px-1 py-2 transition-colors hover:bg-primary/[0.04]">
       <CategoryIcon color={color} icon={Icon} size="xs" />
 
       <button
@@ -46,7 +46,7 @@ export const ExpenseRow = ({
         <Money value={expense.amount} />
       </span>
 
-      <div className="absolute top-1/2 right-1 flex -translate-y-1/2 items-center gap-0.5 rounded-md bg-card/95 pl-1 sm:pointer-events-none sm:opacity-0 sm:group-hover:pointer-events-auto sm:group-hover:opacity-100 sm:group-focus-within:pointer-events-auto sm:group-focus-within:opacity-100">
+      <div className="absolute top-1/2 right-1 hidden -translate-y-1/2 items-center gap-0.5 rounded-md bg-card/95 pl-1 sm:flex sm:pointer-events-none sm:opacity-0 sm:group-hover:pointer-events-auto sm:group-hover:opacity-100 sm:group-focus-within:pointer-events-auto sm:group-focus-within:opacity-100">
         {onEdit && (
           <button
             type="button"
