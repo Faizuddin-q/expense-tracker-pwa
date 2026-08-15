@@ -1,6 +1,6 @@
 'use client';
 
-import { useApp } from '@/lib/app-context';
+import { useAppOptional } from '@/lib/app-context';
 import { money, moneyExact } from '@/lib/utils';
 
 /**
@@ -16,7 +16,8 @@ export const Money = ({
   className?: string;
   precise?: boolean;
 }) => {
-  const { hideAmounts } = useApp();
+  // Falls back to visible amounts when rendered outside <AppProvider> (admin dashboard).
+  const hideAmounts = useAppOptional()?.hideAmounts ?? false;
   const format = precise ? moneyExact : money;
   return <span className={className}>{format(value, hideAmounts)}</span>;
 };

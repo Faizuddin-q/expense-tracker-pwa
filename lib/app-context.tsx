@@ -149,6 +149,9 @@ export const useApp = () => {
   return ctx;
 };
 
+/** Same context, but returns null outside <AppProvider> instead of throwing — lets shared display components (e.g. Money) render standalone, like inside the admin dashboard. */
+export const useAppOptional = () => useContext(AppContext);
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
