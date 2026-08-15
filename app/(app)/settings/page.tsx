@@ -18,6 +18,7 @@ export default function SettingsPage() {
     userId,
     sync,
     logout,
+    changePassword,
     customCategories,
     categoryOverrides,
     categoryIconOverrides,
@@ -59,6 +60,7 @@ export default function SettingsPage() {
       }}
       onChangeIdentity={logout}
       onLogout={logout}
+      onChangePassword={changePassword}
       categories={customCategories}
       theme={theme}
       setTheme={setTheme}

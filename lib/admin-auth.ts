@@ -11,10 +11,11 @@ export const ADMIN_SESSION_COOKIE = 'pocket_admin_session';
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
 export const ADMIN_SESSION_MAX_AGE_SECONDS = SESSION_TTL_MS / 1000;
 
-// Falls back to a fixed dev secret so the panel still works without extra
-// env setup; set ADMIN_SESSION_SECRET in production for a real signing key.
+// Shared with lib/auth.ts (user sessions) — one signing secret for the whole
+// app. Falls back to a fixed dev secret so the panel still works without
+// extra env setup; set SESSION_SECRET in production for a real signing key.
 const SESSION_SECRET =
-  process.env.ADMIN_SESSION_SECRET || 'pocket-admin-session-secret-v1';
+  process.env.SESSION_SECRET || 'pocket-session-secret-v1';
 
 const sign = (payload: string) =>
   createHmac('sha256', SESSION_SECRET).update(payload).digest('hex');

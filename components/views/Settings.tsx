@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Download, Eye, EyeOff, LogOut, Moon, Sun } from 'lucide-react';
 // Hand — used by deprecated double-tap shortcut section
 // import { Download, Eye, EyeOff, Hand, LogOut, Moon, Sun } from 'lucide-react';
@@ -21,6 +22,10 @@ interface SettingsProps {
   sync: () => void;
   onChangeIdentity: () => void;
   onLogout: () => void;
+  onChangePassword: (
+    currentPassword: string,
+    newPassword: string
+  ) => Promise<boolean>;
   categories?: Category[];
   theme: 'dark' | 'light';
   setTheme: (t: 'dark' | 'light') => void;
@@ -160,6 +165,116 @@ const AmountField = ({
   </div>
 );
 
+const PasswordInput = ({
+  label,
+  value,
+  onChange,
+  autoComplete,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoComplete: string;
+}) => {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="field-shell flex h-8 rounded-lg border border-border bg-background">
+      <input
+        aria-label={label}
+        type={visible ? 'text' : 'password'}
+        autoComplete={autoComplete}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={label}
+        className="h-full w-full min-w-0 rounded-l-[inherit] bg-transparent px-2.5 text-[13px] text-foreground outline-none placeholder:text-faint"
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        aria-label={visible ? 'Hide password' : 'Show password'}
+        className="flex shrink-0 cursor-pointer items-center rounded-r-[inherit] border-l border-border px-2 text-muted-foreground transition-colors hover:text-foreground"
+      >
+        {visible ? (
+          <EyeOff className="size-3.5" strokeWidth={1.9} />
+        ) : (
+          <Eye className="size-3.5" strokeWidth={1.9} />
+        )}
+      </button>
+    </div>
+  );
+};
+
+const ChangePasswordForm = ({
+  onChangePassword,
+}: {
+  onChangePassword: (
+    currentPassword: string,
+    newPassword: string
+  ) => Promise<boolean>;
+}) => {
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!current || !next) {
+      toast.error('Could not update password', 'Fill in every field');
+      return;
+    }
+    if (next.length < 6) {
+      toast.error(
+        'Could not update password',
+        'New password must be at least 6 characters'
+      );
+      return;
+    }
+    if (next !== confirm) {
+      toast.error('Could not update password', 'New passwords don’t match');
+      return;
+    }
+    setSubmitting(true);
+    const ok = await onChangePassword(current, next);
+    setSubmitting(false);
+    if (ok) {
+      setCurrent('');
+      setNext('');
+      setConfirm('');
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <PasswordInput
+        label="Current password"
+        value={current}
+        onChange={setCurrent}
+        autoComplete="current-password"
+      />
+      <PasswordInput
+        label="New password"
+        value={next}
+        onChange={setNext}
+        autoComplete="new-password"
+      />
+      <PasswordInput
+        label="Confirm new password"
+        value={confirm}
+        onChange={setConfirm}
+        autoComplete="new-password"
+      />
+      <button
+        type="button"
+        disabled={submitting}
+        onClick={handleSubmit}
+        className="h-8 shrink-0 cursor-pointer rounded-lg bg-primary px-3 text-[12px] font-medium text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-60"
+      >
+        {submitting ? 'Updating…' : 'Update password'}
+      </button>
+    </div>
+  );
+};
+
 export const Settings = ({
   incomeDraft,
   setIncomeDraft,
@@ -172,6 +287,7 @@ export const Settings = ({
   sync,
   onChangeIdentity,
   onLogout,
+  onChangePassword,
   categories = [],
   theme,
   setTheme,
@@ -199,6 +315,12 @@ export const Settings = ({
               <GhostButton onClick={() => sync()}>Sync now</GhostButton>
               <GhostButton onClick={onChangeIdentity}>Change number</GhostButton>
             </div>
+          </Row>
+          <Row
+            title="Change password"
+            description="Existing accounts created before passwords were required were defaulted to their phone number — set a real one here."
+          >
+            <ChangePasswordForm onChangePassword={onChangePassword} />
           </Row>
         </Section>
 

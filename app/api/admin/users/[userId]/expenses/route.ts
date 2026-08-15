@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { NextResponse } from 'next/server';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { adminDb } from '@/lib/admin-db';
+import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
 
 type Params = { params: Promise<{ userId: string }> };
 
@@ -9,6 +10,13 @@ type Params = { params: Promise<{ userId: string }> };
 export const POST = async (request: Request, { params }: Params) => {
   if (!(await isAdminAuthenticated()))
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const limited = rateLimitOrResponse(
+    `admin-expense-write:${clientIp(request)}`,
+    30,
+    60 * 1000
+  );
+  if (limited) return limited;
 
   const { userId } = await params;
   const body = await request.json().catch(() => null);

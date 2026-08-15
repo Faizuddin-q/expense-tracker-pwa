@@ -1,14 +1,26 @@
-import { ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { Brand } from '@/components/Brand';
 
 interface LoginProps {
   phone: string;
   setPhone: (v: string) => void;
+  password: string;
+  setPassword: (v: string) => void;
   onContinue: () => void;
   error: string;
 }
 
-export const Login = ({ phone, setPhone, onContinue, error }: LoginProps) => {
+export const Login = ({
+  phone,
+  setPhone,
+  password,
+  setPassword,
+  onContinue,
+  error,
+}: LoginProps) => {
+  const [showPassword, setShowPassword] = useState(false);
+
   const handlePhoneChange = (raw: string) => {
     setPhone(raw.replace(/\D/g, '').slice(0, 10));
   };
@@ -22,8 +34,9 @@ export const Login = ({ phone, setPhone, onContinue, error }: LoginProps) => {
           Sign in
         </h1>
         <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
-          Your mobile number is your account ID. Use the same number on another
-          device to restore your expenses. No OTP required.
+          Your mobile number is your account ID. New here? Choose a password
+          and this becomes your account. Use the same number and password on
+          another device to restore your expenses.
         </p>
 
         <div className="mt-7 rounded-xl border border-border bg-card p-4">
@@ -57,6 +70,45 @@ export const Login = ({ phone, setPhone, onContinue, error }: LoginProps) => {
               aria-label="10-digit Indian mobile number"
               className="font-mono-numbers h-full w-full rounded-r-[inherit] bg-transparent px-2.5 text-[13px] tracking-wide text-foreground outline-none placeholder:text-faint"
             />
+          </div>
+
+          <label
+            htmlFor="password"
+            className="label mt-3 mb-1.5 block"
+          >
+            Password
+          </label>
+          <div className="field-shell flex h-9 rounded-lg border border-border bg-background">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (
+                  e.key === 'Enter' &&
+                  !e.nativeEvent.isComposing &&
+                  e.keyCode !== 229
+                )
+                  onContinue();
+              }}
+              placeholder="At least 6 characters"
+              aria-label="Password"
+              className="h-full w-full rounded-l-[inherit] bg-transparent px-2.5 text-[13px] text-foreground outline-none placeholder:text-faint"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              className="flex shrink-0 cursor-pointer items-center rounded-r-[inherit] border-l border-border px-2.5 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {showPassword ? (
+                <EyeOff className="size-3.5" strokeWidth={1.9} />
+              ) : (
+                <Eye className="size-3.5" strokeWidth={1.9} />
+              )}
+            </button>
           </div>
 
           {error && (

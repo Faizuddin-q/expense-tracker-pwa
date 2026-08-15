@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { adminDb } from '@/lib/admin-db';
+import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
 
 type Params = { params: Promise<{ userId: string; expenseId: string }> };
 
@@ -8,6 +9,13 @@ type Params = { params: Promise<{ userId: string; expenseId: string }> };
 export const PATCH = async (request: Request, { params }: Params) => {
   if (!(await isAdminAuthenticated()))
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const limited = rateLimitOrResponse(
+    `admin-expense-write:${clientIp(request)}`,
+    30,
+    60 * 1000
+  );
+  if (limited) return limited;
 
   const { userId, expenseId } = await params;
   const body = await request.json().catch(() => null);
@@ -50,9 +58,16 @@ export const PATCH = async (request: Request, { params }: Params) => {
 };
 
 /** DELETE /api/admin/users/:userId/expenses/:expenseId — soft-delete, same as the app's own delete. */
-export const DELETE = async (_request: Request, { params }: Params) => {
+export const DELETE = async (request: Request, { params }: Params) => {
   if (!(await isAdminAuthenticated()))
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const limited = rateLimitOrResponse(
+    `admin-expense-write:${clientIp(request)}`,
+    30,
+    60 * 1000
+  );
+  if (limited) return limited;
 
   const { userId, expenseId } = await params;
 

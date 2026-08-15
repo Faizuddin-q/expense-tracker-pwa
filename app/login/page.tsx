@@ -11,6 +11,8 @@ export default function LoginPage() {
     userId,
     phone,
     setPhone,
+    password,
+    setPassword,
     continueWithPhone,
     error,
     needsIncome,
@@ -67,6 +69,8 @@ export default function LoginPage() {
     <Login
       phone={phone}
       setPhone={setPhone}
+      password={password}
+      setPassword={setPassword}
       onContinue={async () => {
         await continueWithPhone();
       }}
