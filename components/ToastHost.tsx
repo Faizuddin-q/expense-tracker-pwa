@@ -6,25 +6,36 @@ import { CheckCircle2, X, XCircle } from 'lucide-react';
 
 type ToastType = 'success' | 'error';
 
+type ToastAction = {
+  label: string;
+  onClick: () => void;
+};
+
 type ToastItem = {
   id: string;
   type: ToastType;
   title: string;
   message?: string;
+  action?: ToastAction;
 };
 
 type ToastStore = {
   toasts: ToastItem[];
-  push: (type: ToastType, title: string, message?: string) => void;
+  push: (
+    type: ToastType,
+    title: string,
+    message?: string,
+    action?: ToastAction
+  ) => void;
   dismiss: (id: string) => void;
 };
 
 const useToastStore = create<ToastStore>((set) => ({
   toasts: [],
-  push: (type, title, message) => {
+  push: (type, title, message, action) => {
     const id = crypto.randomUUID();
     set((s) => ({
-      toasts: [...s.toasts.slice(-4), { id, type, title, message }],
+      toasts: [...s.toasts.slice(-4), { id, type, title, message, action }],
     }));
   },
   dismiss: (id) =>
@@ -32,13 +43,19 @@ const useToastStore = create<ToastStore>((set) => ({
 }));
 
 export const toast = {
-  success: (title: string, message?: string) =>
-    useToastStore.getState().push('success', title, message),
+  success: (
+    title: string,
+    message?: string,
+    opts?: { action?: ToastAction }
+  ) =>
+    useToastStore
+      .getState()
+      .push('success', title, message, opts?.action),
   error: (title: string, message?: string) =>
     useToastStore.getState().push('error', title, message),
 };
 
-const AUTO_DISMISS_MS = 3600;
+const AUTO_DISMISS_MS = 5000;
 const EXIT_MS = 200;
 
 /** Owns its own enter/exit transition so removal is animated, not instant. */
@@ -51,7 +68,9 @@ const ToastCard = ({
 }) => {
   const [entered, setEntered] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const exitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const exitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined
+  );
 
   const startExit = () => {
     if (leaving) return;
@@ -99,6 +118,18 @@ const ToastCard = ({
           <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">
             {item.message}
           </p>
+        ) : null}
+        {item.action ? (
+          <button
+            type="button"
+            onClick={() => {
+              item.action?.onClick();
+              startExit();
+            }}
+            className="mt-1.5 cursor-pointer text-[12px] font-medium text-primary transition-opacity hover:opacity-70"
+          >
+            {item.action.label}
+          </button>
         ) : null}
       </div>
       <button

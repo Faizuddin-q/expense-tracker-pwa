@@ -83,7 +83,12 @@ export const MonthlySummary = ({
               builtInCategories.find((c) => c.id === id) ??
               ({
                 id,
-                label: id === 'other' ? 'Other' : id,
+                label:
+                  id === 'other'
+                    ? 'Other'
+                    : id.startsWith('custom-')
+                      ? 'Missing category'
+                      : id,
                 tone: 'gray',
                 Icon: Plus,
               } satisfies Category);

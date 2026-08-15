@@ -8,7 +8,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import { BackTapSetupDialog } from '@/components/BackTapSetupDialog';
+// Deprecated for now — double-tap / Back Tap setup guide
+// import { BackTapSetupDialog } from '@/components/BackTapSetupDialog';
 import {
   getBackTapPref,
   getPwaPlatform,
@@ -186,6 +187,7 @@ export const PwaProvider = ({ children }: { children: React.ReactNode }) => {
       }}
     >
       {children}
+      {/* Deprecated for now — double-tap / Back Tap setup guide
       <BackTapSetupDialog
         open={guideOpen}
         deferredInstall={deferredInstall}
@@ -193,6 +195,7 @@ export const PwaProvider = ({ children }: { children: React.ReactNode }) => {
         onInstallRequest={installApp}
         onClose={() => setGuideOpen(false)}
       />
+      */}
     </PwaContext.Provider>
   );
 };

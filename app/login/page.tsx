@@ -14,9 +14,13 @@ export default function LoginPage() {
     continueWithPhone,
     error,
     needsIncome,
+    profileHydrated,
     incomeDraft,
     setIncomeDraft,
-    saveIncome,
+    budgetDraft,
+    setBudgetDraft,
+    completeOnboarding,
+    skipOnboarding,
     initializing,
   } = useApp();
 
@@ -24,22 +28,28 @@ export default function LoginPage() {
 
   // If already logged in, redirect straight to home
   useEffect(() => {
-    if (!initializing && userId && !needsIncome) {
+    if (!initializing && userId && profileHydrated && !needsIncome) {
       router.replace('/');
     }
-  }, [initializing, userId, needsIncome, router]);
+  }, [initializing, userId, profileHydrated, needsIncome, router]);
 
-  if (initializing) {
+  if (initializing || (userId && !profileHydrated)) {
     return <div className="min-h-screen bg-background" />;
   }
 
   if (needsIncome) {
     return (
       <IncomeSetup
-        value={incomeDraft}
-        setValue={setIncomeDraft}
-        onSave={async () => {
-          await saveIncome();
+        income={incomeDraft}
+        setIncome={setIncomeDraft}
+        budget={budgetDraft}
+        setBudget={setBudgetDraft}
+        onContinue={async () => {
+          await completeOnboarding();
+          router.replace('/');
+        }}
+        onSkip={async () => {
+          await skipOnboarding();
           router.replace('/');
         }}
         error={error}

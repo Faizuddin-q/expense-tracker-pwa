@@ -40,6 +40,7 @@ export const POST = async (request: Request) => {
       hideAmounts,
       categoryOverrides,
       categoryIconOverrides,
+      onboardingComplete,
     } = await request.json();
     if (
       typeof userId !== 'string' ||
@@ -52,19 +53,33 @@ export const POST = async (request: Request) => {
     const collection = database.collection('expenses');
     const profiles = database.collection('profiles');
 
-    // Handle permanent deletion of deleted expense IDs
+    // Soft-delete: keep the document so accidents can be recovered.
+    // Active lists exclude deletedAt; purge later if you add a TTL/cron.
     if (Array.isArray(deletedIds) && deletedIds.length > 0) {
-      await collection.deleteMany({
-        userId,
-        $or: [{ localId: { $in: deletedIds } }, { id: { $in: deletedIds } }],
-      });
+      const now = new Date();
+      await collection.updateMany(
+        {
+          userId,
+          $or: [{ localId: { $in: deletedIds } }, { id: { $in: deletedIds } }],
+        },
+        {
+          $set: {
+            deletedAt: now,
+            updatedAt: now,
+          },
+        }
+      );
     }
 
     if (expenses.length)
       await collection.bulkWrite(
         expenses.map((expense) => {
-          const { _id, ...rest } = expense;
+          const { _id, deletedAt: _ignored, note: _note, ...rest } = expense;
           const localId = expense.localId || expense.id;
+          const noteValue =
+            typeof expense.note === 'string' && expense.note.trim()
+              ? expense.note.trim()
+              : null;
           return {
             updateOne: {
               filter: { userId, localId },
@@ -73,8 +88,11 @@ export const POST = async (request: Request) => {
                   ...rest,
                   userId,
                   localId,
+                  note: noteValue,
                   updatedAt: new Date(expense.updatedAt ?? Date.now()),
                 },
+                // Restoring an expense (sync after undo) clears soft-delete
+                $unset: { deletedAt: '' },
               },
               upsert: true,
             },
@@ -103,6 +121,9 @@ export const POST = async (request: Request) => {
     }
     if (typeof hideAmounts === 'boolean') {
       profileUpdate.hideAmounts = hideAmounts;
+    }
+    if (typeof onboardingComplete === 'boolean') {
+      profileUpdate.onboardingComplete = onboardingComplete;
     }
     if (Array.isArray(categories)) {
       profileUpdate.categories = categories
@@ -140,7 +161,10 @@ export const POST = async (request: Request) => {
 
     const [records, profile] = await Promise.all([
       collection
-        .find({ userId })
+        .find({
+          userId,
+          $or: [{ deletedAt: { $exists: false } }, { deletedAt: null }],
+        })
         .sort({ updatedAt: -1 })
         .limit(10000)
         .toArray(),
@@ -156,6 +180,7 @@ export const POST = async (request: Request) => {
               typeof profile.hideAmounts === 'boolean'
                 ? profile.hideAmounts
                 : null,
+            onboardingComplete: profile.onboardingComplete === true,
             categories: profile.categories ?? [],
             categoryOverrides: profile.categoryOverrides ?? {},
             categoryIconOverrides: profile.categoryIconOverrides ?? {},

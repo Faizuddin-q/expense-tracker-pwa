@@ -1,4 +1,6 @@
-import { Download, Eye, EyeOff, Hand, LogOut, Moon, Sun } from 'lucide-react';
+import { Download, Eye, EyeOff, LogOut, Moon, Sun } from 'lucide-react';
+// Hand — used by deprecated double-tap shortcut section
+// import { Download, Eye, EyeOff, Hand, LogOut, Moon, Sun } from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
 import {
   downloadCsv,
@@ -24,9 +26,10 @@ interface SettingsProps {
   setTheme: (t: 'dark' | 'light') => void;
   hideAmounts: boolean;
   setHideAmounts: (v: boolean) => void;
-  backTapEnabled: boolean;
-  setBackTapEnabled: (on: boolean) => void;
-  onOpenBackTapGuide?: () => void;
+  // Deprecated for now — double-tap / Back Tap shortcut
+  // backTapEnabled: boolean;
+  // setBackTapEnabled: (on: boolean) => void;
+  // onOpenBackTapGuide?: () => void;
 }
 
 /** A labelled settings row: description on the left, control on the right. */
@@ -174,9 +177,10 @@ export const Settings = ({
   setTheme,
   hideAmounts,
   setHideAmounts,
-  backTapEnabled,
-  setBackTapEnabled,
-  onOpenBackTapGuide,
+  // Deprecated for now — double-tap / Back Tap shortcut
+  // backTapEnabled,
+  // setBackTapEnabled,
+  // onOpenBackTapGuide,
 }: SettingsProps) => {
   return (
     <div className="mx-auto max-w-6xl">
@@ -287,6 +291,7 @@ export const Settings = ({
           </Row>
         </Section>
 
+        {/* Deprecated for now — double-tap / Back Tap shortcut
         <Section title="Shortcuts">
           <Row
             title="Open with double tap"
@@ -318,6 +323,7 @@ export const Settings = ({
             </Row>
           )}
         </Section>
+        */}
 
         <Section title="Data">
           <Row
