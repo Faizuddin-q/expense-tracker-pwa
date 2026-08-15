@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Trash2, X } from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
 import { categoryFor, getCategoryColor, getCategoryIcon } from '@/lib/utils';
 import { Money } from '@/components/Money';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { builtInCategories } from '@/lib/constants';
+import { useFocusTrap } from '@/lib/useFocusTrap';
 
 interface ExpenseDeleteDialogProps {
   expense: Expense;
@@ -24,6 +25,8 @@ export const ExpenseDeleteDialog = ({
   const c = categoryFor(expense.category, categories);
   const color = getCategoryColor(c.tone);
   const Icon = getCategoryIcon(c);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, true);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -43,6 +46,7 @@ export const ExpenseDeleteDialog = ({
       />
 
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-expense-title"
@@ -67,8 +71,8 @@ export const ExpenseDeleteDialog = ({
 
         <div className="px-4 py-4">
           <p className="text-[13px] leading-relaxed text-muted-foreground">
-            This removes the expense from this device and the cloud. You can&apos;t
-            undo it later.
+            This removes the expense from this device and the cloud. You can
+            undo it for a few seconds after deleting.
           </p>
 
           <div className="mt-3 flex items-center gap-2.5 rounded-lg border border-border bg-background px-3 py-2.5">

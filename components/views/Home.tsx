@@ -99,6 +99,14 @@ export const Home = ({
               />
             </div>
           </div>
+          <p
+            className={`mt-2 min-h-[1.25rem] text-[12px] font-medium text-primary ${
+              hasAmount ? '' : 'invisible'
+            }`}
+            aria-hidden={!hasAmount}
+          >
+            Pick a category to save this expense.
+          </p>
 
           {/* Categories */}
           <div className="mt-6">
@@ -150,11 +158,6 @@ export const Home = ({
                 <span className="truncate text-[13px] font-medium">New</span>
               </button>
             </div>
-            {hasAmount && (
-              <p className="mt-2 text-[12px] font-medium text-primary">
-                Pick a category to save this expense.
-              </p>
-            )}
           </div>
 
           {/* Quick re-log */}

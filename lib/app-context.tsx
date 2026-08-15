@@ -326,6 +326,13 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     if (hydrated && userId) set(`pocket-expenses-${userId}`, expenses);
   }, [expenses, hydrated, userId]);
 
+  // Persist deletions still awaiting a successful sync so an offline delete
+  // survives an app restart instead of being forgotten and resurrected by
+  // the next bootstrap pull from Mongo.
+  useEffect(() => {
+    if (userId) set(`pocket-pending-deleted-${userId}`, pendingDeletedIds);
+  }, [pendingDeletedIds, userId]);
+
   // ── Sync ─────────────────────────────────────────────────────────────────
 
   const sync = useCallback(
@@ -392,24 +399,26 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error);
 
+        const deletedIdSet = new Set(deletedIds);
+
         if (deletedIds.length > 0) {
           setPendingDeletedIds((prev) =>
-            prev.filter((item) => !deletedIds.includes(item))
+            prev.filter((item) => !deletedIdSet.has(item))
           );
         }
 
         if (Array.isArray(data.expenses)) {
-          const activeExpenses = data.expenses
-            .map((e: Expense) => ({
+          const activeExpenses: Expense[] = [];
+          for (const e of data.expenses as Expense[]) {
+            const id = e.localId ?? e.id;
+            if (deletedIdSet.has(id) || e.deletedAt) continue;
+            activeExpenses.push({
               ...e,
-              id: e.localId ?? e.id,
+              id,
               amount: Number(e.amount) || 0,
               syncStatus: 'synced' as const,
-            }))
-            .filter(
-              (e: Expense) =>
-                !deletedIds.includes(e.id) && !e.deletedAt
-            );
+            });
+          }
           hydrate(activeExpenses);
         }
 
@@ -436,11 +445,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           await set(`pocket-income-${id}`, 0);
           setNeedsIncome(false);
         } else {
-          const localIncome = await get<number>(`pocket-income-${id}`);
-          const localDone = await get<boolean>(
-            `pocket-onboarding-complete-${id}`
-          );
-          const localExpenses = await get<Expense[]>(`pocket-expenses-${id}`);
+          const [localIncome, localDone, localExpenses] = await Promise.all([
+            get<number>(`pocket-income-${id}`),
+            get<boolean>(`pocket-onboarding-complete-${id}`),
+            get<Expense[]>(`pocket-expenses-${id}`),
+          ]);
           if (typeof localIncome === 'number' && localIncome > 0) {
             setIncome(localIncome);
             setIncomeDraft(String(localIncome));
@@ -620,6 +629,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           savedOverrides,
           savedIconOverrides,
           savedHideAmounts,
+          savedPendingDeleted,
         ] = await Promise.all([
           get<Expense[]>(`pocket-expenses-${id}`),
           get<Category[]>(`pocket-categories-${id}`),
@@ -628,7 +638,18 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           get<Record<string, string>>(`pocket-cat-overrides-${id}`),
           get<Record<string, string>>(`pocket-cat-icon-overrides-${id}`),
           get<boolean>(`pocket-hide-amounts-${id}`),
+          get<string[]>(`pocket-pending-deleted-${id}`),
         ]);
+
+        // Deletions queued while offline that never made it to Mongo — replay
+        // them on the first sync so the server doesn't resurrect them.
+        const localPendingDeleted = Array.isArray(savedPendingDeleted)
+          ? savedPendingDeleted
+          : [];
+        if (localPendingDeleted.length) {
+          pendingDeletedIdsRef.current = localPendingDeleted;
+          setPendingDeletedIds(localPendingDeleted);
+        }
 
         const localExpenses = Array.isArray(savedExpenses) ? savedExpenses : [];
         const localCategories = Array.isArray(savedCategories)
@@ -695,12 +716,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           // Pull Mongo as source of truth.
           // Never push categories/income/budget on bootstrap — a sparse local
           // list would overwrite the full cloud profile (wiping customs).
+          // Do replay any deletions that queued up while offline last session,
+          // otherwise Mongo still has them as active and hydrate() below would
+          // bring them back to life.
           const ok = await sync(
             id,
             localExpenses,
             null,
             null,
-            [],
+            localPendingDeleted,
             null,
             null,
             null,
@@ -716,9 +740,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         // Offline or sync failed → IndexedDB fallback (may already be painted)
         if (!hasLocalProfile) {
           hydrate(localExpenses);
-          await persistCustomCategories(id, localCategories);
-          await persistToneOverrides(id, localTones);
-          await persistIconOverrides(id, localIcons);
+          await Promise.all([
+            persistCustomCategories(id, localCategories),
+            persistToneOverrides(id, localTones),
+            persistIconOverrides(id, localIcons),
+          ]);
 
           if (typeof savedIncome === 'number' && savedIncome > 0) {
             setIncome(savedIncome);
@@ -773,7 +799,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   const bootstrapUserRef = useRef(bootstrapUser);
-  bootstrapUserRef.current = bootstrapUser;
+  useEffect(() => {
+    bootstrapUserRef.current = bootstrapUser;
+  });
 
   // Only re-bootstrap when the signed-in user changes — not on every sync/expense update
   useEffect(() => {
@@ -872,6 +900,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       toast.error('Could not save income', msg);
       return;
     }
+    setError('');
     setIncome(parsed);
     await set(`pocket-income-${userId}`, parsed);
     setNeedsIncome(false);
@@ -898,6 +927,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       toast.error('Could not save budget', msg);
       return;
     }
+    setError('');
     setBudget(parsed);
     await set(`pocket-budget-${userId}`, parsed);
     const ok = await sync(
@@ -1333,18 +1363,18 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     [expenses]
   );
 
-  const byCategory = useMemo(
-    () =>
-      allCategories
-        .map((c) => ({
-          ...c,
-          total: expenses
-            .filter((e) => e.category === c.id)
-            .reduce((s, e) => s + e.amount, 0),
-        }))
-        .filter((c) => c.total),
-    [allCategories, expenses]
-  );
+  const byCategory = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const e of expenses) {
+      totals.set(e.category, (totals.get(e.category) ?? 0) + e.amount);
+    }
+    const result: (Category & { total: number })[] = [];
+    for (const c of allCategories) {
+      const total = totals.get(c.id) ?? 0;
+      if (total) result.push({ ...c, total });
+    }
+    return result;
+  }, [allCategories, expenses]);
 
   // ── Value ─────────────────────────────────────────────────────────────────
 

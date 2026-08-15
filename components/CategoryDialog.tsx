@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Check, Plus, Trash2, X } from 'lucide-react';
 import { Category } from '@/types/expense';
 import {
@@ -8,6 +8,7 @@ import {
   getCategoryIcon,
 } from '@/lib/utils';
 import { CategoryIcon } from '@/components/CategoryIcon';
+import { useFocusTrap } from '@/lib/useFocusTrap';
 
 interface CategoryDialogProps {
   categories: Category[];
@@ -43,6 +44,16 @@ export const CategoryDialog = ({
   const [activeTab, setActiveTab] = useState<'manage' | 'add'>('manage');
   const [editingId, setEditingId] = useState<string | null>(null);
   const previewColor = getCategoryColor(selectedTone);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, true);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    addEventListener('keydown', onKey);
+    return () => removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/70 p-0 backdrop-blur-sm duration-150 animate-in fade-in sm:items-center sm:p-5">
@@ -54,6 +65,7 @@ export const CategoryDialog = ({
       />
 
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="category-dialog-title"

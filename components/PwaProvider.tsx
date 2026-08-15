@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -175,17 +176,27 @@ export const PwaProvider = ({ children }: { children: React.ReactNode }) => {
     [installApp, showGuideFallback]
   );
 
+  const value = useMemo(
+    () => ({
+      backTapEnabled,
+      setBackTapEnabled,
+      openBackTapGuide,
+      canInstall: Boolean(deferredInstall) && !isInstalled,
+      installApp,
+      isInstalled,
+    }),
+    [
+      backTapEnabled,
+      setBackTapEnabled,
+      openBackTapGuide,
+      deferredInstall,
+      isInstalled,
+      installApp,
+    ]
+  );
+
   return (
-    <PwaContext.Provider
-      value={{
-        backTapEnabled,
-        setBackTapEnabled,
-        openBackTapGuide,
-        canInstall: Boolean(deferredInstall) && !isInstalled,
-        installApp,
-        isInstalled,
-      }}
-    >
+    <PwaContext.Provider value={value}>
       {children}
       {/* Deprecated for now — double-tap / Back Tap setup guide
       <BackTapSetupDialog

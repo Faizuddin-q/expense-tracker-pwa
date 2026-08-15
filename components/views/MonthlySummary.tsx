@@ -38,6 +38,8 @@ export const MonthlySummary = ({
 
   const months = useMemo<MonthSummary[]>(() => {
     const cats = categories.length ? categories : builtInCategories;
+    const catsById = new Map(cats.map((c) => [c.id, c]));
+    const builtInById = new Map(builtInCategories.map((c) => [c.id, c]));
     const now = new Date();
     const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const groups = new Map<string, Expense[]>();
@@ -76,30 +78,27 @@ export const MonthlySummary = ({
           counts.set(id, (counts.get(id) ?? 0) + 1);
         });
 
-        const byCategory = Array.from(totals.entries())
-          .map(([id, catTotal]) => {
-            const meta =
-              cats.find((c) => c.id === id) ??
-              builtInCategories.find((c) => c.id === id) ??
-              ({
-                id,
-                label:
-                  id === 'other'
-                    ? 'Other'
-                    : id.startsWith('custom-')
-                      ? 'Missing category'
-                      : id,
-                tone: 'gray',
-                Icon: Plus,
-              } satisfies Category);
-            return {
-              ...meta,
-              total: catTotal,
-              count: counts.get(id) ?? 0,
-            };
-          })
-          .filter((c) => c.total > 0)
-          .sort((a, b) => b.total - a.total);
+        const byCategory: (Category & { total: number; count: number })[] =
+          [];
+        for (const [id, catTotal] of totals.entries()) {
+          if (catTotal <= 0) continue;
+          const meta =
+            catsById.get(id) ??
+            builtInById.get(id) ??
+            ({
+              id,
+              label:
+                id === 'other'
+                  ? 'Other'
+                  : id.startsWith('custom-')
+                    ? 'Missing category'
+                    : id,
+              tone: 'gray',
+              Icon: Plus,
+            } satisfies Category);
+          byCategory.push({ ...meta, total: catTotal, count: counts.get(id) ?? 0 });
+        }
+        byCategory.sort((a, b) => b.total - a.total);
 
         return {
           key,
