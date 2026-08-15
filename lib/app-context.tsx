@@ -195,6 +195,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const initialSyncDoneFor = useRef<string | null>(null);
   const bootstrapInflight = useRef<Promise<boolean> | null>(null);
   const bootstrapInflightFor = useRef<string | null>(null);
+  const expensesRef = useRef(expenses);
+  const pendingDeletedIdsRef = useRef(pendingDeletedIds);
   // const recoveringCategories = useRef(false); // disabled — see lib/utils.ts
 
   useEffect(() => {
@@ -208,6 +210,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     categoryIconOverridesRef.current = categoryIconOverrides;
   }, [categoryIconOverrides]);
+
+  useEffect(() => {
+    expensesRef.current = expenses;
+  }, [expenses]);
+
+  useEffect(() => {
+    pendingDeletedIdsRef.current = pendingDeletedIds;
+  }, [pendingDeletedIds]);
 
   const persistCustomCategories = useCallback(
     async (id: string, next: Category[]) => {
@@ -321,12 +331,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const sync = useCallback(
     async (
       id = userId,
-      local = expenses,
+      local = expensesRef.current,
       // null = do not push (avoids overwriting cloud with defaults / stale local)
       profileIncome: number | null = null,
       // null = do not push categories (avoids wiping cloud customs with [])
       profileCategories: Category[] | null = null,
-      deletedIds = pendingDeletedIds,
+      deletedIds = pendingDeletedIdsRef.current,
       profileBudget: number | null = null,
       profileHideAmounts: boolean | null = null,
       profileCategoryOverrides: Record<string, string> | null = null,
@@ -581,8 +591,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     },
     [
       userId,
-      expenses,
-      pendingDeletedIds,
       hydrate,
       persistCustomCategories,
       persistToneOverrides,
@@ -604,9 +612,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       const run = (async () => {
-        setProfileHydrated(false);
-        setNeedsIncome(false);
-
         const [
           savedExpenses,
           savedCategories,
@@ -635,8 +640,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           : [];
         const localTones = savedOverrides ?? {};
         const localIcons = savedIconOverrides ?? {};
+        const localDone = await get<boolean>(
+          `pocket-onboarding-complete-${id}`
+        );
 
-        // Seed category refs for merge — do not decide income/budget from IDB yet
+        // Seed category refs for merge
         if (localCategories.length) {
           customCategoriesRef.current = localCategories;
           setCustomCategories(localCategories);
@@ -648,6 +656,36 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         if (Object.keys(localIcons).length) {
           categoryIconOverridesRef.current = localIcons;
           setCategoryIconOverrides(localIcons);
+        }
+
+        // Paint local data immediately when available — avoids a full-screen blank flash
+        const hasLocalProfile =
+          localExpenses.length > 0 ||
+          (typeof savedIncome === 'number' && savedIncome > 0) ||
+          Boolean(localDone);
+
+        if (hasLocalProfile) {
+          hydrate(localExpenses);
+          if (typeof savedIncome === 'number' && savedIncome > 0) {
+            setIncome(savedIncome);
+            setIncomeDraft(String(savedIncome));
+            setNeedsIncome(false);
+          } else {
+            setIncome(0);
+            setIncomeDraft('');
+            setNeedsIncome(false);
+          }
+          if (typeof savedBudget === 'number' && savedBudget > 0) {
+            setBudget(savedBudget);
+            setBudgetDraft(String(savedBudget));
+          }
+          if (typeof savedHideAmounts === 'boolean') {
+            setHideAmountsState(savedHideAmounts);
+          }
+          setProfileHydrated(true);
+        } else {
+          setNeedsIncome(false);
+          setProfileHydrated(false);
         }
 
         const isOnline = navigator.onLine;
@@ -675,40 +713,38 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
 
-        // Offline or sync failed → IndexedDB fallback
-        hydrate(localExpenses);
-        await persistCustomCategories(id, localCategories);
-        await persistToneOverrides(id, localTones);
-        await persistIconOverrides(id, localIcons);
+        // Offline or sync failed → IndexedDB fallback (may already be painted)
+        if (!hasLocalProfile) {
+          hydrate(localExpenses);
+          await persistCustomCategories(id, localCategories);
+          await persistToneOverrides(id, localTones);
+          await persistIconOverrides(id, localIcons);
 
-        const localDone = await get<boolean>(
-          `pocket-onboarding-complete-${id}`
-        );
+          if (typeof savedIncome === 'number' && savedIncome > 0) {
+            setIncome(savedIncome);
+            setIncomeDraft(String(savedIncome));
+            setNeedsIncome(false);
+          } else if (localExpenses.length > 0 || localDone) {
+            setIncome(0);
+            setIncomeDraft('');
+            setNeedsIncome(false);
+          } else {
+            setIncome(0);
+            setIncomeDraft('');
+            setNeedsIncome(true);
+          }
 
-        if (typeof savedIncome === 'number' && savedIncome > 0) {
-          setIncome(savedIncome);
-          setIncomeDraft(String(savedIncome));
-          setNeedsIncome(false);
-        } else if (localExpenses.length > 0 || localDone) {
-          setIncome(0);
-          setIncomeDraft('');
-          setNeedsIncome(false);
-        } else {
-          setIncome(0);
-          setIncomeDraft('');
-          setNeedsIncome(true);
-        }
+          if (typeof savedBudget === 'number' && savedBudget > 0) {
+            setBudget(savedBudget);
+            setBudgetDraft(String(savedBudget));
+          } else {
+            setBudget(0);
+            setBudgetDraft('');
+          }
 
-        if (typeof savedBudget === 'number' && savedBudget > 0) {
-          setBudget(savedBudget);
-          setBudgetDraft(String(savedBudget));
-        } else {
-          setBudget(0);
-          setBudgetDraft('');
-        }
-
-        if (typeof savedHideAmounts === 'boolean') {
-          setHideAmountsState(savedHideAmounts);
+          if (typeof savedHideAmounts === 'boolean') {
+            setHideAmountsState(savedHideAmounts);
+          }
         }
 
         initialSyncDoneFor.current = id;
@@ -736,6 +772,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     ]
   );
 
+  const bootstrapUserRef = useRef(bootstrapUser);
+  bootstrapUserRef.current = bootstrapUser;
+
+  // Only re-bootstrap when the signed-in user changes — not on every sync/expense update
   useEffect(() => {
     if (!userId) {
       setProfileHydrated(false);
@@ -743,13 +783,13 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
     let cancelled = false;
-    void bootstrapUser(userId).then(() => {
+    void bootstrapUserRef.current(userId).then(() => {
       if (cancelled) return;
     });
     return () => {
       cancelled = true;
     };
-  }, [userId, bootstrapUser]);
+  }, [userId]);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
 
