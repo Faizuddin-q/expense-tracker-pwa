@@ -191,52 +191,6 @@ export const categoryFor = (
   };
 };
 
-// Disabled: was fabricating "Recovered category N" / "Recovered · <note>"
-// placeholder categories for expense category IDs that didn't match any
-// known category. Turned off because it was surfacing spurious "Recovered"
-// categories/expenses in the UI. Kept here in case the orphan-recovery
-// behavior needs to be revisited.
-// /** Rebuild custom categories for expense IDs that no longer have a profile entry. */
-// export const recoverOrphanCategories = (
-//   expenses: Expense[],
-//   existingCustom: Category[] = []
-// ): { categories: Category[]; added: Category[] } => {
-//   const known = new Set([
-//     ...builtInCategories.map((c) => c.id),
-//     ...existingCustom.map((c) => c.id),
-//   ]);
-//   const orphanIds = [
-//     ...new Set(
-//       expenses
-//         .map((e) => e.category)
-//         .filter((id): id is string => Boolean(id) && !known.has(id))
-//     ),
-//   ];
-//   if (!orphanIds.length) {
-//     return { categories: existingCustom, added: [] };
-//   }
-//
-//   let n = 1;
-//   const added = orphanIds.map((id) => {
-//     const noteHint = expenses
-//       .filter((e) => e.category === id && e.note?.trim())
-//       .map((e) => e.note!.trim())[0];
-//     const label = noteHint
-//       ? `Recovered · ${noteHint.slice(0, 28)}`
-//       : `Recovered category ${n++}`;
-//     return {
-//       id,
-//       label,
-//       tone: 'gray',
-//       iconName: 'plus',
-//       custom: true,
-//       Icon: getCategoryIcon({ iconName: 'plus' }),
-//     } satisfies Category;
-//   });
-//
-//   return { categories: [...existingCustom, ...added], added };
-// };
-
 /** Merge cloud + local category defs. Prefer non-default local styles, else cloud. */
 export const mergeCategoryDefs = (
   cloud: Category,
@@ -249,14 +203,6 @@ export const mergeCategoryDefs = (
       custom: true,
     };
   }
-  // Disabled along with recoverOrphanCategories above — was preferring a
-  // non-"Recovered" label over a "Recovered ..." one when merging.
-  // const cloudRecovered = /^Recovered\b/i.test(cloud.label);
-  // const localRecovered = /^Recovered\b/i.test(local.label);
-  // const label =
-  //   cloudRecovered && !localRecovered
-  //     ? local.label
-  //     : cloud.label || local.label;
   const label = cloud.label || local.label;
 
   const pick = (
