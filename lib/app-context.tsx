@@ -1030,8 +1030,23 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     [customCategories, categoryOverrides, categoryIconOverrides]
   );
 
+  // Pull the freshest cloud category list right before any category
+  // mutation is computed. Without this, a device whose local cache is
+  // stale (e.g. right after login — profileHydrated can go true from a
+  // local-only paint before the cloud pull finishes — or simply behind a
+  // category added from another device) would compute "next" from an
+  // incomplete list and push it as the full authoritative set, silently
+  // deleting every category the cloud knew about that this device didn't.
+  // That's what was producing "Missing category" for users after their
+  // custom categories vanished.
+  const ensureFreshCategories = useCallback(async () => {
+    if (!userId) return;
+    await sync(userId, expensesRef.current, null, null, pendingDeletedIdsRef.current);
+  }, [userId, sync]);
+
   const updateCategoryColor = async (id: string, newTone: string) => {
     if (!userId) return;
+    await ensureFreshCategories();
     const nextOverrides = { ...categoryOverridesRef.current, [id]: newTone };
     await persistToneOverrides(userId, nextOverrides);
 
@@ -1059,6 +1074,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateCategoryIcon = async (id: string, iconName: string) => {
     if (!userId) return;
+    await ensureFreshCategories();
     const nextIcons = {
       ...categoryIconOverridesRef.current,
       [id]: iconName,
@@ -1094,9 +1110,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const deleteCategory = async (id: string) => {
+    if (!userId) return;
+    await ensureFreshCategories();
     const removedLabel =
-      customCategories.find((c) => c.id === id)?.label ?? 'Category';
-    const next = customCategories.filter((c) => c.id !== id);
+      customCategoriesRef.current.find((c) => c.id === id)?.label ??
+      'Category';
+    const next = customCategoriesRef.current.filter((c) => c.id !== id);
     await persistCustomCategories(userId, next);
     const ok = await sync(
       userId,
@@ -1115,9 +1134,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const renameCategory = async (id: string, label: string) => {
     const trimmed = label.trim();
     if (!trimmed || !userId) return;
-    const target = customCategories.find((c) => c.id === id);
+    await ensureFreshCategories();
+    const target = customCategoriesRef.current.find((c) => c.id === id);
     if (!target || target.label === trimmed) return;
-    const next = customCategories.map((c) =>
+    const next = customCategoriesRef.current.map((c) =>
       c.id === id ? { ...c, label: trimmed } : c
     );
     await persistCustomCategories(userId, next);
@@ -1141,6 +1161,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       toast.error('Could not add category', 'Enter a category name');
       return;
     }
+    await ensureFreshCategories();
     const custom: Category = {
       id: `custom-${crypto.randomUUID()}`,
       label,
@@ -1149,7 +1170,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       Icon: getCategoryIcon({ iconName: selectedIconName }),
       custom: true,
     };
-    const next = [...customCategories, custom];
+    const next = [...customCategoriesRef.current, custom];
     await persistCustomCategories(userId, next);
     setCategoryName('');
     setCategoryDialog(false);
