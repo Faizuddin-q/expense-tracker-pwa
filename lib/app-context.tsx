@@ -156,8 +156,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [undo, setUndo] = useState<Expense | null>(null);
   const [showAll, setShowAll] = useState(false);
 
-  const [income, setIncome] = useState(60000);
-  const [incomeDraft, setIncomeDraft] = useState('60000');
+  const [income, setIncome] = useState(0);
+  const [incomeDraft, setIncomeDraft] = useState('');
   const [budget, setBudget] = useState(0);
   const [budgetDraft, setBudgetDraft] = useState('');
 
@@ -474,13 +474,26 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           hydrate(activeExpenses);
         }
         // Cloud profile is source of truth after sync
-        if (data.profile?.monthlyIncome > 0) {
+        if (
+          typeof data.profile?.monthlyIncome === 'number' &&
+          data.profile.monthlyIncome > 0
+        ) {
           setIncome(data.profile.monthlyIncome);
           setIncomeDraft(String(data.profile.monthlyIncome));
           await set(`pocket-income-${id}`, data.profile.monthlyIncome);
           setNeedsIncome(false);
-        } else if (data.profile === null) {
-          setNeedsIncome(true);
+        } else {
+          // Profile missing or has no income — ask once; never fall back to a fake default
+          const localIncome = await get<number>(`pocket-income-${id}`);
+          if (typeof localIncome === 'number' && localIncome > 0) {
+            setIncome(localIncome);
+            setIncomeDraft(String(localIncome));
+            setNeedsIncome(false);
+          } else {
+            setIncome(0);
+            setIncomeDraft('');
+            setNeedsIncome(true);
+          }
         }
         if (
           typeof data.profile?.monthlyBudget === 'number' &&
@@ -489,6 +502,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           setBudget(data.profile.monthlyBudget);
           setBudgetDraft(String(data.profile.monthlyBudget));
           await set(`pocket-budget-${id}`, data.profile.monthlyBudget);
+        } else {
+          const localBudget = await get<number>(`pocket-budget-${id}`);
+          if (typeof localBudget === 'number' && localBudget > 0) {
+            setBudget(localBudget);
+            setBudgetDraft(String(localBudget));
+          } else {
+            setBudget(0);
+            setBudgetDraft('');
+          }
         }
         if (typeof data.profile?.hideAmounts === 'boolean') {
           setHideAmountsState(data.profile.hideAmounts);
@@ -677,13 +699,19 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     if (localBudget) {
       setBudget(localBudget);
       setBudgetDraft(String(localBudget));
+    } else {
+      setBudget(0);
+      setBudgetDraft('');
     }
     if (localIncome) {
       setIncome(localIncome);
       setIncomeDraft(String(localIncome));
       setNeedsIncome(false);
     } else {
-      setNeedsIncome(false);
+      // Empty until cloud sync fills it — do not keep a placeholder amount
+      setIncome(0);
+      setIncomeDraft('');
+      setNeedsIncome(true);
     }
 
     const localCategories = Array.isArray(savedCats)
