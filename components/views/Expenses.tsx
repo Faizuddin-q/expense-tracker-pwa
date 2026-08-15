@@ -23,6 +23,8 @@ type SortKey = 'date' | 'category' | 'amount' | 'createdAt' | 'updatedAt';
 type SortDir = 'asc' | 'desc';
 type TimeRangeOption = 'all' | '1d' | '7d' | '14d' | '30d' | 'month' | 'custom';
 
+const EMPTY_CATEGORIES: Category[] = [];
+
 const PAYMENT_LABELS: Record<string, string> = {
   upi: 'UPI',
   card: 'Card',
@@ -122,7 +124,7 @@ export const Expenses = ({
   expenses,
   remove,
   updateExpense,
-  categories = [],
+  categories = EMPTY_CATEGORIES,
 }: ExpensesProps) => {
   const [query, setQuery] = useState('');
   const [timeRange, setTimeRange] = useState<TimeRangeOption>('all');

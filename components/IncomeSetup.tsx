@@ -44,7 +44,6 @@ export const IncomeSetup = ({
               <span className="font-mono-numbers text-[13px] text-faint">₹</span>
               <input
                 id="onboarding-income"
-                autoFocus
                 inputMode="decimal"
                 value={formatIndianNumber(income)}
                 onChange={(e) =>

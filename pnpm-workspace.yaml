@@ -1,0 +1,5 @@
+# Supply-chain hardening (pnpm 10+). See:
+# https://pnpm.io/settings#minimumreleaseage
+# https://pnpm.io/settings#trustpolicy
+minimumReleaseAge: 10080 # 7 days — delay installs until releases have had time to be vetted
+trustPolicy: no-downgrade # refuse to downgrade trust signals (provenance/signatures) between resolutions

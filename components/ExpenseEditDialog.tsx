@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
 import {
@@ -10,6 +10,7 @@ import {
   parseRawNumber,
 } from '@/lib/utils';
 import { CategoryIcon } from '@/components/CategoryIcon';
+import { useFocusTrap } from '@/lib/useFocusTrap';
 
 interface ExpenseEditDialogProps {
   expense: Expense;
@@ -29,7 +30,7 @@ export const ExpenseEditDialog = ({
   onSave,
   onClose,
 }: ExpenseEditDialogProps) => {
-  const [amountDraft, setAmountDraft] = useState(
+  const [amountDraft, setAmountDraft] = useState(() =>
     formatIndianNumber(expense.amount)
   );
   const [noteDraft, setNoteDraft] = useState(expense.note ?? '');
@@ -39,6 +40,8 @@ export const ExpenseEditDialog = ({
     if (isNaN(d.getTime())) return '';
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, true);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -73,6 +76,7 @@ export const ExpenseEditDialog = ({
       />
 
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="edit-expense-title"
