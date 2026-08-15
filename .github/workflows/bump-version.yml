@@ -34,3 +34,17 @@ jobs:
           git tag "${{ steps.bump.outputs.version }}"
           git push origin HEAD:main
           git push origin "${{ steps.bump.outputs.version }}"
+
+      # Without this, dev keeps showing the pre-bump version after every
+      # release, since the bump commit only ever lands on main.
+      - name: Sync the version bump back to dev
+        continue-on-error: true
+        run: |
+          if git ls-remote --exit-code --heads origin dev > /dev/null 2>&1; then
+            git fetch origin dev
+            git checkout -B dev origin/dev
+            git merge origin/main --no-edit -m "chore: sync version bump from main [skip ci]"
+            git push origin dev
+          else
+            echo "No dev branch on origin — skipping sync."
+          fi
