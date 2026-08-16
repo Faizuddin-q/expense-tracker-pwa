@@ -7,7 +7,7 @@ export const Brand = () => {
         </span>
       </div>
       <span className="text-[14px] font-semibold tracking-tight text-foreground">
-        Pocket
+        Pockett
       </span>
     </div>
   );

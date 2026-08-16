@@ -3,14 +3,14 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Pocket — Spend with clarity',
+  title: 'Pockett — Spend with clarity',
   description: 'A calm, offline-first expense tracker for everyday spending.',
   generator: 'v0.app',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Pocket',
+    title: 'Pockett',
   },
   icons: {
     icon: [
