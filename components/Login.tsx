@@ -57,7 +57,7 @@ export const Login = ({
     isSignup && confirmPassword.length > 0 && password !== confirmPassword;
 
   return (
-    <main className="grid min-h-screen place-items-center bg-background px-5 py-10">
+    <main className="flex min-h-screen justify-center bg-background px-5 pt-16 pb-10 sm:pt-24">
       <section className="w-full max-w-[380px]">
         <Brand />
 
