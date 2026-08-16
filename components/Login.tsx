@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Info } from 'lucide-react';
 import { Brand } from '@/components/Brand';
 
 interface LoginProps {
@@ -122,6 +122,18 @@ export const Login = ({
             Continue
             <ArrowRight className="size-3.5" strokeWidth={2.2} />
           </button>
+        </div>
+
+        <div className="mt-3 flex items-start gap-2 rounded-xl border border-primary/25 bg-primary/[0.06] p-3">
+          <Info
+            className="mt-0.5 size-3.5 shrink-0 text-primary"
+            strokeWidth={2}
+          />
+          <p className="text-[12px] leading-relaxed text-foreground">
+            <span className="font-medium">Already had an account?</span> Your
+            password is your phone number — sign in once with that, then set
+            a new password anytime in Settings.
+          </p>
         </div>
       </section>
     </main>
