@@ -17,6 +17,11 @@ const SESSION_SECRET =
 
 const SCRYPT_KEYLEN = 64;
 
+export const MIN_PASSWORD_LENGTH = 6;
+export const MAX_PASSWORD_LENGTH = 128;
+export const isValidPhone = (value: string): boolean =>
+  /^[6-9]\d{9}$/.test(value);
+
 // ─── Passwords ──────────────────────────────────────────────────────────────
 
 /** `salt:hash`, both hex — scrypt with a random salt per user. */

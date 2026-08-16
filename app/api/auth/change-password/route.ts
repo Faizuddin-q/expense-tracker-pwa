@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { getSessionUserId, hashPassword, verifyPassword } from '@/lib/auth';
+import {
+  MAX_PASSWORD_LENGTH,
+  MIN_PASSWORD_LENGTH,
+  getSessionUserId,
+  hashPassword,
+  verifyPassword,
+} from '@/lib/auth';
 import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
-
-const MIN_PASSWORD_LENGTH = 6;
-const MAX_PASSWORD_LENGTH = 128;
 
 export const POST = async (request: Request) => {
   const userId = await getSessionUserId();
