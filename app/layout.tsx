@@ -19,7 +19,7 @@ export const metadata: Metadata = {
         type: 'image/png',
       },
       {
-        url: '/icon.svg',
+        url: '/icon-white.svg',
         type: 'image/svg+xml',
       },
     ],
