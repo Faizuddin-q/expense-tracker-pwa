@@ -24,8 +24,6 @@ export interface AdminUserProfile {
   hideAmounts: boolean;
   onboardingComplete: boolean;
   categories: Category[];
-  categoryOverrides: Record<string, string>;
-  categoryIconOverrides: Record<string, string>;
   updatedAt: string | null;
 }
 

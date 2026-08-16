@@ -62,7 +62,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       void idbSet(`pocket-hide-amounts-${userId}`, v);
       void useSyncStore
         .getState()
-        .sync(userId, undefined, null, null, undefined, null, v)
+        .sync({ id: userId, hideAmounts: v })
         .then((ok) => {
           if (ok) {
             toast.success(
@@ -92,7 +92,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
     set({ needsIncome: false });
     const ok = await useSyncStore
       .getState()
-      .sync(userId, undefined, parsed, null, undefined, null, null, null, null, true);
+      .sync({ id: userId, income: parsed, onboardingComplete: true });
     if (ok) toast.success('Income updated', `Set to ${money(parsed)}`);
   },
 
@@ -109,9 +109,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
     set({ name: trimmed, nameDraft: trimmed });
     const userId = useAuthStore.getState().userId;
     await idbSet(`pocket-name-${userId}`, trimmed);
-    const ok = await useSyncStore
-      .getState()
-      .sync(userId, undefined, null, null, undefined, null, null, null, null, null, trimmed);
+    const ok = await useSyncStore.getState().sync({ id: userId, name: trimmed });
     if (ok) toast.success('Name updated', `Set to "${trimmed}"`);
   },
 
@@ -128,9 +126,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
     set({ budget: parsed });
     const userId = useAuthStore.getState().userId;
     await idbSet(`pocket-budget-${userId}`, parsed);
-    const ok = await useSyncStore
-      .getState()
-      .sync(userId, undefined, null, null, undefined, parsed);
+    const ok = await useSyncStore.getState().sync({ id: userId, budget: parsed });
     if (ok) toast.success('Budget updated', `Set to ${money(parsed)}`);
   },
 
@@ -159,20 +155,12 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
     set({ needsIncome: false });
     useAuthStore.getState().setError('');
 
-    const ok = await useSyncStore
-      .getState()
-      .sync(
-        userId,
-        undefined,
-        incomeParsed,
-        null,
-        undefined,
-        budgetValue,
-        null,
-        null,
-        null,
-        true
-      );
+    const ok = await useSyncStore.getState().sync({
+      id: userId,
+      income: incomeParsed,
+      budget: budgetValue,
+      onboardingComplete: true,
+    });
     if (ok) {
       toast.success(
         'Targets saved',
@@ -189,9 +177,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
     const userId = useAuthStore.getState().userId;
     if (userId) {
       await idbSet(`pocket-onboarding-complete-${userId}`, true);
-      await useSyncStore
-        .getState()
-        .sync(userId, undefined, null, null, undefined, null, null, null, null, true);
+      await useSyncStore.getState().sync({ id: userId, onboardingComplete: true });
     }
     toast.success('Skipped', 'You can set income and budget anytime in Settings');
   },

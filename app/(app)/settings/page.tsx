@@ -27,8 +27,7 @@ export default function SettingsPage() {
     hideAmounts,
     setHideAmounts,
   } = useProfileStore();
-  const { customCategories, categoryOverrides, categoryIconOverrides } =
-    useCategoryStore();
+  const { customCategories } = useCategoryStore();
   const sync = useSyncStore((s) => s.sync);
   const { theme, setTheme } = useThemeStore();
   // Deprecated for now — double-tap / Back Tap shortcut
@@ -48,21 +47,15 @@ export default function SettingsPage() {
       expenses={expenses}
       userId={userId}
       sync={async () => {
-        const ok = await sync(
-          userId,
-          expenses,
-          null,
-          customCategories.length > 0 ? customCategories : null,
-          undefined,
-          null,
-          null,
-          categoryOverrides,
-          categoryIconOverrides
-        );
+        const ok = await sync({
+          id: userId,
+          local: expenses,
+          categories: customCategories.length > 0 ? customCategories : null,
+        });
         if (ok)
           toast.success(
             'Data synced',
-            'Expenses, categories, colors, and icons pushed to your account'
+            'Expenses and categories pushed to your account'
           );
       }}
       onChangeIdentity={logout}

@@ -43,21 +43,11 @@ export const AdminUserPanel = ({
   const [resettingPassword, setResettingPassword] = useState(false);
 
   const categories = useMemo(() => {
-    const tones = profile.categoryOverrides ?? {};
-    const icons = profile.categoryIconOverrides ?? {};
     const merged = [
       ...builtInCategories,
       ...profile.categories.map((c) => ({ ...c, custom: true })),
     ];
-    return merged.map((c) => {
-      const iconName = icons[c.id] ?? c.iconName;
-      return {
-        ...c,
-        tone: tones[c.id] ?? c.tone,
-        iconName,
-        Icon: getCategoryIcon({ iconName, Icon: c.Icon }),
-      };
-    });
+    return merged.map((c) => ({ ...c, Icon: getCategoryIcon(c) }));
   }, [profile]);
 
   const filteredExpenses = useMemo(() => {

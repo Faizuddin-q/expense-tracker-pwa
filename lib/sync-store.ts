@@ -17,6 +17,26 @@ let initialSyncDoneFor: string | null = null;
 let bootstrapInflight: Promise<boolean> | null = null;
 let bootstrapInflightFor: string | null = null;
 
+/**
+ * All fields optional and independent — pass only what actually changed.
+ * `null` (or omitted) means "don't touch this on the server", not "clear it".
+ * A named-options object instead of positional args on purpose: a long
+ * positional signature (...null, null, true, null...) is exactly the shape
+ * that causes silent miscounted-argument bugs.
+ */
+export interface SyncOptions {
+  id?: string;
+  local?: Expense[];
+  income?: number | null;
+  categories?: Category[] | null;
+  deletedIds?: string[];
+  budget?: number | null;
+  hideAmounts?: boolean | null;
+  onboardingComplete?: boolean | null;
+  name?: string | null;
+  theme?: 'dark' | 'light' | null;
+}
+
 interface SyncStore {
   online: boolean;
   syncing: boolean;
@@ -27,22 +47,7 @@ interface SyncStore {
   setPendingDeletedIds: (v: string[] | ((prev: string[]) => string[])) => void;
   resetProfileHydrated: () => void;
 
-  sync: (
-    id?: string,
-    local?: Expense[],
-    profileIncome?: number | null,
-    profileCategories?: Category[] | null,
-    deletedIds?: string[],
-    profileBudget?: number | null,
-    profileHideAmounts?: boolean | null,
-    profileCategoryOverrides?: Record<string, string> | null,
-    profileCategoryIconOverrides?: Record<string, string> | null,
-    profileOnboardingComplete?: boolean | null,
-    /** Pass a string to push the display name; null/omit to leave it unchanged */
-    profileName?: string | null,
-    /** Pass a theme to push it as the account's synced theme; null/omit to leave unchanged */
-    profileTheme?: 'dark' | 'light' | null
-  ) => Promise<boolean>;
+  sync: (options?: SyncOptions) => Promise<boolean>;
 
   bootstrapUser: (id: string) => Promise<boolean>;
   /** Pulls the freshest cloud category list before any category mutation. */
@@ -65,23 +70,19 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
     set({ profileHydrated: false });
   },
 
-  sync: async (
-    idParam,
-    localParam,
-    profileIncome = null,
-    profileCategories = null,
-    deletedIdsParam,
-    profileBudget = null,
-    profileHideAmounts = null,
-    profileCategoryOverrides = null,
-    profileCategoryIconOverrides = null,
-    profileOnboardingComplete = null,
-    profileName = null,
-    profileTheme = null
-  ) => {
-    const id = idParam ?? useAuthStore.getState().userId;
-    const local = localParam ?? useExpenses.getState().expenses;
-    const deletedIds = deletedIdsParam ?? get().pendingDeletedIds;
+  sync: async (options = {}) => {
+    const {
+      income = null,
+      categories = null,
+      budget = null,
+      hideAmounts = null,
+      onboardingComplete = null,
+      name = null,
+      theme = null,
+    } = options;
+    const id = options.id ?? useAuthStore.getState().userId;
+    const local = options.local ?? useExpenses.getState().expenses;
+    const deletedIds = options.deletedIds ?? get().pendingDeletedIds;
     if (!id) return false;
     set({ syncing: true });
     useAuthStore.getState().setError('');
@@ -92,42 +93,36 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
         deletedIds,
       };
       // Only push categories when explicitly provided (add/delete/rename/styles)
-      if (profileCategories !== null) {
-        payload.categories = useCategoryStore
-          .getState()
-          .bakeCategoryStyles(profileCategories)
-          .map(({ id: catId, label, tone, iconName, custom }) => ({
+      // — each category already carries its own tone/iconName, so no baking needed.
+      if (categories !== null) {
+        payload.categories = categories.map(
+          ({ id: catId, label, tone, iconName, custom }) => ({
             id: catId,
             label,
             tone,
             iconName,
             custom,
-          }));
+          })
+        );
       }
-      if (profileCategoryOverrides !== null) {
-        payload.categoryOverrides = profileCategoryOverrides;
+      // Only push profile fields when explicitly provided
+      if (typeof income === 'number' && income > 0) {
+        payload.monthlyIncome = income;
       }
-      if (profileCategoryIconOverrides !== null) {
-        payload.categoryIconOverrides = profileCategoryIconOverrides;
+      if (typeof budget === 'number' && budget > 0) {
+        payload.monthlyBudget = budget;
       }
-      // Only push profile money fields when explicitly provided
-      if (typeof profileIncome === 'number' && profileIncome > 0) {
-        payload.monthlyIncome = profileIncome;
+      if (typeof hideAmounts === 'boolean') {
+        payload.hideAmounts = hideAmounts;
       }
-      if (typeof profileBudget === 'number' && profileBudget > 0) {
-        payload.monthlyBudget = profileBudget;
+      if (typeof onboardingComplete === 'boolean') {
+        payload.onboardingComplete = onboardingComplete;
       }
-      if (typeof profileHideAmounts === 'boolean') {
-        payload.hideAmounts = profileHideAmounts;
+      if (typeof name === 'string' && name.trim()) {
+        payload.name = name.trim();
       }
-      if (typeof profileOnboardingComplete === 'boolean') {
-        payload.onboardingComplete = profileOnboardingComplete;
-      }
-      if (typeof profileName === 'string' && profileName.trim()) {
-        payload.name = profileName.trim();
-      }
-      if (profileTheme === 'dark' || profileTheme === 'light') {
-        payload.theme = profileTheme;
+      if (theme === 'dark' || theme === 'light') {
+        payload.theme = theme;
       }
 
       const response = await fetch('/api/expenses/sync', {
@@ -256,39 +251,8 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
         useThemeStore.getState().setThemeState(data.profile.theme);
       }
 
-      // Color / icon overrides — empty cloud must never wipe local styles
-      const cloudToneOverrides =
-        data.profile?.categoryOverrides &&
-        typeof data.profile.categoryOverrides === 'object'
-          ? (data.profile.categoryOverrides as Record<string, string>)
-          : {};
-      const cloudIconOverrides =
-        data.profile?.categoryIconOverrides &&
-        typeof data.profile.categoryIconOverrides === 'object'
-          ? (data.profile.categoryIconOverrides as Record<string, string>)
-          : {};
-
-      const categoryStore = useCategoryStore.getState();
-
-      if (profileCategoryOverrides !== null) {
-        await categoryStore.persistToneOverrides(id, profileCategoryOverrides);
-      } else if (Object.keys(cloudToneOverrides).length > 0) {
-        await categoryStore.persistToneOverrides(id, {
-          ...useCategoryStore.getState().categoryOverrides,
-          ...cloudToneOverrides,
-        });
-      }
-
-      if (profileCategoryIconOverrides !== null) {
-        await categoryStore.persistIconOverrides(id, profileCategoryIconOverrides);
-      } else if (Object.keys(cloudIconOverrides).length > 0) {
-        await categoryStore.persistIconOverrides(id, {
-          ...useCategoryStore.getState().categoryIconOverrides,
-          ...cloudIconOverrides,
-        });
-      }
-
-      // Merge cloud categories with local — fill missing tone/icon from local
+      // Merge cloud categories with local — fill missing tone/icon from local.
+      // Each category already carries its own tone/iconName; no override map involved.
       const cloudCategories: Category[] = Array.isArray(data.profile?.categories)
         ? data.profile.categories.map((c: Category) => ({
             ...c,
@@ -307,7 +271,9 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
         );
       }
 
-      await categoryStore.persistCustomCategories(id, Array.from(mergedById.values()));
+      await useCategoryStore
+        .getState()
+        .persistCustomCategories(id, Array.from(mergedById.values()));
 
       return true;
     } catch (err: unknown) {
@@ -337,8 +303,6 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
         savedCategories,
         savedIncome,
         savedBudget,
-        savedOverrides,
-        savedIconOverrides,
         savedHideAmounts,
         savedPendingDeleted,
         savedName,
@@ -347,8 +311,6 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
         idbGet<Category[]>(`pocket-categories-${id}`),
         idbGet<number>(`pocket-income-${id}`),
         idbGet<number>(`pocket-budget-${id}`),
-        idbGet<Record<string, string>>(`pocket-cat-overrides-${id}`),
-        idbGet<Record<string, string>>(`pocket-cat-icon-overrides-${id}`),
         idbGet<boolean>(`pocket-hide-amounts-${id}`),
         idbGet<string[]>(`pocket-pending-deleted-${id}`),
         idbGet<string>(`pocket-name-${id}`),
@@ -375,19 +337,11 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
             custom: true as const,
           }))
         : [];
-      const localTones = savedOverrides ?? {};
-      const localIcons = savedIconOverrides ?? {};
       const localDone = await idbGet<boolean>(`pocket-onboarding-complete-${id}`);
 
-      // Seed category refs for merge
+      // Seed category state for merge
       if (localCategories.length) {
         categoryStore.setCustomCategoriesLocal(localCategories);
-      }
-      if (Object.keys(localTones).length) {
-        categoryStore.setCategoryOverridesLocal(localTones);
-      }
-      if (Object.keys(localIcons).length) {
-        categoryStore.setCategoryIconOverridesLocal(localIcons);
       }
 
       // Paint local data immediately when available — avoids a full-screen blank flash
@@ -433,17 +387,11 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
         // Do replay any deletions that queued up while offline last session,
         // otherwise Mongo still has them as active and hydrate() below would
         // bring them back to life.
-        const ok = await get().sync(
+        const ok = await get().sync({
           id,
-          localExpenses,
-          null,
-          null,
-          localPendingDeleted,
-          null,
-          null,
-          null,
-          null
-        );
+          local: localExpenses,
+          deletedIds: localPendingDeleted,
+        });
         if (ok) {
           initialSyncDoneFor = id;
           set({ profileHydrated: true });
@@ -454,11 +402,7 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
       // Offline or sync failed → IndexedDB fallback (may already be painted)
       if (!hasLocalProfile) {
         hydrate(localExpenses);
-        await Promise.all([
-          categoryStore.persistCustomCategories(id, localCategories),
-          categoryStore.persistToneOverrides(id, localTones),
-          categoryStore.persistIconOverrides(id, localIcons),
-        ]);
+        await categoryStore.persistCustomCategories(id, localCategories);
 
         if (typeof savedIncome === 'number' && savedIncome > 0) {
           profile.setIncome(savedIncome);
@@ -510,6 +454,6 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
   ensureFreshCategories: async () => {
     const userId = useAuthStore.getState().userId;
     if (!userId) return;
-    await get().sync(userId, undefined, null, null, undefined);
+    await get().sync({ id: userId });
   },
 }));

@@ -20,9 +20,7 @@ export const useThemeStore = create<ThemeStore>((set) => ({
     set({ theme: t });
     const userId = useAuthStore.getState().userId;
     if (userId) {
-      void useSyncStore
-        .getState()
-        .sync(userId, undefined, null, null, undefined, null, null, null, null, null, null, t);
+      void useSyncStore.getState().sync({ id: userId, theme: t });
     }
   },
   setScreenObscured: (v) => set({ screenObscured: v }),

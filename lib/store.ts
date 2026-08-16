@@ -95,7 +95,7 @@ export const useExpenses = create<Store>((setState, getState) => ({
       'Expense added',
       `${money(expense.amount)}${expense.note ? ` · ${expense.note}` : ''}`
     );
-    void useSyncStore.getState().sync(userId, [expense]);
+    void useSyncStore.getState().sync({ id: userId, local: [expense] });
   },
 
   updateExpense: (id, patch) => {
@@ -154,7 +154,7 @@ export const useExpenses = create<Store>((setState, getState) => ({
           });
           void useSyncStore
             .getState()
-            .sync(userId, [restored], null, null, [])
+            .sync({ id: userId, local: [restored], deletedIds: [] })
             .then((ok) => {
               if (ok) {
                 const prevLabel =
@@ -178,7 +178,11 @@ export const useExpenses = create<Store>((setState, getState) => ({
     // Include note: null so clearing a note is persisted (JSON drops undefined)
     void useSyncStore
       .getState()
-      .sync(userId, [{ ...next, note: cleanedNote ?? null } as Expense], null, null, []);
+      .sync({
+        id: userId,
+        local: [{ ...next, note: cleanedNote ?? null } as Expense],
+        deletedIds: [],
+      });
   },
 
   handleDeleteExpense: (id) => {
@@ -207,7 +211,7 @@ export const useExpenses = create<Store>((setState, getState) => ({
 
     void useSyncStore
       .getState()
-      .sync(userId, updatedExpenses, null, null, nextDeleted)
+      .sync({ id: userId, local: updatedExpenses, deletedIds: nextDeleted })
       .then((ok) => {
         if (!ok) return;
         toast.success('Deleted an expense', description, {
@@ -227,7 +231,7 @@ export const useExpenses = create<Store>((setState, getState) => ({
                 .setPendingDeletedIds((prev) => prev.filter((x) => x !== id));
               void useSyncStore
                 .getState()
-                .sync(userId, [restored], null, null, [])
+                .sync({ id: userId, local: [restored], deletedIds: [] })
                 .then((restoredOk) => {
                   if (restoredOk) {
                     toast.success('Expense restored', description);
