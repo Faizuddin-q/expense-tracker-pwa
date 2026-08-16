@@ -1,6 +1,6 @@
 'use client';
 
-import { useAppOptional } from '@/lib/app-context';
+import { useProfileStore } from '@/lib/profile-store';
 import { money, moneyExact } from '@/lib/utils';
 
 /**
@@ -16,8 +16,9 @@ export const Money = ({
   className?: string;
   precise?: boolean;
 }) => {
-  // Falls back to visible amounts when rendered outside <AppProvider> (admin dashboard).
-  const hideAmounts = useAppOptional()?.hideAmounts ?? false;
+  // Zustand needs no Provider, so this is `false` by default in the admin
+  // dashboard too (which never mounts AppInit) — same fallback as before.
+  const hideAmounts = useProfileStore((s) => s.hideAmounts);
   const format = precise ? moneyExact : money;
   return <span className={className}>{format(value, hideAmounts)}</span>;
 };

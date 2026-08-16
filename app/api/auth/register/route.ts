@@ -11,6 +11,7 @@ import {
   isValidPhone,
 } from '@/lib/auth';
 import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
+import { defaultCategorySeed } from '@/lib/default-categories';
 
 export const POST = async (request: Request) => {
   const body = await request.json().catch(() => null);
@@ -73,6 +74,14 @@ export const POST = async (request: Request) => {
       passwordHash,
       passwordIsDefault: false,
       createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    // Seed the starter category set as real, owned rows — not a separate
+    // built-in list — so they're editable/deletable from day one, no
+    // override/shadow mechanism needed.
+    await profiles.insertOne({
+      userId: phone,
+      categories: defaultCategorySeed.map((c) => ({ ...c })),
       updatedAt: new Date(),
     });
 

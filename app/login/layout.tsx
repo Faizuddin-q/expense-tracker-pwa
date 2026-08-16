@@ -1,11 +1,11 @@
 'use client';
 
-import { AppProvider } from '@/lib/app-context';
+import { AppInit } from '@/components/AppInit';
 
 export default function LoginLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <AppProvider>{children}</AppProvider>;
+  return <AppInit>{children}</AppInit>;
 }

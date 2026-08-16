@@ -152,13 +152,15 @@ export const CategoryDialog = ({
                         </span>
                       )}
 
-                      <button
-                        onClick={() => setEditingId(isEditing ? null : c.id)}
-                        aria-expanded={isEditing}
-                        className="shrink-0 cursor-pointer rounded px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                      >
-                        {isEditing ? 'Done' : 'Edit'}
-                      </button>
+                      {c.custom && (
+                        <button
+                          onClick={() => setEditingId(isEditing ? null : c.id)}
+                          aria-expanded={isEditing}
+                          className="shrink-0 cursor-pointer rounded px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                        >
+                          {isEditing ? 'Done' : 'Edit'}
+                        </button>
+                      )}
 
                       {c.custom && onDeleteCategory && (
                         <button
@@ -172,7 +174,7 @@ export const CategoryDialog = ({
                       )}
                     </div>
 
-                    {isEditing && (
+                    {isEditing && c.custom && (
                       <div className="mt-3 space-y-3 pl-[18px]">
                         <div>
                           <p className="label mb-1.5">Color</p>

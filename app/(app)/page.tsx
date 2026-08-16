@@ -1,6 +1,7 @@
 'use client';
 
-import { useApp } from '@/lib/app-context';
+import { useExpenses, useToday } from '@/lib/store';
+import { useAllCategories, useCategoryStore } from '@/lib/category-store';
 import { Home } from '@/components/views/Home';
 
 export default function HomePage() {
@@ -17,10 +18,10 @@ export default function HomePage() {
     handleDeleteExpense,
     undo,
     setUndo,
-    allCategories,
-    setCategoryDialog,
-    today,
-  } = useApp();
+  } = useExpenses();
+  const today = useToday();
+  const allCategories = useAllCategories();
+  const setCategoryDialog = useCategoryStore((s) => s.setCategoryDialog);
 
   return (
     <Home

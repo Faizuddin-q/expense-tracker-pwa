@@ -43,21 +43,15 @@ export const AdminUserPanel = ({
   const [resettingPassword, setResettingPassword] = useState(false);
 
   const categories = useMemo(() => {
-    const tones = profile.categoryOverrides ?? {};
-    const icons = profile.categoryIconOverrides ?? {};
+    // Accounts now own their full category list (seeded with the defaults at
+    // signup — no separate built-in list). This fallback only fills in
+    // defaults for an older account that hasn't synced since that change.
+    const ownedIds = new Set(profile.categories.map((c) => c.id));
     const merged = [
-      ...builtInCategories,
       ...profile.categories.map((c) => ({ ...c, custom: true })),
+      ...builtInCategories.filter((c) => !ownedIds.has(c.id)),
     ];
-    return merged.map((c) => {
-      const iconName = icons[c.id] ?? c.iconName;
-      return {
-        ...c,
-        tone: tones[c.id] ?? c.tone,
-        iconName,
-        Icon: getCategoryIcon({ iconName, Icon: c.Icon }),
-      };
-    });
+    return merged.map((c) => ({ ...c, Icon: getCategoryIcon(c) }));
   }, [profile]);
 
   const filteredExpenses = useMemo(() => {
