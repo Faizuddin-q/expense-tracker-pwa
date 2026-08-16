@@ -2,14 +2,14 @@ import { useMemo } from 'react';
 import { create } from 'zustand';
 import { idbSet } from '@/lib/idb';
 import { Category } from '@/types/expense';
-import { builtInCategories } from '@/lib/constants';
 import { getCategoryIcon } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth-store';
 import { useSyncStore } from '@/lib/sync-store';
 import { toast } from '@/components/ToastHost';
 
 interface CategoryStore {
-  customCategories: Category[];
+  /** Every category this account has — no separate built-in list. All fully owned, editable, deletable. */
+  categories: Category[];
   categoryDialog: boolean;
   categoryName: string;
   selectedTone: string;
@@ -20,22 +20,21 @@ interface CategoryStore {
   setSelectedTone: (v: string) => void;
   setSelectedIconName: (v: string) => void;
 
-  /** Plain in-memory setter — used by sync-store when seeding from local IndexedDB or merging cloud data. */
-  setCustomCategoriesLocal: (v: Category[]) => void;
+  /** Plain in-memory setter — used by sync-store when seeding from local IndexedDB or applying cloud data. */
+  setCategoriesLocal: (v: Category[]) => void;
 
   /** Persist to IndexedDB + update state. Used by the CRUD actions below and by sync-store after a cloud round-trip. */
-  persistCustomCategories: (id: string, next: Category[]) => Promise<void>;
+  persistCategories: (id: string, next: Category[]) => Promise<void>;
 
   addCategory: () => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
   renameCategory: (id: string, label: string) => Promise<void>;
-  /** No-op for built-in categories — only custom (user-created) categories can be recolored/re-iconed. */
   updateCategoryColor: (id: string, tone: string) => Promise<void>;
   updateCategoryIcon: (id: string, iconName: string) => Promise<void>;
 }
 
 export const useCategoryStore = create<CategoryStore>((set, get) => ({
-  customCategories: [],
+  categories: [],
   categoryDialog: false,
   categoryName: '',
   selectedTone: 'mint',
@@ -46,10 +45,10 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
   setSelectedTone: (v) => set({ selectedTone: v }),
   setSelectedIconName: (v) => set({ selectedIconName: v }),
 
-  setCustomCategoriesLocal: (v) => set({ customCategories: v }),
+  setCategoriesLocal: (v) => set({ categories: v }),
 
-  persistCustomCategories: async (id, next) => {
-    set({ customCategories: next });
+  persistCategories: async (id, next) => {
+    set({ categories: next });
     await idbSet(
       `pocket-categories-${id}`,
       next.map(({ id: catId, label, tone, iconName, custom }) => ({
@@ -79,8 +78,8 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
       Icon: getCategoryIcon({ iconName: selectedIconName }),
       custom: true,
     };
-    const next = [...get().customCategories, custom];
-    await get().persistCustomCategories(userId, next);
+    const next = [...get().categories, custom];
+    await get().persistCategories(userId, next);
     set({ categoryName: '', categoryDialog: false });
     const ok = await useSyncStore.getState().sync({ id: userId, categories: next });
     if (ok) toast.success('Category added', `"${label}" is ready to use`);
@@ -91,9 +90,9 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
     if (!userId) return;
     await useSyncStore.getState().ensureFreshCategories();
     const removedLabel =
-      get().customCategories.find((c) => c.id === id)?.label ?? 'Category';
-    const next = get().customCategories.filter((c) => c.id !== id);
-    await get().persistCustomCategories(userId, next);
+      get().categories.find((c) => c.id === id)?.label ?? 'Category';
+    const next = get().categories.filter((c) => c.id !== id);
+    await get().persistCategories(userId, next);
     const ok = await useSyncStore.getState().sync({ id: userId, categories: next });
     if (ok) toast.success('Category removed', `"${removedLabel}" deleted`);
   },
@@ -103,12 +102,12 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
     const userId = useAuthStore.getState().userId;
     if (!trimmed || !userId) return;
     await useSyncStore.getState().ensureFreshCategories();
-    const target = get().customCategories.find((c) => c.id === id);
+    const target = get().categories.find((c) => c.id === id);
     if (!target || target.label === trimmed) return;
-    const next = get().customCategories.map((c) =>
+    const next = get().categories.map((c) =>
       c.id === id ? { ...c, label: trimmed } : c
     );
-    await get().persistCustomCategories(userId, next);
+    await get().persistCategories(userId, next);
     const ok = await useSyncStore.getState().sync({ id: userId, categories: next });
     if (ok) toast.success('Category renamed', `Now called "${trimmed}"`);
   },
@@ -117,13 +116,11 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
     const userId = useAuthStore.getState().userId;
     if (!userId) return;
     await useSyncStore.getState().ensureFreshCategories();
-    // Only custom categories carry their own styling — built-ins are static
-    // shared definitions with nowhere to save a per-user color.
-    if (!get().customCategories.some((c) => c.id === id)) return;
-    const next = get().customCategories.map((c) =>
+    if (!get().categories.some((c) => c.id === id)) return;
+    const next = get().categories.map((c) =>
       c.id === id ? { ...c, tone: newTone } : c
     );
-    await get().persistCustomCategories(userId, next);
+    await get().persistCategories(userId, next);
     const ok = await useSyncStore.getState().sync({ id: userId, categories: next });
     if (!ok) toast.error('Sync failed', 'Color saved on this device only');
   },
@@ -132,34 +129,28 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
     const userId = useAuthStore.getState().userId;
     if (!userId) return;
     await useSyncStore.getState().ensureFreshCategories();
-    if (!get().customCategories.some((c) => c.id === id)) return;
-    const next = get().customCategories.map((c) =>
+    if (!get().categories.some((c) => c.id === id)) return;
+    const next = get().categories.map((c) =>
       c.id === id ? { ...c, iconName, Icon: getCategoryIcon({ iconName }) } : c
     );
-    await get().persistCustomCategories(userId, next);
+    await get().persistCategories(userId, next);
     const ok = await useSyncStore.getState().sync({ id: userId, categories: next });
     if (!ok) toast.error('Sync failed', 'Icon saved on this device only');
   },
 }));
 
-/** Plain (non-hook) combined category list — for use outside React, e.g. toast copy in store actions. */
-export const getAllCategories = (): Category[] => {
-  const { customCategories } = useCategoryStore.getState();
-  return [...builtInCategories, ...customCategories].map((c) => ({
+/** Plain (non-hook) category list — for use outside React, e.g. toast copy in store actions. */
+export const getAllCategories = (): Category[] =>
+  useCategoryStore.getState().categories.map((c) => ({
     ...c,
     Icon: getCategoryIcon(c),
   }));
-};
 
 /** Memoized hook version — for components (mirrors the old `allCategories` context value). */
 export const useAllCategories = (): Category[] => {
-  const customCategories = useCategoryStore((s) => s.customCategories);
+  const categories = useCategoryStore((s) => s.categories);
   return useMemo(
-    () =>
-      [...builtInCategories, ...customCategories].map((c) => ({
-        ...c,
-        Icon: getCategoryIcon(c),
-      })),
-    [customCategories]
+    () => categories.map((c) => ({ ...c, Icon: getCategoryIcon(c) })),
+    [categories]
   );
 };

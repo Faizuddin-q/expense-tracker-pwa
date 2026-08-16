@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { idbGet, idbSet, idbDel } from '@/lib/idb';
 import { Category, Expense } from '@/types/expense';
-import { getCategoryIcon, mergeCategoryDefs } from '@/lib/utils';
+import { getCategoryIcon } from '@/lib/utils';
+import { defaultCategorySeed } from '@/lib/default-categories';
 import { useExpenses } from '@/lib/store';
 import { useAuthStore } from '@/lib/auth-store';
 import { useProfileStore } from '@/lib/profile-store';
@@ -252,28 +253,18 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
       }
 
       // Merge cloud categories with local — fill missing tone/icon from local.
-      // Each category already carries its own tone/iconName; no override map involved.
-      const cloudCategories: Category[] = Array.isArray(data.profile?.categories)
-        ? data.profile.categories.map((c: Category) => ({
-            ...c,
-            Icon: getCategoryIcon(c),
-            custom: true,
-          }))
-        : [];
-
-      const mergedById = new Map<string, Category>();
-      for (const c of cloudCategories) mergedById.set(c.id, c);
-      for (const c of useCategoryStore.getState().customCategories) {
-        const existing = mergedById.get(c.id);
-        mergedById.set(
-          c.id,
-          existing ? mergeCategoryDefs(existing, c) : mergeCategoryDefs(c)
+      // Mongo is source of truth for categories too, same as income/budget —
+      // trust the response directly rather than merging with whatever local
+      // state happens to be at this moment. A merge-with-local-snapshot is
+      // exactly the pattern that previously caused a plain expense sync to
+      // wipe the whole category list: if the merge ever ran against a stale
+      // or empty local snapshot, that wrong result got persisted as truth.
+      if (Array.isArray(data.profile?.categories)) {
+        const cloudCategories: Category[] = data.profile.categories.map(
+          (c: Category) => ({ ...c, Icon: getCategoryIcon(c) })
         );
+        await useCategoryStore.getState().persistCategories(id, cloudCategories);
       }
-
-      await useCategoryStore
-        .getState()
-        .persistCustomCategories(id, Array.from(mergedById.values()));
 
       return true;
     } catch (err: unknown) {
@@ -341,7 +332,7 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
 
       // Seed category state for merge
       if (localCategories.length) {
-        categoryStore.setCustomCategoriesLocal(localCategories);
+        categoryStore.setCategoriesLocal(localCategories);
       }
 
       // Paint local data immediately when available — avoids a full-screen blank flash
@@ -402,7 +393,14 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
       // Offline or sync failed → IndexedDB fallback (may already be painted)
       if (!hasLocalProfile) {
         hydrate(localExpenses);
-        await categoryStore.persistCustomCategories(id, localCategories);
+        // Brand-new account, first-ever launch, offline: nothing to pull from
+        // Mongo yet, so seed the same starter set registration would have
+        // given them. One-time only — once anything is saved (here or via
+        // the server), this branch never runs for this account again.
+        const seededCategories = localCategories.length
+          ? localCategories
+          : defaultCategorySeed.map((c) => ({ ...c, Icon: getCategoryIcon(c) }));
+        await categoryStore.persistCategories(id, seededCategories);
 
         if (typeof savedIncome === 'number' && savedIncome > 0) {
           profile.setIncome(savedIncome);

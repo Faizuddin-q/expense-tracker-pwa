@@ -27,7 +27,7 @@ export default function SettingsPage() {
     hideAmounts,
     setHideAmounts,
   } = useProfileStore();
-  const { customCategories } = useCategoryStore();
+  const { categories: customCategories } = useCategoryStore();
   const sync = useSyncStore((s) => s.sync);
   const { theme, setTheme } = useThemeStore();
   // Deprecated for now — double-tap / Back Tap shortcut
