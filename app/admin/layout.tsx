@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ThemeSync } from '@/components/ThemeSync';
 
 export const metadata: Metadata = {
   title: 'Admin — Pocket',
@@ -11,5 +12,10 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <>
+      <ThemeSync />
+      {children}
+    </>
+  );
 }

@@ -3,7 +3,12 @@
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { LogOut, Moon, Sun } from 'lucide-react';
-import { AppProvider, useApp } from '@/lib/app-context';
+import { AppInit } from '@/components/AppInit';
+import { useAuthStore } from '@/lib/auth-store';
+import { useProfileStore } from '@/lib/profile-store';
+import { useSyncStore } from '@/lib/sync-store';
+import { useCategoryStore, useAllCategories } from '@/lib/category-store';
+import { useThemeStore } from '@/lib/theme-store';
 import { Brand } from '@/components/Brand';
 import { NavButton } from '@/components/NavButton';
 import { CategoryDialog } from '@/components/CategoryDialog';
@@ -25,25 +30,13 @@ const PAGE_TITLES: Record<string, string> = {
 // ─── Inner shell (needs context) ──────────────────────────────────────────────
 
 function AppShell({ children }: { children: React.ReactNode }) {
+  const { userId, initializing, error, logout } = useAuthStore();
+  const { needsIncome, incomeDraft, setIncomeDraft, budgetDraft, setBudgetDraft, completeOnboarding, skipOnboarding } =
+    useProfileStore();
+  const { profileHydrated, online, syncing } = useSyncStore();
   const {
-    userId,
-    initializing,
-    needsIncome,
-    profileHydrated,
-    incomeDraft,
-    setIncomeDraft,
-    budgetDraft,
-    setBudgetDraft,
-    completeOnboarding,
-    skipOnboarding,
-    error,
-    theme,
-    setTheme,
-    online,
-    syncing,
     categoryDialog,
     setCategoryDialog,
-    allCategories,
     categoryName,
     setCategoryName,
     selectedTone,
@@ -55,9 +48,9 @@ function AppShell({ children }: { children: React.ReactNode }) {
     updateCategoryIcon,
     deleteCategory,
     renameCategory,
-    logout,
-    screenObscured,
-  } = useApp();
+  } = useCategoryStore();
+  const allCategories = useAllCategories();
+  const { theme, setTheme, screenObscured } = useThemeStore();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -222,10 +215,10 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AppProvider>
+    <AppInit>
       <PwaProvider>
         <AppShell>{children}</AppShell>
       </PwaProvider>
-    </AppProvider>
+    </AppInit>
   );
 }

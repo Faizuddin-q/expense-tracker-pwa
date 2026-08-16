@@ -191,42 +191,6 @@ export const categoryFor = (
   };
 };
 
-/** Merge cloud + local category defs. Prefer non-default local styles, else cloud. */
-export const mergeCategoryDefs = (
-  cloud: Category,
-  local?: Category
-): Category => {
-  if (!local) {
-    return {
-      ...cloud,
-      Icon: getCategoryIcon(cloud),
-      custom: true,
-    };
-  }
-  const label = cloud.label || local.label;
-
-  const pick = (
-    localVal: string | undefined,
-    cloudVal: string | undefined,
-    fallback: string
-  ) => {
-    if (localVal && localVal !== fallback) return localVal;
-    if (cloudVal && cloudVal !== fallback) return cloudVal;
-    return localVal || cloudVal || fallback;
-  };
-
-  const tone = pick(local.tone, cloud.tone, 'gray');
-  const iconName = pick(local.iconName, cloud.iconName, 'plus');
-  return {
-    id: cloud.id || local.id,
-    label,
-    tone,
-    iconName,
-    custom: true,
-    Icon: getCategoryIcon({ iconName }),
-  };
-};
-
 export const normalizePhone = (value: string): string => {
   let digits = value.replace(/\D/g, '');
   if (digits.startsWith('00')) digits = digits.slice(2);

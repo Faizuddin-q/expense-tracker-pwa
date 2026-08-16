@@ -3,24 +3,6 @@ import { getDb } from '@/lib/db';
 import { getSessionUserId } from '@/lib/auth';
 import { rateLimitOrResponse } from '@/lib/rate-limit';
 
-const asStringRecord = (value: unknown): Record<string, string> | null => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  const out: Record<string, string> = {};
-  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
-    if (
-      typeof key === 'string' &&
-      key.length > 0 &&
-      key.length <= 80 &&
-      typeof entry === 'string' &&
-      entry.length > 0 &&
-      entry.length <= 64
-    ) {
-      out[key] = entry;
-    }
-  }
-  return out;
-};
-
 export const POST = async (request: Request) => {
   try {
     const sessionUserId = await getSessionUserId();
@@ -41,9 +23,9 @@ export const POST = async (request: Request) => {
       categories,
       deletedIds,
       hideAmounts,
-      categoryOverrides,
-      categoryIconOverrides,
       onboardingComplete,
+      name,
+      theme,
     } = await request.json();
     if (
       typeof userId !== 'string' ||
@@ -130,6 +112,12 @@ export const POST = async (request: Request) => {
     if (typeof onboardingComplete === 'boolean') {
       profileUpdate.onboardingComplete = onboardingComplete;
     }
+    if (typeof name === 'string' && name.trim().length > 0) {
+      profileUpdate.name = name.trim().slice(0, 60);
+    }
+    if (theme === 'dark' || theme === 'light') {
+      profileUpdate.theme = theme;
+    }
     if (Array.isArray(categories)) {
       const cleanedCategories = [];
       for (const category of categories) {
@@ -149,15 +137,6 @@ export const POST = async (request: Request) => {
         });
       }
       profileUpdate.categories = cleanedCategories;
-    }
-
-    const toneOverrides = asStringRecord(categoryOverrides);
-    if (toneOverrides) {
-      profileUpdate.categoryOverrides = toneOverrides;
-    }
-    const iconOverrides = asStringRecord(categoryIconOverrides);
-    if (iconOverrides) {
-      profileUpdate.categoryIconOverrides = iconOverrides;
     }
 
     // Always touch the profile doc so findOne returns it even when only expenses sync
@@ -190,8 +169,11 @@ export const POST = async (request: Request) => {
                 : null,
             onboardingComplete: profile.onboardingComplete === true,
             categories: profile.categories ?? [],
-            categoryOverrides: profile.categoryOverrides ?? {},
-            categoryIconOverrides: profile.categoryIconOverrides ?? {},
+            name: typeof profile.name === 'string' ? profile.name : null,
+            theme:
+              profile.theme === 'dark' || profile.theme === 'light'
+                ? profile.theme
+                : null,
           }
         : null,
     });

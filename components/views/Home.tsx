@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Category, CategoryId, Expense } from '@/types/expense';
 import { builtInCategories, quickRelogItems } from '@/lib/constants';
-import { useApp } from '@/lib/app-context';
+import { useProfileStore } from '@/lib/profile-store';
 import { Money } from '@/components/Money';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { ExpenseRow } from '@/components/ExpenseRow';
@@ -52,7 +52,8 @@ export const Home = ({
   categories = builtInCategories,
   onAddCategory,
 }: HomeProps) => {
-  const { hideAmounts } = useApp();
+  const hideAmounts = useProfileStore((s) => s.hideAmounts);
+  const name = useProfileStore((s) => s.name);
   const [editing, setEditing] = useState<Expense | null>(null);
   const [deleting, setDeleting] = useState<Expense | null>(null);
   const displayedTotal = displayed.reduce(
@@ -63,6 +64,11 @@ export const Home = ({
 
   return (
     <section className="mx-auto max-w-6xl">
+      {name && (
+        <p className="mb-3 text-[13px] font-medium text-muted-foreground">
+          Hi, {name.split(' ')[0]}
+        </p>
+      )}
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
         <div className="min-w-0">
           {/* Composer */}

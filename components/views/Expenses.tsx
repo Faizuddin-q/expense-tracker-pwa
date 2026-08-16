@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
 import { categoryFor, downloadCsv, getCategoryColor, getCategoryIcon } from '@/lib/utils';
-import { useApp } from '@/lib/app-context';
+import { useProfileStore } from '@/lib/profile-store';
 import { Money } from '@/components/Money';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { ExpenseEditDialog } from '@/components/ExpenseEditDialog';
@@ -135,7 +135,7 @@ export const Expenses = ({
   const [deleting, setDeleting] = useState<Expense | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
-  const { hideAmounts } = useApp();
+  const hideAmounts = useProfileStore((s) => s.hideAmounts);
 
   const toggleSort = (key: SortKey) => {
     if (sortBy === key) {

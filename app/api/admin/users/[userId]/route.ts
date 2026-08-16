@@ -53,8 +53,6 @@ export const GET = async (request: Request, { params }: Params) => {
         categories: Array.isArray(profile?.categories)
           ? profile.categories
           : [],
-        categoryOverrides: profile?.categoryOverrides ?? {},
-        categoryIconOverrides: profile?.categoryIconOverrides ?? {},
         updatedAt: profile?.updatedAt
           ? new Date(profile.updatedAt).toISOString()
           : null,

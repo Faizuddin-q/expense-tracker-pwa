@@ -11,6 +11,9 @@ import {
 import { toast } from '@/components/ToastHost';
 
 interface SettingsProps {
+  nameDraft: string;
+  setNameDraft: (v: string) => void;
+  onSaveName: () => void;
   incomeDraft: string;
   setIncomeDraft: (v: string) => void;
   onSaveIncome: () => void;
@@ -165,6 +168,42 @@ const AmountField = ({
   </div>
 );
 
+const TextField = ({
+  label,
+  value,
+  onChange,
+  onSave,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  onSave: () => void;
+  placeholder: string;
+}) => (
+  <div className="flex gap-1.5">
+    <div className="field-shell flex h-8 flex-1 items-center rounded-lg border border-border bg-background px-2.5">
+      <input
+        aria-label={label}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') onSave();
+        }}
+        placeholder={placeholder}
+        className="w-full min-w-0 bg-transparent px-1.5 text-[13px] text-foreground outline-none placeholder:text-faint"
+      />
+    </div>
+    <button
+      type="button"
+      onClick={onSave}
+      className="h-8 shrink-0 cursor-pointer rounded-lg bg-primary px-3 text-[12px] font-medium text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80"
+    >
+      Save
+    </button>
+  </div>
+);
+
 const PasswordInput = ({
   label,
   value,
@@ -276,6 +315,9 @@ const ChangePasswordForm = ({
 };
 
 export const Settings = ({
+  nameDraft,
+  setNameDraft,
+  onSaveName,
   incomeDraft,
   setIncomeDraft,
   onSaveIncome,
@@ -302,6 +344,15 @@ export const Settings = ({
     <div className="mx-auto max-w-6xl">
       <div className="mx-auto max-w-2xl">
         <Section title="Account">
+          <Row title="Name" description="Used to greet you around the app.">
+            <TextField
+              label="Name"
+              value={nameDraft}
+              onChange={setNameDraft}
+              onSave={onSaveName}
+              placeholder="Your name"
+            />
+          </Row>
           <Row title="Mobile number" description="Identifies your expense data.">
             <p className="font-mono-numbers text-[13px] text-primary sm:text-right">
               {formatIndianMobileDisplay(userId)}
@@ -358,7 +409,7 @@ export const Settings = ({
         </Section>
 
         <Section title="Appearance">
-          <Row title="Theme" description="Applies on this device.">
+          <Row title="Theme" description="Synced to your account — follows you to every device.">
             <Segment
               value={theme}
               onChange={(v) => setTheme(v as 'dark' | 'light')}
