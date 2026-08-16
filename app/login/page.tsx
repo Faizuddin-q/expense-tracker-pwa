@@ -2,7 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useApp } from '@/lib/app-context';
+import { useAuthStore } from '@/lib/auth-store';
+import { useProfileStore } from '@/lib/profile-store';
+import { useSyncStore } from '@/lib/sync-store';
 import { Login, LoginMode } from '@/components/Login';
 import { IncomeSetup } from '@/components/IncomeSetup';
 
@@ -16,16 +18,18 @@ export default function LoginPage() {
     signIn,
     createAccount,
     error,
+    initializing,
+  } = useAuthStore();
+  const {
     needsIncome,
-    profileHydrated,
     incomeDraft,
     setIncomeDraft,
     budgetDraft,
     setBudgetDraft,
     completeOnboarding,
     skipOnboarding,
-    initializing,
-  } = useApp();
+  } = useProfileStore();
+  const profileHydrated = useSyncStore((s) => s.profileHydrated);
 
   const router = useRouter();
   const [mode, setMode] = useState<LoginMode>('signin');

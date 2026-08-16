@@ -44,6 +44,8 @@ export const POST = async (request: Request) => {
       categoryOverrides,
       categoryIconOverrides,
       onboardingComplete,
+      name,
+      theme,
     } = await request.json();
     if (
       typeof userId !== 'string' ||
@@ -130,6 +132,12 @@ export const POST = async (request: Request) => {
     if (typeof onboardingComplete === 'boolean') {
       profileUpdate.onboardingComplete = onboardingComplete;
     }
+    if (typeof name === 'string' && name.trim().length > 0) {
+      profileUpdate.name = name.trim().slice(0, 60);
+    }
+    if (theme === 'dark' || theme === 'light') {
+      profileUpdate.theme = theme;
+    }
     if (Array.isArray(categories)) {
       const cleanedCategories = [];
       for (const category of categories) {
@@ -192,6 +200,11 @@ export const POST = async (request: Request) => {
             categories: profile.categories ?? [],
             categoryOverrides: profile.categoryOverrides ?? {},
             categoryIconOverrides: profile.categoryIconOverrides ?? {},
+            name: typeof profile.name === 'string' ? profile.name : null,
+            theme:
+              profile.theme === 'dark' || profile.theme === 'light'
+                ? profile.theme
+                : null,
           }
         : null,
     });

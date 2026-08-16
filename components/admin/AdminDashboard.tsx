@@ -4,15 +4,18 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity,
   LogOut,
+  Moon,
   Receipt,
   RefreshCw,
   Search,
   ShieldCheck,
+  Sun,
   Users,
   Wallet,
 } from 'lucide-react';
 import { AdminSummary, AdminUserSummary } from '@/lib/admin-types';
 import { moneyExact } from '@/lib/utils';
+import { useThemeStore } from '@/lib/theme-store';
 import { Brand } from '@/components/Brand';
 import { toast } from '@/components/ToastHost';
 import { AdminUserRow } from '@/components/admin/AdminUserRow';
@@ -44,6 +47,7 @@ const Stat = ({
 );
 
 export const AdminDashboard = ({ onSignedOut }: AdminDashboardProps) => {
+  const { theme, setTheme } = useThemeStore();
   const [users, setUsers] = useState<AdminUserSummary[]>([]);
   const [summary, setSummary] = useState<AdminSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -110,6 +114,19 @@ export const AdminDashboard = ({ onSignedOut }: AdminDashboardProps) => {
             </span>
           </div>
           <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+              className="grid size-8 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              {theme === 'dark' ? (
+                <Sun className="size-4" strokeWidth={1.9} />
+              ) : (
+                <Moon className="size-4" strokeWidth={1.9} />
+              )}
+            </button>
             <button
               type="button"
               onClick={() => void load(true)}

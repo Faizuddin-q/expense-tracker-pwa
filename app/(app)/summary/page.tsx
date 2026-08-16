@@ -1,10 +1,14 @@
 'use client';
 
-import { useApp } from '@/lib/app-context';
+import { useExpenses } from '@/lib/store';
+import { useProfileStore } from '@/lib/profile-store';
+import { useAllCategories } from '@/lib/category-store';
 import { MonthlySummary } from '@/components/views/MonthlySummary';
 
 export default function SummaryPage() {
-  const { expenses, income, budget, allCategories } = useApp();
+  const expenses = useExpenses((s) => s.expenses);
+  const { income, budget } = useProfileStore();
+  const allCategories = useAllCategories();
 
   return (
     <MonthlySummary
