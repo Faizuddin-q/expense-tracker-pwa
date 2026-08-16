@@ -109,7 +109,7 @@ export const AdminLogin = ({ onSuccess }: AdminLoginProps) => {
         </div>
 
         <p className="mt-4 text-center text-[11px] text-faint">
-          This is a separate, admin-only area — your regular Pocket sign-in
+          This is a separate, admin-only area — your regular Pockett sign-in
           at /login is unaffected.
         </p>
       </section>

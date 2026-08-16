@@ -54,7 +54,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
   const router = useRouter();
   const pathname = usePathname();
-  const pageTitle = PAGE_TITLES[pathname] ?? 'Pocket';
+  const pageTitle = PAGE_TITLES[pathname] ?? 'Pockett';
 
   // Auth guard
   useEffect(() => {
@@ -111,7 +111,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
         <div className="fixed inset-0 z-[200] grid place-items-center bg-background">
           <div className="text-center">
             <p className="text-base font-semibold tracking-tight text-foreground">
-              Pocket
+              Pockett
             </p>
             <p className="mt-1 text-[13px] text-muted-foreground">
               Amounts hidden

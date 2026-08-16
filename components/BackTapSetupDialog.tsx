@@ -24,27 +24,27 @@ interface BackTapSetupDialogProps {
 const iosSteps = (installed: boolean) => [
   ...(installed
     ? []
-    : ['Safari → Share → Add to Home Screen, and name it Pocket.']),
+    : ['Safari → Share → Add to Home Screen, and name it Pockett.']),
   'Open Settings → Accessibility → Touch → Back Tap.',
   'Choose Double Tap.',
-  'Select a Shortcut that opens Pocket (or Open URL to this site).',
-  'Double-tap the back of your iPhone to launch Pocket.',
+  'Select a Shortcut that opens Pockett (or Open URL to this site).',
+  'Double-tap the back of your iPhone to launch Pockett.',
 ];
 
 const androidSteps = (installed: boolean) => [
   ...(installed
     ? []
     : [
-        'Install Pocket to your home screen (Install below, or Chrome menu → Install app).',
+        'Install Pockett to your home screen (Install below, or Chrome menu → Install app).',
       ]),
   'Open Settings → search Quick Tap or Back tap (Pixel: System → Gestures → Quick Tap).',
   'Turn it on and set action to Open app.',
-  'Choose Pocket.',
-  'Double-tap the back of your phone to open Pocket.',
+  'Choose Pockett.',
+  'Double-tap the back of your phone to open Pockett.',
 ];
 
 const desktopSteps = [
-  'Open Pocket on your iPhone or Android.',
+  'Open Pockett on your iPhone or Android.',
   'Turn on “Open with double tap” in Settings, or follow the on-phone steps there.',
 ];
 
@@ -169,7 +169,7 @@ export const BackTapSetupDialog = ({
               onClick={() => void handleInstall()}
               className="mt-3 h-9 w-full cursor-pointer rounded-lg bg-primary text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-50"
             >
-              {installing ? 'Installing…' : 'Install Pocket'}
+              {installing ? 'Installing…' : 'Install Pockett'}
             </button>
           )}
 

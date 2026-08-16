@@ -468,7 +468,7 @@ export const Settings = ({
         <Section title="Shortcuts">
           <Row
             title="Open with double tap"
-            description="Double-tap the back of your phone to open Pocket. Controlled by your phone's system settings."
+            description="Double-tap the back of your phone to open Pockett. Controlled by your phone's system settings."
           >
             <div className="flex items-center gap-2 sm:justify-end">
               <Hand
@@ -538,7 +538,7 @@ export const Settings = ({
         </Section>
 
         <p className="mt-5 text-center text-[11px] text-faint">
-          Pocket version: v{process.env.NEXT_PUBLIC_APP_VERSION ?? '0.0.0'}
+          Pockett version: v{process.env.NEXT_PUBLIC_APP_VERSION ?? '0.0.0'}
         </p>
       </div>
     </div>
