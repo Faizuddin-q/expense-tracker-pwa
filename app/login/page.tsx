@@ -1,9 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useApp } from '@/lib/app-context';
-import { Login } from '@/components/Login';
+import { Login, LoginMode } from '@/components/Login';
 import { IncomeSetup } from '@/components/IncomeSetup';
 
 export default function LoginPage() {
@@ -13,7 +13,8 @@ export default function LoginPage() {
     setPhone,
     password,
     setPassword,
-    continueWithPhone,
+    signIn,
+    createAccount,
     error,
     needsIncome,
     profileHydrated,
@@ -27,6 +28,8 @@ export default function LoginPage() {
   } = useApp();
 
   const router = useRouter();
+  const [mode, setMode] = useState<LoginMode>('signin');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // If already logged in, redirect straight to home
   useEffect(() => {
@@ -67,12 +70,24 @@ export default function LoginPage() {
 
   return (
     <Login
+      mode={mode}
+      setMode={(m) => {
+        setMode(m);
+        setPassword('');
+        setConfirmPassword('');
+      }}
       phone={phone}
       setPhone={setPhone}
       password={password}
       setPassword={setPassword}
-      onContinue={async () => {
-        await continueWithPhone();
+      confirmPassword={confirmPassword}
+      setConfirmPassword={setConfirmPassword}
+      onSignIn={async () => {
+        await signIn();
+      }}
+      onCreateAccount={async () => {
+        await createAccount();
+        setConfirmPassword('');
       }}
       error={error}
     />

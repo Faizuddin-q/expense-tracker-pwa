@@ -35,7 +35,8 @@ interface AppContextValue {
   setPassword: (v: string) => void;
   initializing: boolean;
   needsIncome: boolean;
-  continueWithPhone: () => Promise<void>;
+  signIn: () => Promise<void>;
+  createAccount: () => Promise<void>;
   changePassword: (
     currentPassword: string,
     newPassword: string
@@ -823,7 +824,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   // ── Auth ──────────────────────────────────────────────────────────────────
 
-  const continueWithPhone = async () => {
+  const signIn = async () => {
     const normalized = normalizePhone(phone);
     if (!isValidIndianMobile(normalized)) {
       const msg =
@@ -840,11 +841,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
     setError('');
 
-    let data: {
-      error?: string;
-      isNewUser?: boolean;
-      passwordIsDefault?: boolean;
-    };
+    let data: { error?: string; passwordIsDefault?: boolean };
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -876,8 +873,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         'Signed in',
         'You used your phone number as a temporary password — set a real one in Settings.'
       );
-    } else if (data.isNewUser) {
-      toast.success('Account created', `Signed in as +91 ${normalized}`);
     } else if (ok) {
       toast.success('Signed in', `Account +91 ${normalized}`);
     } else {
@@ -886,6 +881,51 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         'Cloud sync unavailable — showing data saved on this device'
       );
     }
+  };
+
+  const createAccount = async () => {
+    const normalized = normalizePhone(phone);
+    if (!isValidIndianMobile(normalized)) {
+      const msg =
+        'Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.';
+      setError(msg);
+      toast.error('Invalid mobile number', msg);
+      return;
+    }
+    if (password.length < 6) {
+      const msg = 'Choose a password with at least 6 characters.';
+      setError(msg);
+      toast.error('Password too short', msg);
+      return;
+    }
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: normalized, password }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        const msg = data.error || 'Could not create account';
+        setError(msg);
+        toast.error('Could not create account', msg);
+        return;
+      }
+    } catch {
+      const msg =
+        'Could not reach the server. Check your connection and try again.';
+      setError(msg);
+      toast.error('Could not create account', msg);
+      return;
+    }
+
+    setPassword('');
+    setUserId(normalized);
+    await set('pocket-user-id', normalized);
+    await bootstrapUser(normalized);
+    toast.success('Account created', `Signed in as +91 ${normalized}`);
   };
 
   const changePassword = async (
@@ -1470,7 +1510,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setPassword,
     initializing,
     needsIncome,
-    continueWithPhone,
+    signIn,
+    createAccount,
     changePassword,
     expenses,
     add,

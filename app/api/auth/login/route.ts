@@ -2,17 +2,16 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getDb } from '@/lib/db';
 import {
+  MAX_PASSWORD_LENGTH,
   SESSION_COOKIE,
   SESSION_MAX_AGE_SECONDS,
   createSessionToken,
   hashPassword,
+  isValidPhone,
   verifyPassword,
 } from '@/lib/auth';
 import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
 
-const MIN_PASSWORD_LENGTH = 6;
-const MAX_PASSWORD_LENGTH = 128;
-const isValidPhone = (value: string): boolean => /^[6-9]\d{9}$/.test(value);
 const GENERIC_ERROR = 'Incorrect phone number or password';
 
 export const POST = async (request: Request) => {
@@ -47,7 +46,6 @@ export const POST = async (request: Request) => {
     const users = db.collection('users');
     const existing = await users.findOne({ userId: phone });
 
-    let isNewUser = false;
     let passwordIsDefault = false;
 
     if (existing) {
@@ -59,57 +57,39 @@ export const POST = async (request: Request) => {
       const profiles = db.collection('profiles');
       const legacyProfile = await profiles.findOne({ userId: phone });
 
-      if (legacyProfile) {
-        // Pre-password account: the phone number itself is the interim
-        // password until the user sets a real one in Settings.
-        if (password !== phone)
-          return NextResponse.json(
-            {
-              error:
-                'This account was created before passwords were required. Sign in once using your phone number as the password, then set a real one in Settings.',
-            },
-            { status: 401 }
-          );
-        const passwordHash = await hashPassword(phone);
-        await users.updateOne(
-          { userId: phone },
+      if (!legacyProfile)
+        return NextResponse.json(
           {
-            $set: {
-              userId: phone,
-              passwordHash,
-              passwordIsDefault: true,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
+            error: 'No account found for this number. Create one instead.',
           },
-          { upsert: true }
+          { status: 404 }
         );
-        passwordIsDefault = true;
-      } else {
-        // Brand-new phone number — this is registration.
-        if (password.length < MIN_PASSWORD_LENGTH)
-          return NextResponse.json(
-            {
-              error: `Choose a password with at least ${MIN_PASSWORD_LENGTH} characters to create your account.`,
-            },
-            { status: 400 }
-          );
-        const passwordHash = await hashPassword(password);
-        await users.updateOne(
-          { userId: phone },
+
+      // Pre-password account: the phone number itself is the interim
+      // password until the user sets a real one in Settings.
+      if (password !== phone)
+        return NextResponse.json(
           {
-            $set: {
-              userId: phone,
-              passwordHash,
-              passwordIsDefault: false,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
+            error:
+              'This account was created before passwords were required. Sign in once using your phone number as the password, then set a real one in Settings.',
           },
-          { upsert: true }
+          { status: 401 }
         );
-        isNewUser = true;
-      }
+      const passwordHash = await hashPassword(phone);
+      await users.updateOne(
+        { userId: phone },
+        {
+          $set: {
+            userId: phone,
+            passwordHash,
+            passwordIsDefault: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        },
+        { upsert: true }
+      );
+      passwordIsDefault = true;
     }
 
     const store = await cookies();
@@ -121,7 +101,7 @@ export const POST = async (request: Request) => {
       maxAge: SESSION_MAX_AGE_SECONDS,
     });
 
-    return NextResponse.json({ ok: true, userId: phone, isNewUser, passwordIsDefault });
+    return NextResponse.json({ ok: true, userId: phone, passwordIsDefault });
   } catch (error) {
     console.error('[auth] login failed', error);
     const message =
