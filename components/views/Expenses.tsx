@@ -13,7 +13,14 @@ import {
 import { Category, Expense } from '@/types/expense';
 import { categoryFor, downloadCsv, getCategoryColor, getCategoryIcon } from '@/lib/utils';
 import { useProfileStore } from '@/lib/profile-store';
-import { groupByCycle, getCycleKey, getCurrentCycleKey, formatCycleLabel } from '@/lib/cycle';
+import {
+  groupByCycle,
+  getCycleKey,
+  getCycleRange,
+  getCurrentCycleKey,
+  formatCycleLabel,
+  toDateInputValue,
+} from '@/lib/cycle';
 import { Money } from '@/components/Money';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { ExpenseEditDialog } from '@/components/ExpenseEditDialog';
@@ -35,12 +42,13 @@ const PAYMENT_LABELS: Record<string, string> = {
   other: 'Other',
 };
 
+// Same order as the Overview (Dashboard) date-range filter, for consistency.
 const RANGES: { key: TimeRangeOption; label: string }[] = [
-  { key: 'all', label: 'All' },
+  { key: 'month', label: 'Month' },
   { key: '7d', label: '7D' },
   { key: '14d', label: '14D' },
   { key: '30d', label: '30D' },
-  { key: 'month', label: 'Month' },
+  { key: 'all', label: 'All' },
   { key: 'custom', label: 'Custom' },
 ];
 
@@ -128,7 +136,7 @@ export const Expenses = ({
   categories = EMPTY_CATEGORIES,
 }: ExpensesProps) => {
   const [query, setQuery] = useState('');
-  const [timeRange, setTimeRange] = useState<TimeRangeOption>('all');
+  const [timeRange, setTimeRange] = useState<TimeRangeOption>('month');
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
@@ -161,6 +169,17 @@ export const Expenses = ({
   }, [selectedMonth, cycleStartDay]);
 
   const monthIndex = availableMonths.findIndex((m) => m.key === activeMonthKey);
+
+  const handleRangeSelect = (key: TimeRangeOption) => {
+    setTimeRange(key);
+    // First time landing on Custom, default the range to the user's current
+    // cycle so it starts pre-filled with something meaningful.
+    if (key === 'custom' && !startDate && !endDate) {
+      const { start, end } = getCycleRange(getCurrentCycleKey(cycleStartDay), cycleStartDay);
+      setStartDate(toDateInputValue(start));
+      setEndDate(toDateInputValue(end));
+    }
+  };
 
   const filtered = useMemo(() => {
     const now = new Date();
@@ -248,11 +267,11 @@ export const Expenses = ({
   }, [filtered, sortBy, sortDir, categories]);
 
   const filtersActive =
-    timeRange !== 'all' || Boolean(query || startDate || endDate);
+    timeRange !== 'month' || Boolean(query || startDate || endDate);
 
   const resetFilters = () => {
     setQuery('');
-    setTimeRange('all');
+    setTimeRange('month');
     setSelectedMonth('');
     setStartDate('');
     setEndDate('');
@@ -302,7 +321,7 @@ export const Expenses = ({
           {RANGES.map(({ key, label }) => (
             <button
               key={key}
-              onClick={() => setTimeRange(key)}
+              onClick={() => handleRangeSelect(key)}
               className={`h-7 cursor-pointer rounded-md px-2.5 text-[12px] font-medium transition-colors ${
                 timeRange === key
                   ? 'bg-primary/12 text-primary'
