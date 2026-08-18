@@ -3,6 +3,7 @@ import { ChevronDown, Plus } from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
 import { builtInCategories } from '@/lib/constants';
 import { getCategoryColor, getCategoryIcon } from '@/lib/utils';
+import { groupByCycle, getCurrentCycleKey, formatCycleLabel } from '@/lib/cycle';
 import { Money } from '@/components/Money';
 import { Bar } from '@/components/Bar';
 import { CategoryIcon } from '@/components/CategoryIcon';
@@ -12,6 +13,7 @@ interface MonthlySummaryProps {
   income: number;
   budget?: number;
   categories?: Category[];
+  cycleStartDay?: number;
 }
 
 interface MonthSummary {
@@ -31,6 +33,7 @@ export const MonthlySummary = ({
   income,
   budget = 0,
   categories = builtInCategories,
+  cycleStartDay = 1,
 }: MonthlySummaryProps) => {
   const hasBudget = budget > 0;
   const target = hasBudget ? budget : income;
@@ -40,34 +43,17 @@ export const MonthlySummary = ({
     const cats = categories.length ? categories : builtInCategories;
     const catsById = new Map(cats.map((c) => [c.id, c]));
     const builtInById = new Map(builtInCategories.map((c) => [c.id, c]));
-    const now = new Date();
-    const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const groups = new Map<string, Expense[]>();
+    const currentKey = getCurrentCycleKey(cycleStartDay);
+    const groups = groupByCycle(expenses, (e) => new Date(e.date), cycleStartDay);
     const amountOf = (e: Expense) => {
       const n = Number(e.amount);
       return Number.isFinite(n) ? n : 0;
     };
 
-    expenses.forEach((e) => {
-      const d = new Date(e.date);
-      if (isNaN(d.getTime())) return;
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      const list = groups.get(key) ?? [];
-      list.push(e);
-      groups.set(key, list);
-    });
-
-    if (!groups.has(currentKey)) groups.set(currentKey, []);
-
     return Array.from(groups.entries())
       .sort(([a], [b]) => b.localeCompare(a))
       .map(([key, list]) => {
-        const [yearStr, monthStr] = key.split('-');
-        const label = new Date(
-          Number(yearStr),
-          Number(monthStr) - 1,
-          1
-        ).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+        const label = formatCycleLabel(key, cycleStartDay);
         const total = list.reduce((sum, e) => sum + amountOf(e), 0);
 
         const totals = new Map<string, number>();
@@ -108,7 +94,7 @@ export const MonthlySummary = ({
           isCurrent: key === currentKey,
         };
       });
-  }, [expenses, target, categories]);
+  }, [expenses, target, categories, cycleStartDay]);
 
   const totals = useMemo(() => {
     const spent = months.reduce((sum, m) => sum + m.total, 0);

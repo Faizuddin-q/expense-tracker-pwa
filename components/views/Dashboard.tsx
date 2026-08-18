@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
 import { builtInCategories } from '@/lib/constants';
 import { getCategoryColor, getCategoryIcon } from '@/lib/utils';
+import { groupByCycle, getCycleKey, getCurrentCycleKey, formatCycleLabel } from '@/lib/cycle';
 import { Money } from '@/components/Money';
 import { Bar } from '@/components/Bar';
 import { CategoryIcon } from '@/components/CategoryIcon';
@@ -18,6 +19,7 @@ interface DashboardProps {
   /** Monthly spend target for analytics. Falls back to income when unset. */
   budget?: number;
   categories?: Category[];
+  cycleStartDay?: number;
 }
 
 type TimeRangeOption = 'all' | '1d' | '7d' | '14d' | '30d' | 'month' | 'custom';
@@ -120,6 +122,7 @@ export const Dashboard = ({
   income,
   budget = 0,
   categories = builtInCategories,
+  cycleStartDay = 1,
 }: DashboardProps) => {
   const [timeRange, setTimeRange] = useState<TimeRangeOption>('month');
   const [selectedMonth, setSelectedMonth] = useState<string>('');
@@ -128,37 +131,16 @@ export const Dashboard = ({
   const [hovered, setHovered] = useState<CategoryBreakdown | null>(null);
 
   const availableMonths = useMemo(() => {
-    const now = new Date();
-    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const monthMap = new Map<string, string>();
-
-    expenses.forEach((e) => {
-      const d = new Date(e.date);
-      if (isNaN(d.getTime())) return;
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      monthMap.set(
-        key,
-        d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
-      );
-    });
-
-    if (!monthMap.has(currentMonthKey)) {
-      monthMap.set(
-        currentMonthKey,
-        now.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
-      );
-    }
-
-    return Array.from(monthMap.entries())
-      .sort(([a], [b]) => b.localeCompare(a))
-      .map(([key, label]) => ({ key, label }));
-  }, [expenses]);
+    const groups = groupByCycle(expenses, (e) => new Date(e.date), cycleStartDay);
+    return Array.from(groups.keys())
+      .sort((a, b) => b.localeCompare(a))
+      .map((key) => ({ key, label: formatCycleLabel(key, cycleStartDay) }));
+  }, [expenses, cycleStartDay]);
 
   const activeMonthKey = useMemo(() => {
     if (selectedMonth) return selectedMonth;
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  }, [selectedMonth]);
+    return getCurrentCycleKey(cycleStartDay);
+  }, [selectedMonth, cycleStartDay]);
 
   const monthIndex = availableMonths.findIndex((m) => m.key === activeMonthKey);
 
@@ -187,8 +169,7 @@ export const Dashboard = ({
       if (timeRange === '30d') return eDate >= daysAgo(30);
 
       if (timeRange === 'month') {
-        const ym = `${eDate.getFullYear()}-${String(eDate.getMonth() + 1).padStart(2, '0')}`;
-        return ym === activeMonthKey;
+        return getCycleKey(eDate, cycleStartDay) === activeMonthKey;
       }
 
       if (timeRange === 'custom') {
@@ -207,7 +188,7 @@ export const Dashboard = ({
 
       return true;
     });
-  }, [expenses, timeRange, activeMonthKey, startDate, endDate]);
+  }, [expenses, timeRange, activeMonthKey, startDate, endDate, cycleStartDay]);
 
   const activeSpend = useMemo(
     () => filteredExpenses.reduce((sum, e) => sum + expenseAmount(e), 0),

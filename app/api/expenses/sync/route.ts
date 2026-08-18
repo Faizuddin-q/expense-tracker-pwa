@@ -26,6 +26,7 @@ export const POST = async (request: Request) => {
       onboardingComplete,
       name,
       theme,
+      cycleStartDay,
     } = await request.json();
     if (
       typeof userId !== 'string' ||
@@ -118,6 +119,14 @@ export const POST = async (request: Request) => {
     if (theme === 'dark' || theme === 'light') {
       profileUpdate.theme = theme;
     }
+    if (
+      typeof cycleStartDay === 'number' &&
+      Number.isInteger(cycleStartDay) &&
+      cycleStartDay >= 1 &&
+      cycleStartDay <= 31
+    ) {
+      profileUpdate.cycleStartDay = cycleStartDay;
+    }
     if (Array.isArray(categories)) {
       const cleanedCategories = [];
       for (const category of categories) {
@@ -173,6 +182,12 @@ export const POST = async (request: Request) => {
             theme:
               profile.theme === 'dark' || profile.theme === 'light'
                 ? profile.theme
+                : null,
+            cycleStartDay:
+              typeof profile.cycleStartDay === 'number' &&
+              profile.cycleStartDay >= 1 &&
+              profile.cycleStartDay <= 31
+                ? profile.cycleStartDay
                 : null,
           }
         : null,

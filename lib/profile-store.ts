@@ -14,6 +14,7 @@ interface ProfileStore {
   needsIncome: boolean;
   name: string;
   nameDraft: string;
+  cycleStartDay: number;
 
   // Plain setters — no persistence/sync side effects. Used internally by
   // sync-store when applying cloud/local data, and by components for drafts.
@@ -25,9 +26,12 @@ interface ProfileStore {
   setHideAmountsState: (v: boolean) => void;
   setNameState: (v: string) => void;
   setNameDraft: (v: string) => void;
+  setCycleStartDayState: (v: number) => void;
 
   /** Public action — persists locally and pushes to the cloud, unlike setHideAmountsState. */
   setHideAmounts: (v: boolean) => void;
+  /** Public action — persists locally and pushes to the cloud, unlike setCycleStartDayState. */
+  setCycleStartDay: (v: number) => void;
   saveIncome: () => Promise<void>;
   saveBudget: () => Promise<void>;
   saveName: () => Promise<void>;
@@ -45,6 +49,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   needsIncome: false,
   name: '',
   nameDraft: '',
+  cycleStartDay: 1,
 
   setIncome: (v) => set({ income: v }),
   setIncomeDraft: (v) => set({ incomeDraft: v }),
@@ -54,6 +59,26 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   setHideAmountsState: (v) => set({ hideAmounts: v }),
   setNameState: (v) => set({ name: v, nameDraft: v }),
   setNameDraft: (v) => set({ nameDraft: v }),
+  setCycleStartDayState: (v) => set({ cycleStartDay: v }),
+
+  setCycleStartDay: (v) => {
+    set({ cycleStartDay: v });
+    const userId = useAuthStore.getState().userId;
+    if (userId) {
+      void idbSet(`pocket-cycle-start-day-${userId}`, v);
+      void useSyncStore
+        .getState()
+        .sync({ id: userId, cycleStartDay: v })
+        .then((ok) => {
+          if (ok) {
+            toast.success(
+              'Cycle start updated',
+              v === 1 ? 'Back to calendar months' : `Months now run from day ${v}`
+            );
+          }
+        });
+    }
+  },
 
   setHideAmounts: (v) => {
     set({ hideAmounts: v });
@@ -192,6 +217,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       hideAmounts: false,
       name: '',
       nameDraft: '',
+      cycleStartDay: 1,
     });
   },
 }));

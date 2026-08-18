@@ -36,6 +36,7 @@ export interface SyncOptions {
   onboardingComplete?: boolean | null;
   name?: string | null;
   theme?: 'dark' | 'light' | null;
+  cycleStartDay?: number | null;
 }
 
 interface SyncStore {
@@ -80,6 +81,7 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
       onboardingComplete = null,
       name = null,
       theme = null,
+      cycleStartDay = null,
     } = options;
     const id = options.id ?? useAuthStore.getState().userId;
     const local = options.local ?? useExpenses.getState().expenses;
@@ -124,6 +126,14 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
       }
       if (theme === 'dark' || theme === 'light') {
         payload.theme = theme;
+      }
+      if (
+        typeof cycleStartDay === 'number' &&
+        Number.isInteger(cycleStartDay) &&
+        cycleStartDay >= 1 &&
+        cycleStartDay <= 31
+      ) {
+        payload.cycleStartDay = cycleStartDay;
       }
 
       const response = await fetch('/api/expenses/sync', {
@@ -252,6 +262,15 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
         useThemeStore.getState().setThemeState(data.profile.theme);
       }
 
+      if (
+        typeof data.profile?.cycleStartDay === 'number' &&
+        data.profile.cycleStartDay >= 1 &&
+        data.profile.cycleStartDay <= 31
+      ) {
+        profile.setCycleStartDayState(data.profile.cycleStartDay);
+        await idbSet(`pocket-cycle-start-day-${id}`, data.profile.cycleStartDay);
+      }
+
       // Merge cloud categories with local — fill missing tone/icon from local.
       // Mongo is source of truth for categories too, same as income/budget —
       // trust the response directly rather than merging with whatever local
@@ -297,6 +316,7 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
         savedHideAmounts,
         savedPendingDeleted,
         savedName,
+        savedCycleStartDay,
       ] = await Promise.all([
         idbGet<Expense[]>(`pocket-expenses-${id}`),
         idbGet<Category[]>(`pocket-categories-${id}`),
@@ -305,6 +325,7 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
         idbGet<boolean>(`pocket-hide-amounts-${id}`),
         idbGet<string[]>(`pocket-pending-deleted-${id}`),
         idbGet<string>(`pocket-name-${id}`),
+        idbGet<number>(`pocket-cycle-start-day-${id}`),
       ]);
 
       const { hydrate } = useExpenses.getState();
@@ -361,6 +382,13 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
         }
         if (typeof savedName === 'string' && savedName) {
           profile.setNameState(savedName);
+        }
+        if (
+          typeof savedCycleStartDay === 'number' &&
+          savedCycleStartDay >= 1 &&
+          savedCycleStartDay <= 31
+        ) {
+          profile.setCycleStartDayState(savedCycleStartDay);
         }
         set({ profileHydrated: true });
       } else {
@@ -429,6 +457,13 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
         }
         if (typeof savedName === 'string' && savedName) {
           profile.setNameState(savedName);
+        }
+        if (
+          typeof savedCycleStartDay === 'number' &&
+          savedCycleStartDay >= 1 &&
+          savedCycleStartDay <= 31
+        ) {
+          profile.setCycleStartDayState(savedCycleStartDay);
         }
       }
 

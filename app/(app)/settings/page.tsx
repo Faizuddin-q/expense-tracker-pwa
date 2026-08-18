@@ -26,6 +26,8 @@ export default function SettingsPage() {
     saveBudget,
     hideAmounts,
     setHideAmounts,
+    cycleStartDay,
+    setCycleStartDay,
   } = useProfileStore();
   const { categories: customCategories } = useCategoryStore();
   const sync = useSyncStore((s) => s.sync);
@@ -66,6 +68,8 @@ export default function SettingsPage() {
       setTheme={setTheme}
       hideAmounts={hideAmounts}
       setHideAmounts={setHideAmounts}
+      cycleStartDay={cycleStartDay}
+      setCycleStartDay={setCycleStartDay}
       // Deprecated for now — double-tap / Back Tap shortcut
       // backTapEnabled={backTapEnabled}
       // setBackTapEnabled={(on) => void setBackTapEnabled(on)}
