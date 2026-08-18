@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { Download, Eye, EyeOff, LogOut, Moon, Sun } from 'lucide-react';
-// Hand — used by deprecated double-tap shortcut section
-// import { Download, Eye, EyeOff, Hand, LogOut, Moon, Sun } from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
 import {
   downloadCsv,
   formatIndianMobileDisplay,
   formatIndianNumber,
 } from '@/lib/utils';
-import { toast } from '@/components/ToastHost';
+import { toast } from '@/lib/toast';
 
 interface SettingsProps {
   nameDraft: string;
@@ -36,10 +34,6 @@ interface SettingsProps {
   setHideAmounts: (v: boolean) => void;
   cycleStartDay: number;
   setCycleStartDay: (v: number) => void;
-  // Deprecated for now — double-tap / Back Tap shortcut
-  // backTapEnabled: boolean;
-  // setBackTapEnabled: (on: boolean) => void;
-  // onOpenBackTapGuide?: () => void;
 }
 
 /** A labelled settings row: description on the left, control on the right. */
@@ -314,8 +308,12 @@ const ChangePasswordForm = ({
       return;
     }
     setSubmitting(true);
-    const ok = await onChangePassword(current, next);
-    setSubmitting(false);
+    let ok = false;
+    try {
+      ok = await onChangePassword(current, next);
+    } finally {
+      setSubmitting(false);
+    }
     if (ok) {
       setCurrent('');
       setNext('');
@@ -378,10 +376,6 @@ export const Settings = ({
   setHideAmounts,
   cycleStartDay,
   setCycleStartDay,
-  // Deprecated for now — double-tap / Back Tap shortcut
-  // backTapEnabled,
-  // setBackTapEnabled,
-  // onOpenBackTapGuide,
 }: SettingsProps) => {
   return (
     <div className="mx-auto max-w-6xl">
@@ -512,40 +506,6 @@ export const Settings = ({
             </div>
           </Row>
         </Section>
-
-        {/* Deprecated for now — double-tap / Back Tap shortcut
-        <Section title="Shortcuts">
-          <Row
-            title="Open with double tap"
-            description="Double-tap the back of your phone to open Pockett. Controlled by your phone's system settings."
-          >
-            <div className="flex items-center gap-2 sm:justify-end">
-              <Hand
-                className={`size-3.5 shrink-0 ${
-                  backTapEnabled ? 'text-primary' : 'text-muted-foreground'
-                }`}
-                strokeWidth={1.9}
-              />
-              <Segment
-                value={backTapEnabled ? 'on' : 'off'}
-                onChange={(v) => setBackTapEnabled(v === 'on')}
-                options={[
-                  { value: 'off', label: 'Off' },
-                  { value: 'on', label: 'On' },
-                ]}
-              />
-            </div>
-          </Row>
-          {onOpenBackTapGuide && (
-            <Row
-              title="Setup guide"
-              description="Step-by-step for iPhone, Android, and Motorola."
-            >
-              <GhostButton onClick={onOpenBackTapGuide}>View guide</GhostButton>
-            </Row>
-          )}
-        </Section>
-        */}
 
         <Section title="Data">
           <Row

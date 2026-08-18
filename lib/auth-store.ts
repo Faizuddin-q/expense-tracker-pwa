@@ -4,7 +4,7 @@ import { normalizePhone, isValidIndianMobile } from '@/lib/utils';
 import { useExpenses } from '@/lib/store';
 import { useSyncStore } from '@/lib/sync-store';
 import { useProfileStore } from '@/lib/profile-store';
-import { toast } from '@/components/ToastHost';
+import { toast } from '@/lib/toast';
 
 interface AuthStore {
   userId: string;
@@ -90,13 +90,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: normalized, password }),
       });
-      data = await response.json();
       if (!response.ok) {
-        const msg = data.error || 'Could not sign in';
+        const errorBody = await response.json().catch(() => ({}));
+        const msg = errorBody.error || 'Could not sign in';
         set({ error: msg });
         toast.error('Could not sign in', msg);
         return;
       }
+      data = await response.json();
     } catch {
       const msg =
         'Could not reach the server. Check your connection and try again.';

@@ -8,7 +8,7 @@ import { CategoryIcon } from '@/components/CategoryIcon';
 import { ExpenseRow } from '@/components/ExpenseRow';
 import { ExpenseEditDialog } from '@/components/ExpenseEditDialog';
 import { ExpenseDeleteDialog } from '@/components/ExpenseDeleteDialog';
-import { toast } from '@/components/ToastHost';
+import { toast } from '@/lib/toast';
 import { getCategoryColor, getCategoryIcon } from '@/lib/utils';
 
 interface HomeProps {

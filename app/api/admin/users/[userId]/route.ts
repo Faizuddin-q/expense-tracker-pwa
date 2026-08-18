@@ -89,8 +89,10 @@ export const PATCH = async (request: Request, { params }: Params) => {
   );
   if (limited) return limited;
 
-  const { userId } = await params;
-  const body = await request.json().catch(() => null);
+  const [{ userId }, body] = await Promise.all([
+    params,
+    request.json().catch(() => null),
+  ]);
   if (!body)
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
 

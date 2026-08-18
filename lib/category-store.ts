@@ -5,7 +5,7 @@ import { Category } from '@/types/expense';
 import { getCategoryIcon } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth-store';
 import { useSyncStore } from '@/lib/sync-store';
-import { toast } from '@/components/ToastHost';
+import { toast } from '@/lib/toast';
 
 interface CategoryStore {
   /** Every category this account has — no separate built-in list. All fully owned, editable, deletable. */

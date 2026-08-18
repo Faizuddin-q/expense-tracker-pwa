@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Trash2, TriangleAlert, X } from 'lucide-react';
 import { formatIndianMobileDisplay } from '@/lib/utils';
-import { useFocusTrap } from '@/lib/useFocusTrap';
 
 interface AdminDeleteUserDialogProps {
   userId: string;
@@ -20,36 +19,31 @@ export const AdminDeleteUserDialog = ({
   onClose,
 }: AdminDeleteUserDialogProps) => {
   const [confirmText, setConfirmText] = useState('');
-  const dialogRef = useRef<HTMLDivElement>(null);
-  useFocusTrap(dialogRef, true);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const confirmInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    addEventListener('keydown', onKey);
-    return () => removeEventListener('keydown', onKey);
-  }, [onClose]);
+    // showModal() focuses the first focusable descendant by default — that's
+    // the close button here, since it comes first in the markup. Focus the
+    // confirm field explicitly right after, overriding that default.
+    dialogRef.current?.showModal();
+    confirmInputRef.current?.focus();
+  }, []);
 
   const matches =
     confirmText.replace(/\D/g, '') === userId.replace(/\D/g, '');
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-background/70 p-0 backdrop-blur-sm duration-150 animate-in fade-in sm:items-center sm:p-6">
-      <button
-        type="button"
-        aria-label="Close"
-        className="absolute inset-0 cursor-default"
-        onClick={onClose}
-      />
-
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="delete-user-title"
-        className="relative z-10 w-full max-w-sm rounded-t-xl border border-destructive/30 bg-card duration-200 ease-[var(--ease-drawer)] animate-in slide-in-from-bottom-4 sm:rounded-xl sm:zoom-in-[0.98] sm:slide-in-from-bottom-0"
-      >
+    <dialog
+      ref={dialogRef}
+      onClose={onClose}
+      onClick={(e) => {
+        if (e.target === dialogRef.current) dialogRef.current?.close();
+      }}
+      aria-labelledby="delete-user-title"
+      className="m-0 h-full max-h-full w-full max-w-full border-0 bg-background/70 p-0 backdrop-blur-sm flex items-end justify-center duration-150 animate-in fade-in sm:items-center sm:p-6"
+    >
+      <div className="relative w-full max-w-sm rounded-t-xl border border-destructive/30 bg-card duration-200 ease-[var(--ease-drawer)] animate-in slide-in-from-bottom-4 sm:rounded-xl sm:zoom-in-[0.98] sm:slide-in-from-bottom-0">
         <div className="flex h-11 items-center justify-between border-b border-border px-4">
           <h2
             id="delete-user-title"
@@ -61,7 +55,7 @@ export const AdminDeleteUserDialog = ({
           <button
             type="button"
             aria-label="Close"
-            onClick={onClose}
+            onClick={() => dialogRef.current?.close()}
             className="grid size-6 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-secondary hover:text-foreground"
           >
             <X className="size-3.5" strokeWidth={2} />
@@ -83,7 +77,7 @@ export const AdminDeleteUserDialog = ({
           </label>
           <input
             id="confirm-phone"
-            autoFocus
+            ref={confirmInputRef}
             inputMode="numeric"
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
@@ -94,7 +88,7 @@ export const AdminDeleteUserDialog = ({
           <div className="mt-4 flex gap-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => dialogRef.current?.close()}
               className="h-9 flex-1 cursor-pointer rounded-lg border border-border text-[13px] font-medium text-foreground transition-colors hover:bg-secondary"
             >
               Cancel
@@ -111,6 +105,6 @@ export const AdminDeleteUserDialog = ({
           </div>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 };

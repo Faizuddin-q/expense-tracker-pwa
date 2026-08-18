@@ -8,7 +8,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import { useProfileStore } from '@/lib/profile-store';
 import { useCategoryStore } from '@/lib/category-store';
 import { useThemeStore } from '@/lib/theme-store';
-import { toast } from '@/components/ToastHost';
+import { toast } from '@/lib/toast';
 
 // Module-scope (non-reactive) bootstrap bookkeeping — mirrors the refs the
 // old context kept on the AppProvider component instance. Never used as a

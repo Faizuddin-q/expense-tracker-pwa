@@ -7,7 +7,6 @@ import { categoryFor, getCategoryColor, getCategoryIcon } from '@/lib/utils';
 import { Money } from '@/components/Money';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { builtInCategories } from '@/lib/constants';
-import { useFocusTrap } from '@/lib/useFocusTrap';
 
 interface ExpenseDeleteDialogProps {
   expense: Expense;
@@ -25,33 +24,28 @@ export const ExpenseDeleteDialog = ({
   const c = categoryFor(expense.category, categories);
   const color = getCategoryColor(c.tone);
   const Icon = getCategoryIcon(c);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  useFocusTrap(dialogRef, true);
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    addEventListener('keydown', onKey);
-    return () => removeEventListener('keydown', onKey);
-  }, [onClose]);
+    // No input field to focus here — showModal() would otherwise default to
+    // focusing the close button, since it's the first focusable descendant.
+    // Focus the dialog container itself instead, a neutral target.
+    dialogRef.current?.showModal();
+    dialogRef.current?.focus();
+  }, []);
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-background/70 p-0 backdrop-blur-sm duration-150 animate-in fade-in sm:items-center sm:p-6">
-      <button
-        type="button"
-        aria-label="Close"
-        className="absolute inset-0 cursor-default"
-        onClick={onClose}
-      />
-
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="delete-expense-title"
-        className="relative z-10 w-full max-w-sm rounded-t-xl border border-border bg-card duration-200 ease-[var(--ease-drawer)] animate-in slide-in-from-bottom-4 sm:rounded-xl sm:zoom-in-[0.98] sm:slide-in-from-bottom-0"
-      >
+    <dialog
+      ref={dialogRef}
+      tabIndex={-1}
+      onClose={onClose}
+      onClick={(e) => {
+        if (e.target === dialogRef.current) dialogRef.current?.close();
+      }}
+      aria-labelledby="delete-expense-title"
+      className="m-0 h-full max-h-full w-full max-w-full border-0 bg-background/70 p-0 backdrop-blur-sm flex items-end justify-center duration-150 animate-in fade-in sm:items-center sm:p-6"
+    >
+      <div className="relative w-full max-w-sm rounded-t-xl border border-border bg-card duration-200 ease-[var(--ease-drawer)] animate-in slide-in-from-bottom-4 sm:rounded-xl sm:zoom-in-[0.98] sm:slide-in-from-bottom-0">
         <div className="flex h-11 items-center justify-between border-b border-border px-4">
           <h2
             id="delete-expense-title"
@@ -62,7 +56,7 @@ export const ExpenseDeleteDialog = ({
           <button
             type="button"
             aria-label="Close"
-            onClick={onClose}
+            onClick={() => dialogRef.current?.close()}
             className="grid size-6 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-secondary hover:text-foreground"
           >
             <X className="size-3.5" strokeWidth={2} />
@@ -93,7 +87,7 @@ export const ExpenseDeleteDialog = ({
           <div className="mt-4 flex gap-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => dialogRef.current?.close()}
               className="h-9 flex-1 cursor-pointer rounded-lg border border-border text-[13px] font-medium text-foreground transition-colors hover:bg-secondary"
             >
               Cancel
@@ -109,6 +103,6 @@ export const ExpenseDeleteDialog = ({
           </div>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 };

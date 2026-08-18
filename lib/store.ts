@@ -1,14 +1,12 @@
 import { useMemo } from 'react';
 import { create } from 'zustand';
-import { Category, CategoryId, Expense } from '@/types/expense';
+import { CategoryId, Expense } from '@/types/expense';
 import { builtInCategories } from '@/lib/constants';
 import { parseRawNumber, formatIndianNumber, money } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth-store';
 import { useSyncStore } from '@/lib/sync-store';
-import { useProfileStore } from '@/lib/profile-store';
-import { getAllCategories, useAllCategories } from '@/lib/category-store';
-import { toast } from '@/components/ToastHost';
-import { getCycleKey, getCurrentCycleKey } from '@/lib/cycle';
+import { getAllCategories } from '@/lib/category-store';
+import { toast } from '@/lib/toast';
 
 interface Store {
   expenses: Expense[];
@@ -248,17 +246,6 @@ export const useExpenses = create<Store>((setState, getState) => ({
 
 // ─── Derived selectors (React hooks — mirror the old context's memoized values) ───
 
-export const useMonthSpend = (): number => {
-  const expenses = useExpenses((s) => s.expenses);
-  const cycleStartDay = useProfileStore((s) => s.cycleStartDay);
-  return useMemo(() => {
-    const currentKey = getCurrentCycleKey(cycleStartDay);
-    return expenses
-      .filter((e) => getCycleKey(new Date(e.date), cycleStartDay) === currentKey)
-      .reduce((sum, e) => sum + e.amount, 0);
-  }, [expenses, cycleStartDay]);
-};
-
 export const useToday = (): Expense[] => {
   const expenses = useExpenses((s) => s.expenses);
   return useMemo(
@@ -268,21 +255,4 @@ export const useToday = (): Expense[] => {
       ),
     [expenses]
   );
-};
-
-export const useByCategory = (): (Category & { total: number })[] => {
-  const expenses = useExpenses((s) => s.expenses);
-  const allCategories = useAllCategories();
-  return useMemo(() => {
-    const totals = new Map<string, number>();
-    for (const e of expenses) {
-      totals.set(e.category, (totals.get(e.category) ?? 0) + e.amount);
-    }
-    const result: (Category & { total: number })[] = [];
-    for (const c of allCategories) {
-      const total = totals.get(c.id) ?? 0;
-      if (total) result.push({ ...c, total });
-    }
-    return result;
-  }, [allCategories, expenses]);
 };

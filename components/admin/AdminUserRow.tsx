@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ChevronRight, Loader2 } from 'lucide-react';
 import { AdminUserDetail, AdminUserSummary } from '@/lib/admin-types';
 import { formatIndianMobileDisplay, formatRelativeTime, moneyExact } from '@/lib/utils';
-import { toast } from '@/components/ToastHost';
+import { toast } from '@/lib/toast';
 import { AdminUserPanel } from '@/components/admin/AdminUserPanel';
 
 interface AdminUserRowProps {
@@ -67,6 +67,15 @@ export const AdminUserRow = ({
     <>
       <tr
         onClick={() => void handleToggle()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            void handleToggle();
+          }
+        }}
+        tabIndex={0}
+        role="button"
+        aria-expanded={expanded}
         className={`cursor-pointer border-b border-border transition-colors last:border-b-0 ${
           expanded ? 'bg-primary/[0.045]' : 'hover:bg-primary/[0.03]'
         }`}
