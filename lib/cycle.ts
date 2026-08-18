@@ -100,6 +100,12 @@ export function formatCycleLabel(key: CycleKey, cycleStartDay: number): string {
   return `${startStr} – ${endStr}`;
 }
 
+/** Format a Date as a "YYYY-MM-DD" string suitable for an <input type="date">
+ *  value — local calendar date, no timezone conversion. */
+export function toDateInputValue(date: Date): string {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
 /** Bucket a list of dated items into a Map<CycleKey, T[]>, always including
  *  the current cycle even if empty — mirrors the "always show current
  *  month" behavior the Dashboard/Expenses/MonthlySummary views want. */

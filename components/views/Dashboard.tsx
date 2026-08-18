@@ -3,7 +3,14 @@ import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Category, Expense } from '@/types/expense';
 import { builtInCategories } from '@/lib/constants';
 import { getCategoryColor, getCategoryIcon } from '@/lib/utils';
-import { groupByCycle, getCycleKey, getCurrentCycleKey, formatCycleLabel } from '@/lib/cycle';
+import {
+  groupByCycle,
+  getCycleKey,
+  getCycleRange,
+  getCurrentCycleKey,
+  formatCycleLabel,
+  toDateInputValue,
+} from '@/lib/cycle';
 import { Money } from '@/components/Money';
 import { Bar } from '@/components/Bar';
 import { CategoryIcon } from '@/components/CategoryIcon';
@@ -154,6 +161,17 @@ export const Dashboard = ({
     if (monthIndex > 0) setSelectedMonth(availableMonths[monthIndex - 1].key);
   };
 
+  const handleRangeSelect = (key: TimeRangeOption) => {
+    setTimeRange(key);
+    // First time landing on Custom, default the range to the user's current
+    // cycle so it starts pre-filled with something meaningful.
+    if (key === 'custom' && !startDate && !endDate) {
+      const { start, end } = getCycleRange(getCurrentCycleKey(cycleStartDay), cycleStartDay);
+      setStartDate(toDateInputValue(start));
+      setEndDate(toDateInputValue(end));
+    }
+  };
+
   const filteredExpenses = useMemo(() => {
     const now = new Date();
     const daysAgo = (n: number) =>
@@ -292,7 +310,7 @@ export const Dashboard = ({
             <button
               key={key}
               type="button"
-              onClick={() => setTimeRange(key)}
+              onClick={() => handleRangeSelect(key)}
               className={`h-7 cursor-pointer rounded-md px-2.5 text-[12px] font-medium transition-colors ${
                 timeRange === key
                   ? 'bg-primary/12 text-primary'
