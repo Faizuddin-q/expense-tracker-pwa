@@ -5,8 +5,10 @@ import { builtInCategories } from '@/lib/constants';
 import { parseRawNumber, formatIndianNumber, money } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth-store';
 import { useSyncStore } from '@/lib/sync-store';
+import { useProfileStore } from '@/lib/profile-store';
 import { getAllCategories, useAllCategories } from '@/lib/category-store';
 import { toast } from '@/components/ToastHost';
+import { getCycleKey, getCurrentCycleKey } from '@/lib/cycle';
 
 interface Store {
   expenses: Expense[];
@@ -248,13 +250,13 @@ export const useExpenses = create<Store>((setState, getState) => ({
 
 export const useMonthSpend = (): number => {
   const expenses = useExpenses((s) => s.expenses);
-  return useMemo(
-    () =>
-      expenses
-        .filter((e) => new Date(e.date).getMonth() === new Date().getMonth())
-        .reduce((sum, e) => sum + e.amount, 0),
-    [expenses]
-  );
+  const cycleStartDay = useProfileStore((s) => s.cycleStartDay);
+  return useMemo(() => {
+    const currentKey = getCurrentCycleKey(cycleStartDay);
+    return expenses
+      .filter((e) => getCycleKey(new Date(e.date), cycleStartDay) === currentKey)
+      .reduce((sum, e) => sum + e.amount, 0);
+  }, [expenses, cycleStartDay]);
 };
 
 export const useToday = (): Expense[] => {

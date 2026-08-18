@@ -13,6 +13,7 @@ import {
 import { Category, Expense } from '@/types/expense';
 import { categoryFor, downloadCsv, getCategoryColor, getCategoryIcon } from '@/lib/utils';
 import { useProfileStore } from '@/lib/profile-store';
+import { groupByCycle, getCycleKey, getCurrentCycleKey, formatCycleLabel } from '@/lib/cycle';
 import { Money } from '@/components/Money';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { ExpenseEditDialog } from '@/components/ExpenseEditDialog';
@@ -136,6 +137,7 @@ export const Expenses = ({
   const [sortBy, setSortBy] = useState<SortKey>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const hideAmounts = useProfileStore((s) => s.hideAmounts);
+  const cycleStartDay = useProfileStore((s) => s.cycleStartDay);
 
   const toggleSort = (key: SortKey) => {
     if (sortBy === key) {
@@ -147,36 +149,16 @@ export const Expenses = ({
   };
 
   const availableMonths = useMemo(() => {
-    const monthMap = new Map<string, string>();
-    expenses.forEach((e) => {
-      const d = new Date(e.date);
-      if (isNaN(d.getTime())) return;
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      monthMap.set(
-        key,
-        d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
-      );
-    });
-
-    const now = new Date();
-    const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    if (!monthMap.has(currentKey)) {
-      monthMap.set(
-        currentKey,
-        now.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
-      );
-    }
-
-    return Array.from(monthMap.entries())
-      .sort(([a], [b]) => b.localeCompare(a))
-      .map(([key, label]) => ({ key, label }));
-  }, [expenses]);
+    const groups = groupByCycle(expenses, (e) => new Date(e.date), cycleStartDay);
+    return Array.from(groups.keys())
+      .sort((a, b) => b.localeCompare(a))
+      .map((key) => ({ key, label: formatCycleLabel(key, cycleStartDay) }));
+  }, [expenses, cycleStartDay]);
 
   const activeMonthKey = useMemo(() => {
     if (selectedMonth) return selectedMonth;
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  }, [selectedMonth]);
+    return getCurrentCycleKey(cycleStartDay);
+  }, [selectedMonth, cycleStartDay]);
 
   const monthIndex = availableMonths.findIndex((m) => m.key === activeMonthKey);
 
@@ -202,8 +184,7 @@ export const Expenses = ({
       if (timeRange === '30d') return eDate >= daysAgo(30);
 
       if (timeRange === 'month') {
-        const ym = `${eDate.getFullYear()}-${String(eDate.getMonth() + 1).padStart(2, '0')}`;
-        return ym === activeMonthKey;
+        return getCycleKey(eDate, cycleStartDay) === activeMonthKey;
       }
 
       if (timeRange === 'custom') {
@@ -222,7 +203,16 @@ export const Expenses = ({
 
       return true;
     });
-  }, [expenses, query, timeRange, activeMonthKey, startDate, endDate, categories]);
+  }, [
+    expenses,
+    query,
+    timeRange,
+    activeMonthKey,
+    startDate,
+    endDate,
+    categories,
+    cycleStartDay,
+  ]);
 
   const filteredTotal = useMemo(
     () => filtered.reduce((sum, e) => sum + e.amount, 0),

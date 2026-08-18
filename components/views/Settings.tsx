@@ -34,6 +34,8 @@ interface SettingsProps {
   setTheme: (t: 'dark' | 'light') => void;
   hideAmounts: boolean;
   setHideAmounts: (v: boolean) => void;
+  cycleStartDay: number;
+  setCycleStartDay: (v: number) => void;
   // Deprecated for now — double-tap / Back Tap shortcut
   // backTapEnabled: boolean;
   // setBackTapEnabled: (on: boolean) => void;
@@ -106,6 +108,45 @@ const Segment = ({
         </button>
       );
     })}
+  </div>
+);
+
+// Fixed days 1-28 (identical every month) plus one "Last day of month"
+// option — stored as 31, which always clamps down to that month's actual
+// last day (see lib/cycle.ts effectiveStartDay). Days 29/30 aren't offered
+// as their own options: picking one of those would make the cycle boundary
+// silently slide between e.g. the 28th/29th/30th depending on the month,
+// which reads as a bug rather than an intentional choice.
+const CYCLE_START_DAY_OPTIONS = [...Array.from({ length: 28 }, (_, i) => i + 1), 31];
+
+const cycleStartDayLabel = (day: number) => {
+  if (day === 1) return 'Day 1 (calendar month)';
+  if (day === 31) return 'Last day of month';
+  return `Day ${day}`;
+};
+
+/** Native select for the cycle-start-day picker — 31 options don't fit a
+ *  Segment control, and a native select gives keyboard/a11y support for free. */
+const CycleStartDaySelect = ({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+}) => (
+  <div className="field-shell flex h-8 w-full items-center rounded-lg border border-border bg-background px-2.5 sm:w-auto">
+    <select
+      aria-label="Monthly cycle start day"
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="w-full min-w-0 cursor-pointer appearance-none bg-transparent px-1.5 text-[13px] text-foreground outline-none sm:w-auto"
+    >
+      {CYCLE_START_DAY_OPTIONS.map((day) => (
+        <option key={day} value={day}>
+          {cycleStartDayLabel(day)}
+        </option>
+      ))}
+    </select>
   </div>
 );
 
@@ -335,6 +376,8 @@ export const Settings = ({
   setTheme,
   hideAmounts,
   setHideAmounts,
+  cycleStartDay,
+  setCycleStartDay,
   // Deprecated for now — double-tap / Back Tap shortcut
   // backTapEnabled,
   // setBackTapEnabled,
@@ -376,6 +419,12 @@ export const Settings = ({
         </Section>
 
         <Section title="Targets">
+          <Row
+            title="Monthly cycle start day"
+            description="Your month runs from this day to the day before it next month — e.g. day 5 means 5 Jul–4 Aug counts as one month. Changes how past expenses are grouped everywhere."
+          >
+            <CycleStartDaySelect value={cycleStartDay} onChange={setCycleStartDay} />
+          </Row>
           <Row
             title="Monthly income"
             description="Used as the fallback target when no budget is set."

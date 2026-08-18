@@ -7,7 +7,7 @@ import { Dashboard } from '@/components/views/Dashboard';
 
 export default function DashboardPage() {
   const expenses = useExpenses((s) => s.expenses);
-  const { income, budget } = useProfileStore();
+  const { income, budget, cycleStartDay } = useProfileStore();
   const allCategories = useAllCategories();
 
   return (
@@ -16,6 +16,7 @@ export default function DashboardPage() {
       income={income}
       budget={budget}
       categories={allCategories}
+      cycleStartDay={cycleStartDay}
     />
   );
 }

@@ -7,7 +7,7 @@ import { MonthlySummary } from '@/components/views/MonthlySummary';
 
 export default function SummaryPage() {
   const expenses = useExpenses((s) => s.expenses);
-  const { income, budget } = useProfileStore();
+  const { income, budget, cycleStartDay } = useProfileStore();
   const allCategories = useAllCategories();
 
   return (
@@ -16,6 +16,7 @@ export default function SummaryPage() {
       income={income}
       budget={budget}
       categories={allCategories}
+      cycleStartDay={cycleStartDay}
     />
   );
 }
