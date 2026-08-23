@@ -12,10 +12,13 @@ const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
 export const ADMIN_SESSION_MAX_AGE_SECONDS = SESSION_TTL_MS / 1000;
 
 // Shared with lib/auth.ts (user sessions) — one signing secret for the whole
-// app. Falls back to a fixed dev secret so the panel still works without
-// extra env setup; set SESSION_SECRET in production for a real signing key.
-const SESSION_SECRET =
-  process.env.SESSION_SECRET || 'pocket-session-secret-v1';
+// app. No hardcoded fallback: a known default would let anyone forge a valid
+// admin session cookie if the env var is ever missing. Set SESSION_SECRET
+// before running the app, including locally.
+const SESSION_SECRET = process.env.SESSION_SECRET;
+if (!SESSION_SECRET) {
+  throw new Error('SESSION_SECRET environment variable must be set');
+}
 
 const sign = (payload: string) =>
   createHmac('sha256', SESSION_SECRET).update(payload).digest('hex');

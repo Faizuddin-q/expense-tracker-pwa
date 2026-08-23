@@ -3,7 +3,7 @@ import { idbSet } from '@/lib/idb';
 import { money } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth-store';
 import { useSyncStore } from '@/lib/sync-store';
-import { toast } from '@/components/ToastHost';
+import { toast } from '@/lib/toast';
 
 interface ProfileStore {
   income: number;

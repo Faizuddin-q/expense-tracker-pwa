@@ -18,8 +18,10 @@ export const POST = async (request: Request, { params }: Params) => {
   );
   if (limited) return limited;
 
-  const { userId } = await params;
-  const body = await request.json().catch(() => null);
+  const [{ userId }, body] = await Promise.all([
+    params,
+    request.json().catch(() => null),
+  ]);
   const amount = Number(body?.amount);
   const category = typeof body?.category === 'string' ? body.category : '';
 

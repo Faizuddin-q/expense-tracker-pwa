@@ -1,59 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { create } from 'zustand';
 import { CheckCircle2, X, XCircle } from 'lucide-react';
-
-type ToastType = 'success' | 'error';
-
-type ToastAction = {
-  label: string;
-  onClick: () => void;
-};
-
-type ToastItem = {
-  id: string;
-  type: ToastType;
-  title: string;
-  message?: string;
-  action?: ToastAction;
-};
-
-type ToastStore = {
-  toasts: ToastItem[];
-  push: (
-    type: ToastType,
-    title: string,
-    message?: string,
-    action?: ToastAction
-  ) => void;
-  dismiss: (id: string) => void;
-};
-
-const useToastStore = create<ToastStore>((set) => ({
-  toasts: [],
-  push: (type, title, message, action) => {
-    const id = crypto.randomUUID();
-    set((s) => ({
-      toasts: [...s.toasts.slice(-4), { id, type, title, message, action }],
-    }));
-  },
-  dismiss: (id) =>
-    set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
-}));
-
-export const toast = {
-  success: (
-    title: string,
-    message?: string,
-    opts?: { action?: ToastAction }
-  ) =>
-    useToastStore
-      .getState()
-      .push('success', title, message, opts?.action),
-  error: (title: string, message?: string) =>
-    useToastStore.getState().push('error', title, message),
-};
+import { useToastStore, type ToastItem } from '@/lib/toast';
 
 const AUTO_DISMISS_MS = 5000;
 const EXIT_MS = 200;

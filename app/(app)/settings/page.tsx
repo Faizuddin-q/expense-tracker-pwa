@@ -6,10 +6,8 @@ import { useProfileStore } from '@/lib/profile-store';
 import { useCategoryStore } from '@/lib/category-store';
 import { useSyncStore } from '@/lib/sync-store';
 import { useThemeStore } from '@/lib/theme-store';
-// Deprecated for now — double-tap / Back Tap shortcut
-// import { usePwa } from '@/components/PwaProvider';
 import { Settings } from '@/components/views/Settings';
-import { toast } from '@/components/ToastHost';
+import { toast } from '@/lib/toast';
 
 export default function SettingsPage() {
   const expenses = useExpenses((s) => s.expenses);
@@ -32,8 +30,6 @@ export default function SettingsPage() {
   const { categories: customCategories } = useCategoryStore();
   const sync = useSyncStore((s) => s.sync);
   const { theme, setTheme } = useThemeStore();
-  // Deprecated for now — double-tap / Back Tap shortcut
-  // const { backTapEnabled, setBackTapEnabled, openBackTapGuide } = usePwa();
 
   return (
     <Settings
@@ -70,10 +66,6 @@ export default function SettingsPage() {
       setHideAmounts={setHideAmounts}
       cycleStartDay={cycleStartDay}
       setCycleStartDay={setCycleStartDay}
-      // Deprecated for now — double-tap / Back Tap shortcut
-      // backTapEnabled={backTapEnabled}
-      // setBackTapEnabled={(on) => void setBackTapEnabled(on)}
-      // onOpenBackTapGuide={openBackTapGuide}
     />
   );
 }

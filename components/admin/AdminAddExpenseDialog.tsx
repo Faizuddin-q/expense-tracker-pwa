@@ -10,7 +10,6 @@ import {
   parseRawNumber,
 } from '@/lib/utils';
 import { CategoryIcon } from '@/components/CategoryIcon';
-import { useFocusTrap } from '@/lib/useFocusTrap';
 
 interface AdminAddExpenseDialogProps {
   categories: Category[];
@@ -36,16 +35,16 @@ export const AdminAddExpenseDialog = ({
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
-  const dialogRef = useRef<HTMLDivElement>(null);
-  useFocusTrap(dialogRef, true);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const amountInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    addEventListener('keydown', onKey);
-    return () => removeEventListener('keydown', onKey);
-  }, [onClose]);
+    // showModal() focuses the first focusable descendant by default — that's
+    // the close button here, since it comes first in the markup. Focus the
+    // amount field explicitly right after, overriding that default.
+    dialogRef.current?.showModal();
+    amountInputRef.current?.focus();
+  }, []);
 
   const parsedAmount = Number(parseRawNumber(amountDraft));
   const valid = Number.isFinite(parsedAmount) && parsedAmount > 0 && category;
@@ -63,21 +62,16 @@ export const AdminAddExpenseDialog = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-background/70 p-0 backdrop-blur-sm duration-150 animate-in fade-in sm:items-center sm:p-6">
-      <button
-        type="button"
-        aria-label="Close"
-        className="absolute inset-0 cursor-default"
-        onClick={onClose}
-      />
-
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-expense-title"
-        className="relative z-10 w-full max-w-sm rounded-t-xl border border-border bg-card duration-200 ease-[var(--ease-drawer)] animate-in slide-in-from-bottom-4 sm:rounded-xl sm:zoom-in-[0.98] sm:slide-in-from-bottom-0"
-      >
+    <dialog
+      ref={dialogRef}
+      onClose={onClose}
+      onClick={(e) => {
+        if (e.target === dialogRef.current) dialogRef.current?.close();
+      }}
+      aria-labelledby="add-expense-title"
+      className="m-0 h-full max-h-full w-full max-w-full border-0 bg-background/70 p-0 backdrop-blur-sm flex items-end justify-center duration-150 animate-in fade-in sm:items-center sm:p-6"
+    >
+      <div className="relative w-full max-w-sm rounded-t-xl border border-border bg-card duration-200 ease-[var(--ease-drawer)] animate-in slide-in-from-bottom-4 sm:rounded-xl sm:zoom-in-[0.98] sm:slide-in-from-bottom-0">
         <div className="flex h-11 items-center justify-between border-b border-border px-4">
           <h2
             id="add-expense-title"
@@ -88,7 +82,7 @@ export const AdminAddExpenseDialog = ({
           <button
             type="button"
             aria-label="Close"
-            onClick={onClose}
+            onClick={() => dialogRef.current?.close()}
             className="grid size-6 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-secondary hover:text-foreground"
           >
             <X className="size-3.5" strokeWidth={2} />
@@ -104,7 +98,7 @@ export const AdminAddExpenseDialog = ({
               <span className="font-mono-numbers text-[13px] text-faint">₹</span>
               <input
                 id="add-amount"
-                autoFocus
+                ref={amountInputRef}
                 inputMode="decimal"
                 value={amountDraft}
                 onChange={(e) =>
@@ -177,7 +171,7 @@ export const AdminAddExpenseDialog = ({
         <div className="flex gap-2 border-t border-border px-4 py-3">
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => dialogRef.current?.close()}
             className="h-9 flex-1 cursor-pointer rounded-lg border border-border bg-background text-[13px] font-medium text-foreground transition-colors hover:border-border-strong hover:bg-secondary"
           >
             Cancel
@@ -192,6 +186,6 @@ export const AdminAddExpenseDialog = ({
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 };

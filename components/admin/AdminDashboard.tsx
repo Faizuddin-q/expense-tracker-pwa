@@ -17,7 +17,7 @@ import { AdminSummary, AdminUserSummary } from '@/lib/admin-types';
 import { moneyExact } from '@/lib/utils';
 import { useThemeStore } from '@/lib/theme-store';
 import { Brand } from '@/components/Brand';
-import { toast } from '@/components/ToastHost';
+import { toast } from '@/lib/toast';
 import { AdminUserRow } from '@/components/admin/AdminUserRow';
 
 interface AdminDashboardProps {
@@ -178,6 +178,7 @@ export const AdminDashboard = ({ onSignedOut }: AdminDashboardProps) => {
           <div className="field-shell flex h-9 w-full max-w-xs items-center gap-2 rounded-lg border border-border bg-card px-2.5">
             <Search className="size-3.5 shrink-0 text-faint" strokeWidth={2} />
             <input
+              aria-label="Search by phone number"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by phone number"

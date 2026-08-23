@@ -17,8 +17,10 @@ export const PATCH = async (request: Request, { params }: Params) => {
   );
   if (limited) return limited;
 
-  const { userId, expenseId } = await params;
-  const body = await request.json().catch(() => null);
+  const [{ userId, expenseId }, body] = await Promise.all([
+    params,
+    request.json().catch(() => null),
+  ]);
   const amount = Number(body?.amount);
   const category = typeof body?.category === 'string' ? body.category : '';
 
