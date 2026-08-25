@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { KeyRound, Plus, Search, Trash2 } from 'lucide-react';
-import { Expense } from '@/types/expense';
+import { List, type RowComponentProps } from 'react-window';
+import { Category, Expense } from '@/types/expense';
 import { AdminUserDetail } from '@/lib/admin-types';
 import { builtInCategories } from '@/lib/constants';
 import { getCategoryIcon, moneyExact } from '@/lib/utils';
@@ -14,6 +15,9 @@ import { ExpenseDeleteDialog } from '@/components/ExpenseDeleteDialog';
 import { AdminAddExpenseDialog } from '@/components/admin/AdminAddExpenseDialog';
 import { AdminDeleteUserDialog } from '@/components/admin/AdminDeleteUserDialog';
 
+const ADMIN_EXPENSE_ROW_HEIGHT = 48;
+const ADMIN_EXPENSE_LIST_HEIGHT = 420;
+
 interface AdminUserPanelProps {
   detail: AdminUserDetail;
   onDetailChange: (next: AdminUserDetail) => void;
@@ -21,6 +25,47 @@ interface AdminUserPanelProps {
 }
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
+
+type AdminExpenseListRowProps = {
+  expenses: Expense[];
+  categories: Category[];
+  busyExpenseId: string | null;
+  onEdit: (expense: Expense) => void;
+  onDelete: (expense: Expense) => void;
+};
+
+const AdminExpenseListRow = ({
+  index,
+  style,
+  ariaAttributes,
+  expenses,
+  categories,
+  busyExpenseId,
+  onEdit,
+  onDelete,
+}: RowComponentProps<AdminExpenseListRowProps>) => {
+  const expense = expenses[index];
+  if (!expense) return null;
+
+  return (
+    <div
+      {...ariaAttributes}
+      style={style}
+      className={
+        busyExpenseId === expense.id
+          ? 'pointer-events-none border-b border-border opacity-50'
+          : 'border-b border-border'
+      }
+    >
+      <ExpenseRow
+        expense={expense}
+        onDelete={onDelete}
+        onEdit={onEdit}
+        categories={categories}
+      />
+    </div>
+  );
+};
 
 export const AdminUserPanel = ({
   detail,
@@ -233,6 +278,31 @@ export const AdminUserPanel = ({
     }
   };
 
+  const onEditExpense = useCallback((expense: Expense) => {
+    setEditing(expense);
+  }, []);
+
+  const onDeleteExpense = useCallback((expense: Expense) => {
+    setDeleting(expense);
+  }, []);
+
+  const adminListRowProps = useMemo(
+    () => ({
+      expenses: filteredExpenses,
+      categories,
+      busyExpenseId,
+      onEdit: onEditExpense,
+      onDelete: onDeleteExpense,
+    }),
+    [filteredExpenses, categories, busyExpenseId, onEditExpense, onDeleteExpense]
+  );
+
+  const adminListRowKey = useCallback(
+    (index: number, data: AdminExpenseListRowProps) =>
+      data.expenses[index]?.id ?? index,
+    []
+  );
+
   return (
     <div className="space-y-4 border-t border-border bg-background/40 px-3 py-4 sm:px-5">
       {/* Profile controls */}
@@ -350,27 +420,23 @@ export const AdminUserPanel = ({
           </div>
         </div>
 
-        <div className="max-h-[420px] overflow-y-auto px-3 sm:px-4">
+        <div className="px-3 sm:px-4">
           {filteredExpenses.length ? (
-            <div className="divide-y divide-border">
-              {filteredExpenses.map((expense) => (
-                <div
-                  key={expense.id}
-                  className={
-                    busyExpenseId === expense.id
-                      ? 'pointer-events-none opacity-50'
-                      : undefined
-                  }
-                >
-                  <ExpenseRow
-                    expense={expense}
-                    onDelete={setDeleting}
-                    onEdit={setEditing}
-                    categories={categories}
-                  />
-                </div>
-              ))}
-            </div>
+            <List
+              rowComponent={AdminExpenseListRow}
+              rowCount={filteredExpenses.length}
+              rowHeight={ADMIN_EXPENSE_ROW_HEIGHT}
+              rowProps={adminListRowProps}
+              rowKey={adminListRowKey}
+              overscanCount={6}
+              style={{
+                height: Math.min(
+                  filteredExpenses.length * ADMIN_EXPENSE_ROW_HEIGHT,
+                  ADMIN_EXPENSE_LIST_HEIGHT
+                ),
+                width: '100%',
+              }}
+            />
           ) : (
             <p className="py-8 text-center text-[13px] text-muted-foreground">
               {expenses.length ? 'No expenses match your search.' : 'No expenses yet.'}

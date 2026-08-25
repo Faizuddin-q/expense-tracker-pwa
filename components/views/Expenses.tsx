@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -10,6 +10,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import { List, type RowComponentProps } from 'react-window';
 import { Category, Expense } from '@/types/expense';
 import { categoryFor, downloadCsv, getCategoryColor, getCategoryIcon } from '@/lib/utils';
 import { useProfileStore } from '@/lib/profile-store';
@@ -26,6 +27,16 @@ import { CategoryIcon } from '@/components/CategoryIcon';
 import { ExpenseEditDialog } from '@/components/ExpenseEditDialog';
 import { ExpenseDeleteDialog } from '@/components/ExpenseDeleteDialog';
 import { toast } from '@/components/ToastHost';
+
+const ROW_HEIGHT = 44;
+const LIST_MAX_HEIGHT = 480;
+
+/** Shared column template so header / rows / footer stay aligned. */
+const COLS =
+  'grid w-full grid-cols-[5.75rem_minmax(0,1fr)_5.25rem_2.75rem] sm:grid-cols-[7rem_minmax(0,1fr)_minmax(0,1.2fr)_5.5rem_3.5rem] md:grid-cols-[7.5rem_minmax(7rem,1fr)_minmax(8rem,1.4fr)_6.5rem_6.5rem_6.5rem_5.5rem_4rem]';
+
+const LIST_INNER =
+  'w-full max-w-full min-w-0 sm:min-w-[620px] md:min-w-[860px]';
 
 type SortKey = 'date' | 'category' | 'amount' | 'createdAt' | 'updatedAt';
 type SortDir = 'asc' | 'desc';
@@ -105,9 +116,8 @@ const SortHeader = ({
   align?: 'left' | 'right';
   className?: string;
 }) => (
-  <th
-    scope="col"
-    className={`px-3 py-2 font-medium ${align === 'right' ? 'text-right' : 'text-left'} ${className}`}
+  <div
+    className={`px-2.5 py-2 font-medium sm:px-3 ${align === 'right' ? 'text-right' : 'text-left'} ${className}`}
   >
     <button
       type="button"
@@ -126,8 +136,91 @@ const SortHeader = ({
           ))}
       </span>
     </button>
-  </th>
+  </div>
 );
+
+type ExpenseListRowProps = {
+  expenses: Expense[];
+  categories: Category[];
+  hideAmounts: boolean;
+  onEdit: (expense: Expense) => void;
+  onDelete: (expense: Expense) => void;
+};
+
+const ExpenseListRow = ({
+  index,
+  style,
+  ariaAttributes,
+  expenses,
+  categories,
+  hideAmounts,
+  onEdit,
+  onDelete,
+}: RowComponentProps<ExpenseListRowProps>) => {
+  const e = expenses[index];
+  if (!e) return null;
+  const c = categoryFor(e.category, categories);
+  const color = getCategoryColor(c.tone);
+
+  return (
+    <div
+      {...ariaAttributes}
+      style={style}
+      className={`group ${COLS} items-center border-b border-border text-[13px] transition-colors hover:bg-primary/[0.055]`}
+    >
+      <div className="font-mono-numbers truncate px-2.5 py-2 text-[12px] whitespace-nowrap text-muted-foreground transition-shadow group-hover:shadow-[inset_2px_0_0_var(--primary)] sm:px-3 sm:text-[13px]">
+        {formatDate(e.date)}
+      </div>
+      <div className="min-w-0 px-2.5 py-2 sm:px-3">
+        <span className="inline-flex max-w-full items-center gap-1.5 sm:gap-2">
+          <CategoryIcon color={color} icon={getCategoryIcon(c)} size="xs" />
+          <span className="truncate font-medium text-foreground">{c.label}</span>
+        </span>
+      </div>
+      <div className="hidden min-w-0 truncate px-3 py-2 text-muted-foreground sm:block">
+        {e.note || <span className="text-faint">—</span>}
+      </div>
+      <div className="hidden px-3 py-2 whitespace-nowrap text-muted-foreground md:block">
+        {e.paymentMethod ? (
+          PAYMENT_LABELS[e.paymentMethod] ?? e.paymentMethod
+        ) : (
+          <span className="text-faint">—</span>
+        )}
+      </div>
+      <div className="font-mono-numbers hidden px-3 py-2 text-[12px] whitespace-nowrap text-faint md:block">
+        {formatDateTime(e.createdAt)}
+      </div>
+      <div className="font-mono-numbers hidden px-3 py-2 text-[12px] whitespace-nowrap text-faint md:block">
+        {e.updatedAt ? formatDateTime(e.updatedAt) : '—'}
+      </div>
+      <div className="font-mono-numbers truncate px-1.5 py-2 text-right font-medium tabular-nums text-foreground sm:px-3">
+        <Money value={e.amount} precise />
+      </div>
+      <div className="px-1 py-2 sm:px-3">
+        <div className="flex items-center justify-end gap-0.5">
+          {!hideAmounts && (
+            <button
+              type="button"
+              aria-label="Edit expense"
+              onClick={() => onEdit(e)}
+              className="grid size-7 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-primary/12 hover:text-primary sm:size-6 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+            >
+              <Pencil className="size-3.5" strokeWidth={1.9} />
+            </button>
+          )}
+          <button
+            type="button"
+            aria-label="Delete expense"
+            onClick={() => onDelete(e)}
+            className="grid size-7 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-destructive/10 hover:text-destructive sm:size-6 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+          >
+            <Trash2 className="size-3.5" strokeWidth={1.9} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const Expenses = ({
   expenses,
@@ -277,6 +370,31 @@ export const Expenses = ({
     setEndDate('');
   };
 
+  const onEditExpense = useCallback((expense: Expense) => {
+    setEditing(expense);
+  }, []);
+
+  const onDeleteExpense = useCallback((expense: Expense) => {
+    setDeleting(expense);
+  }, []);
+
+  const listRowProps = useMemo(
+    () => ({
+      expenses: sorted,
+      categories,
+      hideAmounts,
+      onEdit: onEditExpense,
+      onDelete: onDeleteExpense,
+    }),
+    [sorted, categories, hideAmounts, onEditExpense, onDeleteExpense]
+  );
+
+  const listRowKey = useCallback(
+    (index: number, data: ExpenseListRowProps) =>
+      data.expenses[index]?.id ?? index,
+    []
+  );
+
   return (
     <section className="mx-auto max-w-6xl">
       {/* Toolbar */}
@@ -405,12 +523,14 @@ export const Expenses = ({
         </span>
       </div>
 
-      {/* Table */}
+      {/* Virtualized expense list */}
       {sorted.length ? (
-        <div className="mt-3 max-w-full overflow-x-auto overscroll-x-contain rounded-xl border border-border bg-card [contain:layout]">
-          <table className="w-full min-w-[440px] border-collapse text-[13px] sm:min-w-[620px] md:min-w-[860px]">
-            <thead className="sticky-head text-[11px] tracking-[0.04em] text-muted-foreground uppercase">
-              <tr className="border-b border-border">
+        <div className="mt-3 max-w-full overflow-hidden rounded-xl border border-border bg-card [contain:layout]">
+          <div className="max-w-full overflow-x-auto overscroll-x-contain sm:overflow-x-auto">
+            <div className={LIST_INNER}>
+              <div
+                className={`sticky-head ${COLS} border-b border-border text-[11px] tracking-[0.04em] text-muted-foreground uppercase`}
+              >
                 <SortHeader
                   label="Date"
                   active={sortBy === 'date'}
@@ -423,25 +543,25 @@ export const Expenses = ({
                   dir={sortDir}
                   onClick={() => toggleSort('category')}
                 />
-                <th scope="col" className="hidden px-3 py-2 text-left font-medium sm:table-cell">
+                <div className="hidden px-3 py-2 text-left font-medium sm:block">
                   Note
-                </th>
-                <th scope="col" className="hidden px-3 py-2 text-left font-medium md:table-cell">
+                </div>
+                <div className="hidden px-3 py-2 text-left font-medium md:block">
                   Payment
-                </th>
+                </div>
                 <SortHeader
                   label="Added"
                   active={sortBy === 'createdAt'}
                   dir={sortDir}
                   onClick={() => toggleSort('createdAt')}
-                  className="hidden md:table-cell"
+                  className="hidden md:block"
                 />
                 <SortHeader
                   label="Updated"
                   active={sortBy === 'updatedAt'}
                   dir={sortDir}
                   onClick={() => toggleSort('updatedAt')}
-                  className="hidden md:table-cell"
+                  className="hidden md:block"
                 />
                 <SortHeader
                   label="Amount"
@@ -450,93 +570,35 @@ export const Expenses = ({
                   onClick={() => toggleSort('amount')}
                   align="right"
                 />
-                <th scope="col" className="w-[64px] px-3 py-2">
+                <div className="px-1 py-2 sm:px-3">
                   <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
+                </div>
+              </div>
 
-            <tbody className="divide-y divide-border">
-              {sorted.map((e) => {
-                const c = categoryFor(e.category, categories);
-                const color = getCategoryColor(c.tone);
-                return (
-                  <tr key={e.id} className="group transition-colors hover:bg-primary/[0.055]">
-                    <td className="font-mono-numbers px-3 py-2 whitespace-nowrap text-muted-foreground transition-shadow group-hover:shadow-[inset_2px_0_0_var(--primary)]">
-                      {formatDate(e.date)}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-2">
-                        <CategoryIcon
-                          color={color}
-                          icon={getCategoryIcon(c)}
-                          size="xs"
-                        />
-                        <span className="font-medium text-foreground">
-                          {c.label}
-                        </span>
-                      </span>
-                    </td>
-                    <td className="hidden max-w-[240px] truncate px-3 py-2 text-muted-foreground sm:table-cell">
-                      {e.note || <span className="text-faint">—</span>}
-                    </td>
-                    <td className="hidden px-3 py-2 whitespace-nowrap text-muted-foreground md:table-cell">
-                      {e.paymentMethod ? (
-                        PAYMENT_LABELS[e.paymentMethod] ?? e.paymentMethod
-                      ) : (
-                        <span className="text-faint">—</span>
-                      )}
-                    </td>
-                    <td className="font-mono-numbers hidden px-3 py-2 text-[12px] whitespace-nowrap text-faint md:table-cell">
-                      {formatDateTime(e.createdAt)}
-                    </td>
-                    <td className="font-mono-numbers hidden px-3 py-2 text-[12px] whitespace-nowrap text-faint md:table-cell">
-                      {e.updatedAt ? formatDateTime(e.updatedAt) : '—'}
-                    </td>
-                    <td className="font-mono-numbers px-3 py-2 text-right font-medium whitespace-nowrap text-foreground">
-                      <Money value={e.amount} precise />
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-center justify-end gap-0.5">
-                        {!hideAmounts && (
-                          <button
-                            aria-label="Edit expense"
-                            onClick={() => setEditing(e)}
-                            className="grid size-6 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-primary/12 hover:text-primary sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
-                          >
-                            <Pencil className="size-3.5" strokeWidth={1.9} />
-                          </button>
-                        )}
-                        <button
-                          aria-label="Delete expense"
-                          onClick={() => setDeleting(e)}
-                          className="grid size-6 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-destructive/10 hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
-                        >
-                          <Trash2 className="size-3.5" strokeWidth={1.9} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
+              <List
+                rowComponent={ExpenseListRow}
+                rowCount={sorted.length}
+                rowHeight={ROW_HEIGHT}
+                rowProps={listRowProps}
+                rowKey={listRowKey}
+                overscanCount={8}
+                className="overscroll-y-contain [-webkit-overflow-scrolling:touch]"
+                style={{
+                  height: Math.min(sorted.length * ROW_HEIGHT, LIST_MAX_HEIGHT),
+                  width: '100%',
+                }}
+              />
 
-            <tfoot>
-              <tr className="border-t border-primary/25 bg-primary/[0.07]">
-                <td colSpan={2} className="px-3 py-2.5 text-[11px] font-semibold tracking-[0.04em] text-primary uppercase">
+              <div className="flex items-center justify-between gap-3 border-t border-primary/25 bg-primary/[0.07] px-2.5 py-2.5 sm:px-3">
+                <span className="text-[11px] font-semibold tracking-[0.04em] text-primary uppercase">
                   Total
-                </td>
-                <td className="hidden sm:table-cell" />
-                <td className="hidden md:table-cell" />
-                <td className="hidden md:table-cell" />
-                <td className="hidden md:table-cell" />
-                <td className="font-mono-numbers px-3 py-2.5 text-right font-semibold whitespace-nowrap text-foreground">
+                </span>
+                <span className="font-mono-numbers min-w-0 truncate text-right text-[13px] font-semibold tabular-nums text-foreground">
                   <Money value={filteredTotal} precise />
-                </td>
-                <td />
-              </tr>
-            </tfoot>
-          </table>
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="mt-3 rounded-xl border border-dashed border-border py-16 text-center">
