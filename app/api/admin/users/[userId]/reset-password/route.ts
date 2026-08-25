@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { adminDb } from '@/lib/admin-db';
 import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
+import { auditFromRequest, writeAuditLog } from '@/lib/audit-log';
 
 type Params = { params: Promise<{ userId: string }> };
 
@@ -36,6 +37,14 @@ export const POST = async (request: Request, { params }: Params) => {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     await db.collection('users').deleteOne({ userId });
+
+    void writeAuditLog(
+      db,
+      auditFromRequest(request, userId, 'admin.user.reset_password', {
+        actor: 'admin',
+      })
+    );
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('[admin] password reset failed', error);

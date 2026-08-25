@@ -52,6 +52,9 @@ async function runSync(
       userId: id,
       deletedIds,
     };
+    if (options.pullOnly) {
+      payload.pullOnly = true;
+    }
     if (!options.pullOnly) {
       payload.expenses = local;
     }

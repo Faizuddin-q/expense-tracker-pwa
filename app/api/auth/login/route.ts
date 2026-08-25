@@ -11,6 +11,7 @@ import {
   verifyPassword,
 } from '@/lib/auth';
 import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
+import { auditFromRequest, writeAuditLog } from '@/lib/audit-log';
 
 const GENERIC_ERROR = 'Incorrect phone number or password';
 
@@ -100,6 +101,13 @@ export const POST = async (request: Request) => {
       path: '/',
       maxAge: SESSION_MAX_AGE_SECONDS,
     });
+
+    void writeAuditLog(
+      db,
+      auditFromRequest(request, phone, 'auth.login', {
+        meta: { passwordIsDefault },
+      })
+    );
 
     return NextResponse.json({ ok: true, userId: phone, passwordIsDefault });
   } catch (error) {

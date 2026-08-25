@@ -7,6 +7,8 @@ import {
   shouldSkipCategoryUpdate,
 } from '@/lib/category-sync-merge';
 import { ensureDefaultCategories } from '@/lib/ensure-default-categories';
+import { buildSyncAuditEntries } from '@/lib/audit-sync';
+import { writeAuditLogs } from '@/lib/audit-log';
 
 const EXPENSE_UPSERT_FIELDS = [
   'amount',
@@ -49,6 +51,7 @@ export const POST = async (request: Request) => {
       name,
       theme,
       cycleStartDay,
+      pullOnly,
     } = await request.json();
     if (
       typeof userId !== 'string' ||
@@ -62,6 +65,71 @@ export const POST = async (request: Request) => {
     const database = await getDb();
     const collection = database.collection('expenses');
     const profiles = database.collection('profiles');
+
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      undefined;
+
+    let incomingCategoriesForAudit:
+      | { id: string; label: string }[]
+      | undefined;
+    if (Array.isArray(categories)) {
+      const cleanedForAudit: { id: string; label: string }[] = [];
+      for (const category of categories) {
+        if (cleanedForAudit.length >= 100) break;
+        if (
+          typeof category?.id !== 'string' ||
+          typeof category?.label !== 'string'
+        )
+          continue;
+        cleanedForAudit.push({ id: category.id, label: category.label });
+      }
+      if (!shouldSkipCategoryUpdate(cleanedForAudit, deletedCategoryIds)) {
+        incomingCategoriesForAudit = cleanedForAudit;
+      }
+    }
+
+    const auditEntries = await buildSyncAuditEntries({
+      db: database,
+      userId,
+      ip,
+      pullOnly: pullOnly === true,
+      deletedIds: Array.isArray(deletedIds) ? deletedIds : [],
+      expenses: Array.isArray(expenses) ? expenses : undefined,
+      deletedCategoryIds: Array.isArray(deletedCategoryIds)
+        ? deletedCategoryIds
+        : undefined,
+      incomingCategories: incomingCategoriesForAudit,
+      profileFields: {
+        monthlyIncome:
+          typeof monthlyIncome === 'number' && monthlyIncome > 0
+            ? monthlyIncome
+            : undefined,
+        monthlyBudget:
+          typeof monthlyBudget === 'number' && monthlyBudget > 0
+            ? monthlyBudget
+            : undefined,
+        hideAmounts:
+          typeof hideAmounts === 'boolean' ? hideAmounts : undefined,
+        onboardingComplete:
+          typeof onboardingComplete === 'boolean'
+            ? onboardingComplete
+            : undefined,
+        name:
+          typeof name === 'string' && name.trim().length > 0
+            ? name.trim().slice(0, 60)
+            : undefined,
+        theme: theme === 'dark' || theme === 'light' ? theme : undefined,
+        cycleStartDay:
+          typeof cycleStartDay === 'number' &&
+          Number.isInteger(cycleStartDay) &&
+          cycleStartDay >= 1 &&
+          cycleStartDay <= 31
+            ? cycleStartDay
+            : undefined,
+      },
+    });
 
     if (Array.isArray(deletedIds) && deletedIds.length > 0) {
       const now = new Date();
@@ -220,6 +288,8 @@ export const POST = async (request: Request) => {
         { $set: { categories: responseCategories, updatedAt: new Date() } }
       );
     }
+
+    void writeAuditLogs(database, auditEntries);
 
     return NextResponse.json({
       expenses: records,

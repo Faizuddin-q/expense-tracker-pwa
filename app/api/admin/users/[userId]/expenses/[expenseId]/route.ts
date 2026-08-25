@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { adminDb } from '@/lib/admin-db';
 import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
+import { auditFromRequest, writeAuditLog } from '@/lib/audit-log';
 
 type Params = { params: Promise<{ userId: string; expenseId: string }> };
 
@@ -47,6 +48,17 @@ export const PATCH = async (request: Request, { params }: Params) => {
     );
     if (result.matchedCount === 0)
       return NextResponse.json({ error: 'Expense not found' }, { status: 404 });
+
+    void writeAuditLog(
+      db,
+      auditFromRequest(request, userId, 'admin.expense.update', {
+        actor: 'admin',
+        entityType: 'expense',
+        entityId: expenseId,
+        meta: { amount, category },
+      })
+    );
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('[admin] edit expense failed', error);
@@ -80,6 +92,16 @@ export const DELETE = async (request: Request, { params }: Params) => {
     );
     if (result.matchedCount === 0)
       return NextResponse.json({ error: 'Expense not found' }, { status: 404 });
+
+    void writeAuditLog(
+      db,
+      auditFromRequest(request, userId, 'admin.expense.delete', {
+        actor: 'admin',
+        entityType: 'expense',
+        entityId: expenseId,
+      })
+    );
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('[admin] delete expense failed', error);

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getSessionUserId } from '@/lib/auth';
+import { getDb } from '@/lib/db';
 import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
+import { auditFromRequest, writeAuditLog } from '@/lib/audit-log';
 
 export const GET = async (request: Request) => {
   // Generous cap — the app polls this on every boot/tab focus to verify the
@@ -13,6 +15,12 @@ export const GET = async (request: Request) => {
   if (limited) return limited;
 
   const userId = await getSessionUserId();
+  if (userId) {
+    void writeAuditLog(
+      await getDb(),
+      auditFromRequest(request, userId, 'session.read')
+    );
+  }
   return NextResponse.json(
     userId ? { authenticated: true, userId } : { authenticated: false }
   );

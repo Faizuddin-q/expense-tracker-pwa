@@ -8,6 +8,7 @@ import {
   verifyPassword,
 } from '@/lib/auth';
 import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
+import { auditFromRequest, writeAuditLog } from '@/lib/audit-log';
 
 export const POST = async (request: Request) => {
   const userId = await getSessionUserId();
@@ -69,6 +70,11 @@ export const POST = async (request: Request) => {
           updatedAt: new Date(),
         },
       }
+    );
+
+    void writeAuditLog(
+      db,
+      auditFromRequest(request, userId, 'auth.password_change')
     );
 
     return NextResponse.json({ ok: true });

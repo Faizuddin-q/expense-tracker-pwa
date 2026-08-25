@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { adminDb } from '@/lib/admin-db';
 import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
+import { auditFromRequest, writeAuditLog } from '@/lib/audit-log';
 
 type Params = { params: Promise<{ userId: string }> };
 
@@ -50,6 +51,16 @@ export const POST = async (request: Request, { params }: Params) => {
       createdAt: now,
       updatedAt: now,
     });
+
+    void writeAuditLog(
+      db,
+      auditFromRequest(request, userId, 'admin.expense.create', {
+        actor: 'admin',
+        entityType: 'expense',
+        entityId: localId,
+        meta: { amount, category },
+      })
+    );
 
     return NextResponse.json({
       ok: true,

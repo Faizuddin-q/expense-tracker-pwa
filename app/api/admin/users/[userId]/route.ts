@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { adminDb } from '@/lib/admin-db';
 import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
+import { auditFromRequest, writeAuditLog } from '@/lib/audit-log';
 
 type Params = { params: Promise<{ userId: string }> };
 
@@ -36,6 +37,14 @@ export const GET = async (request: Request, { params }: Params) => {
 
     if (!profile && expenses.length === 0)
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+    void writeAuditLog(
+      db,
+      auditFromRequest(request, userId, 'admin.user.read', {
+        actor: 'admin',
+        meta: { expenseCount: expenses.length },
+      })
+    );
 
     return NextResponse.json({
       userId,
@@ -107,6 +116,19 @@ export const PATCH = async (request: Request, { params }: Params) => {
       .collection('profiles')
       .updateOne({ userId }, { $set: update }, { upsert: true });
     const profile = await db.collection('profiles').findOne({ userId });
+
+    void writeAuditLog(
+      db,
+      auditFromRequest(request, userId, 'admin.user.update', {
+        actor: 'admin',
+        meta: {
+          monthlyIncome: update.monthlyIncome,
+          monthlyBudget: update.monthlyBudget,
+          hideAmounts: update.hideAmounts,
+        },
+      })
+    );
+
     return NextResponse.json({
       ok: true,
       profile: {
@@ -146,6 +168,12 @@ export const DELETE = async (request: Request, { params }: Params) => {
       db.collection('profiles').deleteOne({ userId }),
       db.collection('expenses').deleteMany({ userId }),
     ]);
+
+    void writeAuditLog(
+      db,
+      auditFromRequest(request, userId, 'admin.user.delete', { actor: 'admin' })
+    );
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('[admin] user delete failed', error);

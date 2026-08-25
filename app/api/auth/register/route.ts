@@ -12,6 +12,7 @@ import {
 } from '@/lib/auth';
 import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
 import { defaultCategorySeed } from '@/lib/default-categories';
+import { auditFromRequest, writeAuditLog } from '@/lib/audit-log';
 
 export const POST = async (request: Request) => {
   const body = await request.json().catch(() => null);
@@ -93,6 +94,11 @@ export const POST = async (request: Request) => {
       path: '/',
       maxAge: SESSION_MAX_AGE_SECONDS,
     });
+
+    void writeAuditLog(
+      db,
+      auditFromRequest(request, phone, 'auth.register')
+    );
 
     return NextResponse.json({ ok: true, userId: phone });
   } catch (error) {
