@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { idbSet } from '@/lib/idb';
 import { money } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth-store';
 import { useSyncStore } from '@/lib/sync-store';
@@ -16,8 +15,6 @@ interface ProfileStore {
   nameDraft: string;
   cycleStartDay: number;
 
-  // Plain setters — no persistence/sync side effects. Used internally by
-  // sync-store when applying cloud/local data, and by components for drafts.
   setIncome: (v: number) => void;
   setIncomeDraft: (v: string) => void;
   setBudget: (v: number) => void;
@@ -28,9 +25,7 @@ interface ProfileStore {
   setNameDraft: (v: string) => void;
   setCycleStartDayState: (v: number) => void;
 
-  /** Public action — persists locally and pushes to the cloud, unlike setHideAmountsState. */
   setHideAmounts: (v: boolean) => void;
-  /** Public action — persists locally and pushes to the cloud, unlike setCycleStartDayState. */
   setCycleStartDay: (v: number) => void;
   saveIncome: () => Promise<void>;
   saveBudget: () => Promise<void>;
@@ -65,7 +60,6 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
     set({ cycleStartDay: v });
     const userId = useAuthStore.getState().userId;
     if (userId) {
-      void idbSet(`pocket-cycle-start-day-${userId}`, v);
       void useSyncStore
         .getState()
         .sync({ id: userId, cycleStartDay: v })
@@ -84,7 +78,6 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
     set({ hideAmounts: v });
     const userId = useAuthStore.getState().userId;
     if (userId) {
-      void idbSet(`pocket-hide-amounts-${userId}`, v);
       void useSyncStore
         .getState()
         .sync({ id: userId, hideAmounts: v })
@@ -111,10 +104,8 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       return;
     }
     useAuthStore.getState().setError('');
-    set({ income: parsed });
+    set({ income: parsed, needsIncome: false });
     const userId = useAuthStore.getState().userId;
-    await idbSet(`pocket-income-${userId}`, parsed);
-    set({ needsIncome: false });
     const ok = await useSyncStore
       .getState()
       .sync({ id: userId, income: parsed, onboardingComplete: true });
@@ -133,7 +124,6 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
     useAuthStore.getState().setError('');
     set({ name: trimmed, nameDraft: trimmed });
     const userId = useAuthStore.getState().userId;
-    await idbSet(`pocket-name-${userId}`, trimmed);
     const ok = await useSyncStore.getState().sync({ id: userId, name: trimmed });
     if (ok) toast.success('Name updated', `Set to "${trimmed}"`);
   },
@@ -150,7 +140,6 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
     useAuthStore.getState().setError('');
     set({ budget: parsed });
     const userId = useAuthStore.getState().userId;
-    await idbSet(`pocket-budget-${userId}`, parsed);
     const ok = await useSyncStore.getState().sync({ id: userId, budget: parsed });
     if (ok) toast.success('Budget updated', `Set to ${money(parsed)}`);
   },
@@ -171,12 +160,9 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
 
     const userId = useAuthStore.getState().userId;
     set({ income: incomeParsed, incomeDraft: String(incomeParsed) });
-    await idbSet(`pocket-income-${userId}`, incomeParsed);
     if (budgetValue) {
       set({ budget: budgetValue, budgetDraft: String(budgetValue) });
-      await idbSet(`pocket-budget-${userId}`, budgetValue);
     }
-    await idbSet(`pocket-onboarding-complete-${userId}`, true);
     set({ needsIncome: false });
     useAuthStore.getState().setError('');
 
@@ -201,7 +187,6 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
     useAuthStore.getState().setError('');
     const userId = useAuthStore.getState().userId;
     if (userId) {
-      await idbSet(`pocket-onboarding-complete-${userId}`, true);
       await useSyncStore.getState().sync({ id: userId, onboardingComplete: true });
     }
     toast.success('Skipped', 'You can set income and budget anytime in Settings');

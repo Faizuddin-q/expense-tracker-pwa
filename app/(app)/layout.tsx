@@ -33,7 +33,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
   const { userId, initializing, error, logout } = useAuthStore();
   const { needsIncome, incomeDraft, setIncomeDraft, budgetDraft, setBudgetDraft, completeOnboarding, skipOnboarding } =
     useProfileStore();
-  const { profileHydrated, online, syncing } = useSyncStore();
+  const { profileHydrated, syncing } = useSyncStore();
   const {
     categoryDialog,
     setCategoryDialog,
@@ -103,7 +103,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
   if (!userId) return null;
 
-  const syncLabel = syncing ? 'Syncing' : online ? 'Synced' : 'Offline';
+  const syncLabel = syncing ? 'Syncing' : 'Synced';
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -134,11 +134,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="mt-auto border-t border-border px-4 py-3">
           <div className="flex items-center gap-2">
-            <span
-              className={`size-1.5 shrink-0 rounded-full ${
-                online ? 'bg-positive' : 'bg-faint'
-              }`}
-            />
+            <span className="size-1.5 shrink-0 rounded-full bg-positive" />
             <span className="text-[11px] font-medium text-muted-foreground">
               {syncLabel}
             </span>
@@ -158,9 +154,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center gap-1">
             <span className="mr-1 hidden items-center gap-1.5 text-[11px] font-medium text-muted-foreground sm:flex lg:hidden">
-              <span
-                className={`size-1.5 rounded-full ${online ? 'bg-positive' : 'bg-faint'}`}
-              />
+              <span className="size-1.5 rounded-full bg-positive" />
               {syncLabel}
             </span>
             <button

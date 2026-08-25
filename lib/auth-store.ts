@@ -1,9 +1,9 @@
 import { create } from 'zustand';
-import { idbGet, idbSet, idbDel } from '@/lib/idb';
 import { normalizePhone, isValidIndianMobile } from '@/lib/utils';
 import { useExpenses } from '@/lib/store';
 import { useSyncStore } from '@/lib/sync-store';
 import { useProfileStore } from '@/lib/profile-store';
+import { useCategoryStore } from '@/lib/category-store';
 import { toast } from '@/components/ToastHost';
 
 interface AuthStore {
@@ -15,7 +15,6 @@ interface AuthStore {
   setPhone: (v: string) => void;
   setPassword: (v: string) => void;
   setError: (v: string) => void;
-  /** Boot-time: restores the local session id and verifies it against the server. */
   restoreSession: () => Promise<void>;
   signIn: () => Promise<void>;
   createAccount: () => Promise<void>;
@@ -24,9 +23,15 @@ interface AuthStore {
     newPassword: string
   ) => Promise<boolean>;
   logout: () => Promise<void>;
-  /** Called by sync-store when a 401/403 means the session is no longer valid. */
   handleSessionExpired: (message: string) => void;
 }
+
+const clearSessionState = () => {
+  useSyncStore.getState().resetOnLogout();
+  useCategoryStore.getState().resetOnLogout();
+  useExpenses.getState().hydrate([]);
+  useProfileStore.getState().resetOnLogout();
+};
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
   userId: '',
@@ -40,27 +45,16 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   setError: (v) => set({ error: v }),
 
   restoreSession: async () => {
-    const saved = await idbGet<string>('pocket-user-id');
-    if (saved) {
-      try {
-        const res = await fetch('/api/auth/session');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.authenticated) {
-            set({ userId: saved });
-          } else {
-            // Cookie is gone/expired — this device needs to sign in again.
-            await idbDel('pocket-user-id');
-          }
-        } else {
-          // Server error while checking — trust the local session so
-          // degraded/offline use still works; sync() will recover later.
-          set({ userId: saved });
+    try {
+      const res = await fetch('/api/auth/session');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.authenticated && typeof data.userId === 'string') {
+          set({ userId: data.userId });
         }
-      } catch {
-        // Offline or unreachable — trust the local session.
-        set({ userId: saved });
       }
+    } catch {
+      // Cloud-only — no local session fallback.
     }
     set({ initializing: false });
   },
@@ -82,6 +76,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return;
     }
     set({ error: '' });
+    clearSessionState();
 
     let data: { error?: string; passwordIsDefault?: boolean };
     try {
@@ -106,7 +101,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
 
     set({ password: '', userId: normalized });
-    await idbSet('pocket-user-id', normalized);
     const ok = await useSyncStore.getState().bootstrapUser(normalized);
 
     if (data.passwordIsDefault) {
@@ -117,10 +111,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     } else if (ok) {
       toast.success('Signed in', `Account +91 ${normalized}`);
     } else {
-      toast.success(
-        'Signed in',
-        'Cloud sync unavailable — showing data saved on this device'
-      );
+      toast.error('Could not load account', 'Check your connection and try again.');
     }
   },
 
@@ -141,6 +132,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return;
     }
     set({ error: '' });
+    clearSessionState();
 
     try {
       const response = await fetch('/api/auth/register', {
@@ -164,7 +156,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
 
     set({ password: '', userId: normalized });
-    await idbSet('pocket-user-id', normalized);
     await useSyncStore.getState().bootstrapUser(normalized);
     toast.success('Account created', `Signed in as +91 ${normalized}`);
   },
@@ -193,16 +184,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   logout: async () => {
-    useSyncStore.getState().resetProfileHydrated();
+    clearSessionState();
     void fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
-    await idbDel('pocket-user-id');
     set({ userId: '', phone: '', password: '' });
-    useExpenses.getState().hydrate([]);
-    useProfileStore.getState().resetOnLogout();
-    toast.success('Logged out', 'Your cloud data is still safe');
+    toast.success('Logged out', 'Your data is still saved in the cloud');
   },
 
   handleSessionExpired: (message) => {
+    clearSessionState();
     set({ userId: '', error: message });
   },
 }));

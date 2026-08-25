@@ -17,7 +17,6 @@ export type Expense = {
   updatedAt?: string;
   /** ISO timestamp when soft-deleted; omitted/null = active */
   deletedAt?: string | null;
-  syncStatus: 'pending' | 'synced';
 };
 
 export type Category = {
