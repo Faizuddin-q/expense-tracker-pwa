@@ -98,7 +98,7 @@ const Segment = ({
           key={opt.value}
           type="button"
           onClick={() => onChange(opt.value)}
-          className={`flex h-7 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 text-[12px] font-medium transition-colors sm:flex-none ${
+          className={`press flex h-7 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 text-[12px] font-medium transition-colors sm:flex-none ${
             active
               ? 'bg-primary/12 text-primary'
               : 'text-muted-foreground hover:text-foreground'
@@ -162,7 +162,7 @@ const GhostButton = ({
   <button
     type="button"
     onClick={onClick}
-    className={`flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-[12px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary sm:w-auto ${className}`}
+    className={`press flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-[12px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary sm:w-auto ${className}`}
   >
     {children}
   </button>
@@ -202,7 +202,7 @@ const AmountField = ({
     <button
       type="button"
       onClick={onSave}
-      className="h-8 shrink-0 cursor-pointer rounded-lg bg-primary px-3 text-[12px] font-medium text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80"
+      className="h-8 shrink-0 cursor-pointer rounded-lg bg-primary px-3 text-[12px] font-medium text-primary-foreground press transition-opacity hover:opacity-90 active:opacity-80"
     >
       Save
     </button>
@@ -238,7 +238,7 @@ const TextField = ({
     <button
       type="button"
       onClick={onSave}
-      className="h-8 shrink-0 cursor-pointer rounded-lg bg-primary px-3 text-[12px] font-medium text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80"
+      className="h-8 shrink-0 cursor-pointer rounded-lg bg-primary px-3 text-[12px] font-medium text-primary-foreground press transition-opacity hover:opacity-90 active:opacity-80"
     >
       Save
     </button>
@@ -347,7 +347,7 @@ const ChangePasswordForm = ({
         type="button"
         disabled={submitting}
         onClick={handleSubmit}
-        className="h-8 shrink-0 cursor-pointer rounded-lg bg-primary px-3 text-[12px] font-medium text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-60"
+        className="h-8 shrink-0 cursor-pointer rounded-lg bg-primary px-3 text-[12px] font-medium text-primary-foreground press transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-60"
       >
         {submitting ? 'Updating…' : 'Update password'}
       </button>

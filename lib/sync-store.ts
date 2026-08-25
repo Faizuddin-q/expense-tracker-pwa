@@ -30,6 +30,8 @@ export interface SyncOptions {
   local?: Expense[];
   income?: number | null;
   categories?: Category[] | null;
+  /** Explicit category ids to remove from cloud (required for delete under merge-by-id). */
+  deletedCategoryIds?: string[];
   deletedIds?: string[];
   budget?: number | null;
   hideAmounts?: boolean | null;
@@ -76,6 +78,7 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
     const {
       income = null,
       categories = null,
+      deletedCategoryIds,
       budget = null,
       hideAmounts = null,
       onboardingComplete = null,
@@ -107,6 +110,9 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
             custom,
           })
         );
+      }
+      if (Array.isArray(deletedCategoryIds) && deletedCategoryIds.length > 0) {
+        payload.deletedCategoryIds = deletedCategoryIds;
       }
       // Only push profile fields when explicitly provided
       if (typeof income === 'number' && income > 0) {

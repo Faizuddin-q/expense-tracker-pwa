@@ -104,7 +104,7 @@ export const AdminDashboard = ({ onSignedOut }: AdminDashboardProps) => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur-md">
+      <header className="sticky top-0 z-30 relative bg-background/90 backdrop-blur-md after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-3 after:bg-gradient-to-b after:from-border/60 after:to-transparent">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <Brand />
@@ -119,7 +119,7 @@ export const AdminDashboard = ({ onSignedOut }: AdminDashboardProps) => {
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
               aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-              className="grid size-8 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              className="press grid size-8 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             >
               {theme === 'dark' ? (
                 <Sun className="size-4" strokeWidth={1.9} />
@@ -133,7 +133,7 @@ export const AdminDashboard = ({ onSignedOut }: AdminDashboardProps) => {
               disabled={refreshing}
               title="Refresh"
               aria-label="Refresh"
-              className="grid size-8 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
+              className="press grid size-8 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
             >
               <RefreshCw
                 className={`size-4 ${refreshing ? 'animate-spin' : ''}`}

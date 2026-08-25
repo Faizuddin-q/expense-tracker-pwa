@@ -98,7 +98,7 @@ export const IncomeSetup = ({
           <button
             type="button"
             onClick={onContinue}
-            className="flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-primary text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80"
+            className="flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-primary text-[13px] font-medium text-primary-foreground press transition-opacity hover:opacity-90 active:opacity-80"
           >
             Continue
             <ArrowRight className="size-3.5" strokeWidth={2.2} />

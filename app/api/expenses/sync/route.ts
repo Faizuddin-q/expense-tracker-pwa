@@ -21,6 +21,7 @@ export const POST = async (request: Request) => {
       monthlyIncome,
       monthlyBudget,
       categories,
+      deletedCategoryIds,
       deletedIds,
       hideAmounts,
       onboardingComplete,
@@ -145,7 +146,24 @@ export const POST = async (request: Request) => {
           custom: category.custom !== false,
         });
       }
-      profileUpdate.categories = cleanedCategories;
+      // Merge by id with existing profile categories so a stale/incomplete
+      // client list cannot wipe categories the cloud still knows about.
+      // Explicit deletes go through deletedCategoryIds only.
+      const existingProfile = await profiles.findOne(
+        { userId },
+        { projection: { categories: 1 } }
+      );
+      const mergedById = new Map<string, (typeof cleanedCategories)[number]>();
+      for (const c of existingProfile?.categories ?? []) {
+        if (typeof c?.id === 'string') mergedById.set(c.id, c);
+      }
+      for (const c of cleanedCategories) mergedById.set(c.id, c);
+      if (Array.isArray(deletedCategoryIds)) {
+        for (const id of deletedCategoryIds) {
+          if (typeof id === 'string' && id.length > 0) mergedById.delete(id);
+        }
+      }
+      profileUpdate.categories = Array.from(mergedById.values()).slice(0, 100);
     }
 
     // Always touch the profile doc so findOne returns it even when only expenses sync

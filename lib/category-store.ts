@@ -93,7 +93,9 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
       get().categories.find((c) => c.id === id)?.label ?? 'Category';
     const next = get().categories.filter((c) => c.id !== id);
     await get().persistCategories(userId, next);
-    const ok = await useSyncStore.getState().sync({ id: userId, categories: next });
+    const ok = await useSyncStore
+      .getState()
+      .sync({ id: userId, categories: next, deletedCategoryIds: [id] });
     if (ok) toast.success('Category removed', `"${removedLabel}" deleted`);
   },
 

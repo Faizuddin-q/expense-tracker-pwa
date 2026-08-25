@@ -49,16 +49,11 @@ export default function SettingsPage() {
       expenses={expenses}
       userId={userId}
       sync={async () => {
-        const ok = await sync({
-          id: userId,
-          local: expenses,
-          categories: customCategories.length > 0 ? customCategories : null,
-        });
+        // Expenses only — never push categories here; a stale local list
+        // would overwrite the full cloud profile.categories array.
+        const ok = await sync({ id: userId, local: expenses });
         if (ok)
-          toast.success(
-            'Data synced',
-            'Expenses and categories pushed to your account'
-          );
+          toast.success('Data synced', 'Expenses pushed to your account');
       }}
       onChangeIdentity={logout}
       onLogout={logout}

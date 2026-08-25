@@ -151,7 +151,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Main */}
       <main className="pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:ml-56 lg:pb-10">
-        <header className="sticky top-0 z-30 flex h-12 items-center justify-between border-b border-border bg-background/85 px-4 backdrop-blur-md sm:px-6 lg:px-8">
+        <header className="sticky top-0 z-30 flex h-12 items-center justify-between bg-background/85 px-4 backdrop-blur-md sm:px-6 lg:px-8 relative after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-3 after:bg-gradient-to-b after:from-border/60 after:to-transparent">
           <h1 className="text-[14px] font-semibold tracking-tight text-foreground">
             {pageTitle}
           </h1>
@@ -167,7 +167,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
               aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-              className="grid size-7 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              className="press grid size-7 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             >
               {theme === 'dark' ? (
                 <Sun className="size-4" strokeWidth={1.9} />
@@ -179,7 +179,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
               onClick={() => void logout()}
               title="Log out"
               aria-label="Log out"
-              className="hidden size-7 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-destructive lg:grid"
+              className="press hidden size-7 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-destructive lg:grid"
             >
               <LogOut className="size-4" strokeWidth={1.9} />
             </button>

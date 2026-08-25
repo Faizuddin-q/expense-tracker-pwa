@@ -126,7 +126,7 @@ const ToastCard = ({
               item.action?.onClick();
               startExit();
             }}
-            className="mt-1.5 cursor-pointer text-[12px] font-medium text-primary transition-opacity hover:opacity-70"
+            className="press mt-1.5 cursor-pointer text-[12px] font-medium text-primary transition-opacity hover:opacity-70"
           >
             {item.action.label}
           </button>
@@ -136,7 +136,7 @@ const ToastCard = ({
         type="button"
         aria-label="Dismiss"
         onClick={startExit}
-        className="grid size-5 shrink-0 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-secondary hover:text-foreground"
+        className="press grid size-5 shrink-0 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-secondary hover:text-foreground"
       >
         <X className="size-3.5" strokeWidth={2} />
       </button>

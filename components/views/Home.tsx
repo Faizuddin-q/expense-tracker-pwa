@@ -158,7 +158,7 @@ export const Home = ({
               <button
                 type="button"
                 onClick={onAddCategory}
-                className="flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-2.5 text-left text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary"
+                className="press flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-2.5 text-left text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary"
               >
                 <Plus className="size-3.5 shrink-0" strokeWidth={2} />
                 <span className="truncate text-[13px] font-medium">New</span>

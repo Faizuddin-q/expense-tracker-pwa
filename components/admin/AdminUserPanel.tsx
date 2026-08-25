@@ -285,7 +285,7 @@ export const AdminUserPanel = ({
               type="button"
               onClick={() => void saveProfile()}
               disabled={!profileDirty || savingProfile}
-              className="h-9 cursor-pointer rounded-lg bg-primary px-4 text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80 disabled:pointer-events-none disabled:opacity-40"
+              className="h-9 cursor-pointer rounded-lg bg-primary px-4 text-[13px] font-medium text-primary-foreground press transition-opacity hover:opacity-90 active:opacity-80 disabled:pointer-events-none disabled:opacity-40"
             >
               {savingProfile ? 'Saving…' : 'Save'}
             </button>
@@ -306,7 +306,7 @@ export const AdminUserPanel = ({
             type="button"
             onClick={() => void resetPassword()}
             disabled={resettingPassword}
-            className="flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-[12px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary disabled:pointer-events-none disabled:opacity-50"
+            className="press flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-[12px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary disabled:pointer-events-none disabled:opacity-50"
           >
             <KeyRound className="size-3.5" strokeWidth={2} />
             {resettingPassword ? 'Resetting…' : 'Reset password'}
@@ -342,7 +342,7 @@ export const AdminUserPanel = ({
             <button
               type="button"
               onClick={() => setAdding(true)}
-              className="flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[12px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary"
+              className="press flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[12px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary"
             >
               <Plus className="size-3.5" strokeWidth={2.2} />
               Add

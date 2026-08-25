@@ -74,7 +74,7 @@ export const Login = ({
           <button
             type="button"
             onClick={() => setMode('signin')}
-            className={`h-8 flex-1 cursor-pointer rounded-md text-[12px] font-medium transition-colors ${
+            className={`press h-8 flex-1 cursor-pointer rounded-md text-[12px] font-medium transition-colors ${
               !isSignup
                 ? 'bg-primary/12 text-primary'
                 : 'text-muted-foreground hover:text-foreground'
@@ -85,7 +85,7 @@ export const Login = ({
           <button
             type="button"
             onClick={() => setMode('signup')}
-            className={`h-8 flex-1 cursor-pointer rounded-md text-[12px] font-medium transition-colors ${
+            className={`press h-8 flex-1 cursor-pointer rounded-md text-[12px] font-medium transition-colors ${
               isSignup
                 ? 'bg-primary/12 text-primary'
                 : 'text-muted-foreground hover:text-foreground'
@@ -205,7 +205,7 @@ export const Login = ({
           <button
             onClick={submit}
             disabled={isSignup && confirmMismatch}
-            className="mt-3 flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-primary text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80 disabled:pointer-events-none disabled:opacity-50"
+            className="mt-3 flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-primary text-[13px] font-medium text-primary-foreground press transition-opacity hover:opacity-90 active:opacity-80 disabled:pointer-events-none disabled:opacity-50"
           >
             {isSignup ? 'Create account' : 'Continue'}
             <ArrowRight className="size-3.5" strokeWidth={2.2} />
