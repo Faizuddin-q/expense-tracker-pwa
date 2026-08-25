@@ -29,7 +29,7 @@ export const NavButton = ({
       <Link
         href={href}
         aria-current={active ? 'page' : undefined}
-        className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg py-1.5 transition-colors ${
+        className={`press flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg py-1.5 transition-colors ${
           active
             ? 'text-primary'
             : 'text-faint active:text-muted-foreground'
@@ -53,7 +53,7 @@ export const NavButton = ({
     <Link
       href={href}
       aria-current={active ? 'page' : undefined}
-      className={`group flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-[13px] font-medium transition-colors ${
+      className={`press group flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-[13px] font-medium transition-colors ${
         active
           ? 'bg-secondary text-foreground'
           : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'

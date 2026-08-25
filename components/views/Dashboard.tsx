@@ -311,7 +311,7 @@ export const Dashboard = ({
               key={key}
               type="button"
               onClick={() => handleRangeSelect(key)}
-              className={`h-7 cursor-pointer rounded-md px-2.5 text-[12px] font-medium transition-colors ${
+              className={`press h-7 cursor-pointer rounded-md px-2.5 text-[12px] font-medium transition-colors ${
                 timeRange === key
                   ? 'bg-primary/12 text-primary'
                   : 'text-muted-foreground hover:text-foreground'
@@ -329,7 +329,7 @@ export const Dashboard = ({
               onClick={handlePrevMonth}
               disabled={monthIndex >= availableMonths.length - 1}
               aria-label="Previous month"
-              className="grid size-6 cursor-pointer place-items-center rounded text-muted-foreground transition-colors hover:bg-primary/12 hover:text-primary disabled:pointer-events-none disabled:opacity-30"
+              className="press grid size-6 cursor-pointer place-items-center rounded text-muted-foreground transition-colors hover:bg-primary/12 hover:text-primary disabled:pointer-events-none disabled:opacity-30"
             >
               <ChevronLeft className="size-4" strokeWidth={1.9} />
             </button>
@@ -341,7 +341,7 @@ export const Dashboard = ({
               onClick={handleNextMonth}
               disabled={monthIndex <= 0}
               aria-label="Next month"
-              className="grid size-6 cursor-pointer place-items-center rounded text-muted-foreground transition-colors hover:bg-primary/12 hover:text-primary disabled:pointer-events-none disabled:opacity-30"
+              className="press grid size-6 cursor-pointer place-items-center rounded text-muted-foreground transition-colors hover:bg-primary/12 hover:text-primary disabled:pointer-events-none disabled:opacity-30"
             >
               <ChevronRight className="size-4" strokeWidth={1.9} />
             </button>

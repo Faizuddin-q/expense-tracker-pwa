@@ -52,7 +52,7 @@ export const ExpenseRow = ({
             type="button"
             aria-label="Edit expense"
             onClick={() => onEdit(expense)}
-            className="grid size-6 shrink-0 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-primary/12 hover:text-primary"
+            className="press grid size-6 shrink-0 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-primary/12 hover:text-primary"
           >
             <Pencil className="size-3.5" strokeWidth={1.9} />
           </button>
@@ -61,7 +61,7 @@ export const ExpenseRow = ({
           type="button"
           aria-label="Delete expense"
           onClick={() => onDelete(expense)}
-          className="grid size-6 shrink-0 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-destructive/10 hover:text-destructive"
+          className="press grid size-6 shrink-0 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-destructive/10 hover:text-destructive"
         >
           <Trash2 className="size-3.5" strokeWidth={1.9} />
         </button>

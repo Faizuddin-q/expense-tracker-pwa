@@ -58,6 +58,8 @@ export const BackTapSetupDialog = ({
   const [platform, setPlatform] = useState<PwaPlatform>('desktop');
   const [installed, setInstalled] = useState(false);
   const [installing, setInstalling] = useState(false);
+  const [rendered, setRendered] = useState(open);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -65,7 +67,33 @@ export const BackTapSetupDialog = ({
     setInstalled(isPwaInstalled());
   }, [open]);
 
-  if (!open) return null;
+  // Keep the dialog mounted through its exit transition instead of
+  // vanishing the instant `open` flips false — snappier than the entry,
+  // but still a real transition rather than a hard cut.
+  useEffect(() => {
+    if (open) {
+      setRendered(true);
+      setLeaving(false);
+      return;
+    }
+    if (!rendered) return;
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      setRendered(false);
+      return;
+    }
+    setLeaving(true);
+    const t = setTimeout(() => {
+      setRendered(false);
+      setLeaving(false);
+    }, 150);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  if (!rendered) return null;
 
   const steps =
     platform === 'ios'
@@ -100,7 +128,11 @@ export const BackTapSetupDialog = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-background/70 p-0 backdrop-blur-sm duration-150 animate-in fade-in sm:items-center sm:p-5">
+    <div
+      className={`fixed inset-0 z-[60] flex items-end justify-center bg-background/70 p-0 backdrop-blur-sm duration-150 sm:items-center sm:p-5 ${
+        leaving ? 'animate-out fade-out' : 'animate-in fade-in'
+      }`}
+    >
       <button
         type="button"
         aria-label="Close"
@@ -112,7 +144,11 @@ export const BackTapSetupDialog = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="back-tap-guide-title"
-        className="relative z-10 flex max-h-[88vh] w-full max-w-md flex-col rounded-t-xl border border-border bg-card duration-200 ease-[var(--ease-drawer)] animate-in slide-in-from-bottom-4 sm:rounded-xl sm:zoom-in-[0.98] sm:slide-in-from-bottom-0"
+        className={`relative z-10 flex max-h-[88vh] w-full max-w-md flex-col rounded-t-xl border border-border bg-card duration-200 ease-[var(--ease-drawer)] sm:rounded-xl ${
+          leaving
+            ? 'animate-out fade-out slide-out-to-bottom-4 sm:zoom-out-[0.98] sm:slide-out-to-bottom-0'
+            : 'animate-in slide-in-from-bottom-4 sm:zoom-in-[0.98] sm:slide-in-from-bottom-0'
+        }`}
       >
         <div className="flex h-11 shrink-0 items-center justify-between border-b border-border px-4">
           <h2
@@ -125,7 +161,7 @@ export const BackTapSetupDialog = ({
             type="button"
             aria-label="Close"
             onClick={onClose}
-            className="grid size-6 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-secondary hover:text-foreground"
+            className="press grid size-6 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-secondary hover:text-foreground"
           >
             <X className="size-3.5" strokeWidth={2} />
           </button>
@@ -167,7 +203,7 @@ export const BackTapSetupDialog = ({
               type="button"
               disabled={installing}
               onClick={() => void handleInstall()}
-              className="mt-3 h-9 w-full cursor-pointer rounded-lg bg-primary text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-50"
+              className="mt-3 h-9 w-full cursor-pointer rounded-lg bg-primary text-[13px] font-medium text-primary-foreground press transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-50"
             >
               {installing ? 'Installing…' : 'Install Pockett'}
             </button>
@@ -205,7 +241,7 @@ export const BackTapSetupDialog = ({
           <button
             type="button"
             onClick={onClose}
-            className="h-9 w-full cursor-pointer rounded-lg bg-primary text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80"
+            className="h-9 w-full cursor-pointer rounded-lg bg-primary text-[13px] font-medium text-primary-foreground press transition-opacity hover:opacity-90 active:opacity-80"
           >
             Done
           </button>

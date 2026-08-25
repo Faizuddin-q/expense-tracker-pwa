@@ -299,7 +299,7 @@ export const Expenses = ({
             <button
               onClick={() => setQuery('')}
               aria-label="Clear search"
-              className="grid size-4 cursor-pointer place-items-center rounded text-faint transition-colors hover:text-foreground"
+              className="press grid size-4 cursor-pointer place-items-center rounded text-faint transition-colors hover:text-foreground"
             >
               <X className="size-3.5" strokeWidth={2} />
             </button>
@@ -308,7 +308,7 @@ export const Expenses = ({
 
         <button
           onClick={() => downloadCsv(filtered, categories)}
-          className="flex h-8 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-[12px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary"
+          className="press flex h-8 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-[12px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary"
         >
           <Download className="size-3.5" strokeWidth={2} />
           Export CSV
@@ -322,7 +322,7 @@ export const Expenses = ({
             <button
               key={key}
               onClick={() => handleRangeSelect(key)}
-              className={`h-7 cursor-pointer rounded-md px-2.5 text-[12px] font-medium transition-colors ${
+              className={`press h-7 cursor-pointer rounded-md px-2.5 text-[12px] font-medium transition-colors ${
                 timeRange === key
                   ? 'bg-primary/12 text-primary'
                   : 'text-muted-foreground hover:text-foreground'
@@ -342,7 +342,7 @@ export const Expenses = ({
               }
               disabled={monthIndex >= availableMonths.length - 1}
               aria-label="Previous month"
-              className="grid size-6 cursor-pointer place-items-center rounded text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+              className="press grid size-6 cursor-pointer place-items-center rounded text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
             >
               <ChevronLeft className="size-4" strokeWidth={1.9} />
             </button>
@@ -356,7 +356,7 @@ export const Expenses = ({
               }
               disabled={monthIndex <= 0}
               aria-label="Next month"
-              className="grid size-6 cursor-pointer place-items-center rounded text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+              className="press grid size-6 cursor-pointer place-items-center rounded text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
             >
               <ChevronRight className="size-4" strokeWidth={1.9} />
             </button>
