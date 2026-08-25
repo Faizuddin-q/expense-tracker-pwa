@@ -5,9 +5,9 @@ import { useThemeStore } from '@/lib/theme-store';
 
 /**
  * Loads the saved theme preference and keeps <html>'s class + localStorage
- * in sync with it. Shared by the main app (via AppInit) and the admin
- * dashboard (which has no Pocket account/session, so its theme is always
- * device-local — setTheme() only pushes to the cloud when signed in).
+ * in sync with it. Mounted once from root AppInit. Admin has no Pockett
+ * user session, so its theme stays device-local — setTheme() only pushes
+ * to the cloud when a user is signed in.
  */
 export const ThemeSync = () => {
   const theme = useThemeStore((s) => s.theme);

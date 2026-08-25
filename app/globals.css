@@ -293,6 +293,26 @@ textarea {
   }
 }
 
+/* Loading placeholder — muted fill, no color, pulse only when motion is ok */
+.skeleton-bone {
+  background-color: var(--muted);
+  border-radius: var(--radius-md);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton-bone {
+    animation: skeleton-pulse 1.5s var(--ease-in-out) infinite;
+  }
+}
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.42;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

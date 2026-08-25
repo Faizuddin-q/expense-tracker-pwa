@@ -248,7 +248,7 @@ export const POST = async (request: Request) => {
         : null,
     });
   } catch (error) {
-    console.error('[v0] expense sync failed', error);
+    console.error('[sync] expense sync failed', error);
     const message = error instanceof Error ? error.message : 'Sync unavailable';
     return NextResponse.json({ error: message }, { status: 503 });
   }

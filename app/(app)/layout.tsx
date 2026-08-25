@@ -3,7 +3,6 @@
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { LogOut, Moon, Sun } from 'lucide-react';
-import { AppInit } from '@/components/AppInit';
 import { useAuthStore } from '@/lib/auth-store';
 import { useProfileStore } from '@/lib/profile-store';
 import { useSyncStore } from '@/lib/sync-store';
@@ -13,6 +12,7 @@ import { Brand } from '@/components/Brand';
 import { NavButton } from '@/components/NavButton';
 import { CategoryDialog } from '@/components/CategoryDialog';
 import { IncomeSetup } from '@/components/IncomeSetup';
+import { HomeSkeleton } from '@/components/HomeSkeleton';
 import { PwaProvider } from '@/components/PwaProvider';
 import { navItems } from '@/lib/constants';
 import { formatIndianMobileDisplay } from '@/lib/utils';
@@ -63,7 +63,11 @@ function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [initializing, userId, router]);
 
-  if (initializing || (userId && !profileHydrated)) {
+  if (userId && !profileHydrated) {
+    return <HomeSkeleton title={pageTitle} />;
+  }
+
+  if (initializing) {
     return <div className="min-h-screen bg-background" />;
   }
 
@@ -209,10 +213,8 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AppInit>
-      <PwaProvider>
-        <AppShell>{children}</AppShell>
-      </PwaProvider>
-    </AppInit>
+    <PwaProvider>
+      <AppShell>{children}</AppShell>
+    </PwaProvider>
   );
 }

@@ -34,9 +34,15 @@ const useToastStore = create<ToastStore>((set) => ({
   toasts: [],
   push: (type, title, message, action) => {
     const id = crypto.randomUUID();
-    set((s) => ({
-      toasts: [...s.toasts.slice(-4), { id, type, title, message, action }],
-    }));
+    set((s) => {
+      const duplicate = s.toasts.some(
+        (t) => t.type === type && t.title === title && t.message === message
+      );
+      if (duplicate) return s;
+      return {
+        toasts: [...s.toasts.slice(-4), { id, type, title, message, action }],
+      };
+    });
   },
   dismiss: (id) =>
     set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),

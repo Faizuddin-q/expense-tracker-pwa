@@ -1,11 +1,11 @@
 import { Analytics } from '@vercel/analytics/next';
 import type { Metadata, Viewport } from 'next';
+import { AppInit } from '@/components/AppInit';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Pockett — Spend with clarity',
   description: 'A calm expense tracker for everyday spending — synced to your account.',
-  generator: 'v0.app',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -44,7 +44,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="light bg-background">
       <body className="antialiased">
-        {children}
+        <AppInit>{children}</AppInit>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
