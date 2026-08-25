@@ -6,8 +6,6 @@ import { useProfileStore } from '@/lib/profile-store';
 import { useCategoryStore } from '@/lib/category-store';
 import { useSyncStore } from '@/lib/sync-store';
 import { useThemeStore } from '@/lib/theme-store';
-// Deprecated for now — double-tap / Back Tap shortcut
-// import { usePwa } from '@/components/PwaProvider';
 import { Settings } from '@/components/views/Settings';
 import { toast } from '@/components/ToastHost';
 
@@ -32,8 +30,6 @@ export default function SettingsPage() {
   const { categories: customCategories } = useCategoryStore();
   const sync = useSyncStore((s) => s.sync);
   const { theme, setTheme } = useThemeStore();
-  // Deprecated for now — double-tap / Back Tap shortcut
-  // const { backTapEnabled, setBackTapEnabled, openBackTapGuide } = usePwa();
 
   return (
     <Settings
@@ -49,11 +45,8 @@ export default function SettingsPage() {
       expenses={expenses}
       userId={userId}
       sync={async () => {
-        // Expenses only — never push categories here; a stale local list
-        // would overwrite the full cloud profile.categories array.
         const ok = await sync({ id: userId, local: expenses });
-        if (ok)
-          toast.success('Data synced', 'Expenses pushed to your account');
+        if (ok) toast.success('Data synced', 'Expenses refreshed from the cloud');
       }}
       onChangeIdentity={logout}
       onLogout={logout}
@@ -65,10 +58,6 @@ export default function SettingsPage() {
       setHideAmounts={setHideAmounts}
       cycleStartDay={cycleStartDay}
       setCycleStartDay={setCycleStartDay}
-      // Deprecated for now — double-tap / Back Tap shortcut
-      // backTapEnabled={backTapEnabled}
-      // setBackTapEnabled={(on) => void setBackTapEnabled(on)}
-      // onOpenBackTapGuide={openBackTapGuide}
     />
   );
 }

@@ -1,7 +1,7 @@
 {
   "name": "Pockett — Spend with Clarity",
   "short_name": "Pockett",
-  "description": "A calm, fast, offline-first expense tracker for everyday spending.",
+  "description": "A calm expense tracker for everyday spending — synced to your account.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

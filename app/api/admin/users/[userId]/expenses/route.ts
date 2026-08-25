@@ -61,7 +61,6 @@ export const POST = async (request: Request, { params }: Params) => {
         date,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
-        syncStatus: 'synced' as const,
       },
     });
   } catch (error) {

@@ -66,7 +66,6 @@ export const GET = async (request: Request, { params }: Params) => {
         date: e.date,
         createdAt: e.createdAt,
         updatedAt: e.updatedAt,
-        syncStatus: 'synced' as const,
       })),
     });
   } catch (error) {

@@ -18,6 +18,6 @@ export interface SyncOptions {
   name?: string | null;
   theme?: 'dark' | 'light' | null;
   cycleStartDay?: number | null;
-  /** Login/bootstrap: pull cloud truth without uploading local IDB snapshot. */
+  /** Login/bootstrap: pull cloud truth without uploading local expense snapshot. */
   pullOnly?: boolean;
 }

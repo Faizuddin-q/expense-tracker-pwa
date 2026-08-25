@@ -12,7 +12,6 @@ import { getCycleKey, getCurrentCycleKey } from '@/lib/cycle';
 
 interface Store {
   expenses: Expense[];
-  hydrated: boolean;
   add: (expense: Expense) => void;
   update: (id: string, patch: Partial<Expense>) => void;
   remove: (id: string) => void;
@@ -39,7 +38,6 @@ interface Store {
 
 export const useExpenses = create<Store>((setState, getState) => ({
   expenses: [],
-  hydrated: false,
   add: (expense) => setState((s) => ({ expenses: [expense, ...s.expenses] })),
   update: (id, patch) =>
     setState((s) => ({
@@ -52,7 +50,6 @@ export const useExpenses = create<Store>((setState, getState) => ({
   hydrate: (items) =>
     setState({
       expenses: items.map((e) => ({ ...e, amount: Number(e.amount) || 0 })),
-      hydrated: true,
     }),
 
   amount: '',
@@ -76,7 +73,6 @@ export const useExpenses = create<Store>((setState, getState) => ({
       toast.error('Could not add expense', 'Enter an amount first');
       return;
     }
-    const online = useSyncStore.getState().online;
     const userId = useAuthStore.getState().userId;
     const now = new Date().toISOString();
     const expense: Expense = {
@@ -87,7 +83,6 @@ export const useExpenses = create<Store>((setState, getState) => ({
       date: now,
       createdAt: now,
       updatedAt: now,
-      syncStatus: online ? 'synced' : 'pending',
     };
     getState().add(expense);
     setState({ amount: '', note: '' });
@@ -107,7 +102,6 @@ export const useExpenses = create<Store>((setState, getState) => ({
     const previous = getState().expenses.find((e) => e.id === id);
     if (!previous) return;
 
-    const online = useSyncStore.getState().online;
     const userId = useAuthStore.getState().userId;
     const allCategories = getAllCategories();
 
@@ -120,7 +114,6 @@ export const useExpenses = create<Store>((setState, getState) => ({
       date: patch.date,
       updatedAt: now,
       deletedAt: null,
-      syncStatus: online ? 'synced' : 'pending',
     };
     getState().update(id, updated);
     const next: Expense = {
@@ -146,7 +139,6 @@ export const useExpenses = create<Store>((setState, getState) => ({
             ...previous,
             updatedAt: new Date().toISOString(),
             deletedAt: null,
-            syncStatus: online ? 'synced' : 'pending',
           };
           getState().update(id, {
             amount: restored.amount,
@@ -155,7 +147,6 @@ export const useExpenses = create<Store>((setState, getState) => ({
             date: restored.date,
             updatedAt: restored.updatedAt,
             deletedAt: null,
-            syncStatus: restored.syncStatus,
           });
           void useSyncStore
             .getState()
@@ -205,7 +196,6 @@ export const useExpenses = create<Store>((setState, getState) => ({
     syncStore.setPendingDeletedIds(nextDeleted);
     const updatedExpenses = expenses.filter((e) => e.id !== id);
 
-    const online = syncStore.online;
     const userId = useAuthStore.getState().userId;
     const allCategories = getAllCategories();
 
@@ -231,7 +221,6 @@ export const useExpenses = create<Store>((setState, getState) => ({
                 ...target,
                 deletedAt: null,
                 updatedAt: new Date().toISOString(),
-                syncStatus: online ? 'synced' : 'pending',
               };
               getState().add(restored);
               useSyncStore
