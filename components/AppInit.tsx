@@ -28,6 +28,7 @@ export const AppInit = ({ children }: { children: React.ReactNode }) => {
       useCategoryStore.getState().resetOnLogout();
       return;
     }
+    if (useSyncStore.getState().profileHydrated) return;
     let cancelled = false;
     void useSyncStore
       .getState()

@@ -272,6 +272,10 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
   bootstrapUser: async (id) => {
     if (!id) return false;
 
+    if (get().profileHydrated && useAuthStore.getState().userId === id) {
+      return true;
+    }
+
     if (bootstrapInflightFor === id && bootstrapInflight) {
       return bootstrapInflight;
     }
