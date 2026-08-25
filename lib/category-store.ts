@@ -31,6 +31,7 @@ interface CategoryStore {
   renameCategory: (id: string, label: string) => Promise<void>;
   updateCategoryColor: (id: string, tone: string) => Promise<void>;
   updateCategoryIcon: (id: string, iconName: string) => Promise<void>;
+  resetOnLogout: () => void;
 }
 
 export const useCategoryStore = create<CategoryStore>((set, get) => ({
@@ -138,6 +139,16 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
     await get().persistCategories(userId, next);
     const ok = await useSyncStore.getState().sync({ id: userId, categories: next });
     if (!ok) toast.error('Sync failed', 'Icon saved on this device only');
+  },
+
+  resetOnLogout: () => {
+    set({
+      categories: [],
+      categoryDialog: false,
+      categoryName: '',
+      selectedTone: 'mint',
+      selectedIconName: 'plus',
+    });
   },
 }));
 

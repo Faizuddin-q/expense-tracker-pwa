@@ -2,6 +2,30 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getSessionUserId } from '@/lib/auth';
 import { rateLimitOrResponse } from '@/lib/rate-limit';
+import {
+  mergeCategoriesById,
+  shouldSkipCategoryUpdate,
+} from '@/lib/category-sync-merge';
+import { ensureDefaultCategories } from '@/lib/ensure-default-categories';
+
+const EXPENSE_UPSERT_FIELDS = [
+  'amount',
+  'category',
+  'note',
+  'date',
+  'paymentMethod',
+  'createdAt',
+] as const;
+
+const pickExpenseFields = (
+  expense: Record<string, unknown>
+): Record<string, unknown> => {
+  const picked: Record<string, unknown> = {};
+  for (const key of EXPENSE_UPSERT_FIELDS) {
+    if (key in expense) picked[key] = expense[key];
+  }
+  return picked;
+};
 
 export const POST = async (request: Request) => {
   try {
@@ -9,9 +33,6 @@ export const POST = async (request: Request) => {
     if (!sessionUserId)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Not a credential-guessing endpoint — this is normal app traffic (every
-    // add/edit/delete triggers a sync), so the cap is generous and keyed to
-    // the authenticated session rather than IP.
     const limited = rateLimitOrResponse(`sync:${sessionUserId}`, 120, 60 * 1000);
     if (limited) return limited;
 
@@ -33,7 +54,7 @@ export const POST = async (request: Request) => {
       typeof userId !== 'string' ||
       userId.length < 8 ||
       userId.length > 32 ||
-      !Array.isArray(expenses)
+      (expenses !== undefined && !Array.isArray(expenses))
     )
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     if (userId !== sessionUserId)
@@ -42,8 +63,6 @@ export const POST = async (request: Request) => {
     const collection = database.collection('expenses');
     const profiles = database.collection('profiles');
 
-    // Soft-delete: keep the document so accidents can be recovered.
-    // Active lists exclude deletedAt; purge later if you add a TTL/cron.
     if (Array.isArray(deletedIds) && deletedIds.length > 0) {
       const now = new Date();
       await collection.updateMany(
@@ -60,27 +79,34 @@ export const POST = async (request: Request) => {
       );
     }
 
-    if (expenses.length)
+    if (Array.isArray(expenses) && expenses.length) {
       await collection.bulkWrite(
-        expenses.map((expense) => {
-          const { _id, deletedAt: _ignored, note: _note, ...rest } = expense;
-          const localId = expense.localId || expense.id;
+        expenses.map((expense: Record<string, unknown>) => {
+          const localId =
+            (typeof expense.localId === 'string' && expense.localId) ||
+            (typeof expense.id === 'string' && expense.id) ||
+            '';
           const noteValue =
             typeof expense.note === 'string' && expense.note.trim()
               ? expense.note.trim()
               : null;
+          const whitelisted = pickExpenseFields(expense);
           return {
             updateOne: {
               filter: { userId, localId },
               update: {
                 $set: {
-                  ...rest,
+                  ...whitelisted,
                   userId,
                   localId,
                   note: noteValue,
-                  updatedAt: new Date(expense.updatedAt ?? Date.now()),
+                  updatedAt: new Date(
+                    (typeof expense.updatedAt === 'string' ||
+                    typeof expense.updatedAt === 'number'
+                      ? expense.updatedAt
+                      : Date.now()) as string | number
+                  ),
                 },
-                // Restoring an expense (sync after undo) clears soft-delete
                 $unset: { deletedAt: '' },
               },
               upsert: true,
@@ -88,12 +114,12 @@ export const POST = async (request: Request) => {
           };
         })
       );
+    }
 
     const profileUpdate: Record<string, unknown> = {
       userId,
       updatedAt: new Date(),
     };
-    // Only overwrite income/budget when the client explicitly sends them
     if (
       typeof monthlyIncome === 'number' &&
       Number.isFinite(monthlyIncome) &&
@@ -146,27 +172,20 @@ export const POST = async (request: Request) => {
           custom: category.custom !== false,
         });
       }
-      // Merge by id with existing profile categories so a stale/incomplete
-      // client list cannot wipe categories the cloud still knows about.
-      // Explicit deletes go through deletedCategoryIds only.
-      const existingProfile = await profiles.findOne(
-        { userId },
-        { projection: { categories: 1 } }
-      );
-      const mergedById = new Map<string, (typeof cleanedCategories)[number]>();
-      for (const c of existingProfile?.categories ?? []) {
-        if (typeof c?.id === 'string') mergedById.set(c.id, c);
+
+      if (!shouldSkipCategoryUpdate(cleanedCategories, deletedCategoryIds)) {
+        const existingProfile = await profiles.findOne(
+          { userId },
+          { projection: { categories: 1 } }
+        );
+        profileUpdate.categories = mergeCategoriesById(
+          existingProfile?.categories ?? [],
+          cleanedCategories,
+          deletedCategoryIds
+        );
       }
-      for (const c of cleanedCategories) mergedById.set(c.id, c);
-      if (Array.isArray(deletedCategoryIds)) {
-        for (const id of deletedCategoryIds) {
-          if (typeof id === 'string' && id.length > 0) mergedById.delete(id);
-        }
-      }
-      profileUpdate.categories = Array.from(mergedById.values()).slice(0, 100);
     }
 
-    // Always touch the profile doc so findOne returns it even when only expenses sync
     await profiles.updateOne(
       { userId },
       { $set: profileUpdate },
@@ -184,6 +203,24 @@ export const POST = async (request: Request) => {
         .toArray(),
       profiles.findOne({ userId }),
     ]);
+
+    const referencedCategoryIds = records
+      .map((e) => e.category)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+    let responseCategories = profile?.categories ?? [];
+    const backfill = ensureDefaultCategories(
+      Array.isArray(responseCategories) ? responseCategories : [],
+      referencedCategoryIds
+    );
+    if (backfill.added.length > 0) {
+      responseCategories = backfill.categories;
+      await profiles.updateOne(
+        { userId },
+        { $set: { categories: responseCategories, updatedAt: new Date() } }
+      );
+    }
+
     return NextResponse.json({
       expenses: records,
       profile: profile
@@ -195,7 +232,7 @@ export const POST = async (request: Request) => {
                 ? profile.hideAmounts
                 : null,
             onboardingComplete: profile.onboardingComplete === true,
-            categories: profile.categories ?? [],
+            categories: responseCategories,
             name: typeof profile.name === 'string' ? profile.name : null,
             theme:
               profile.theme === 'dark' || profile.theme === 'light'

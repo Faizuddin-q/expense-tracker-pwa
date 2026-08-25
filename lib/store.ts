@@ -97,7 +97,10 @@ export const useExpenses = create<Store>((setState, getState) => ({
       'Expense added',
       `${money(expense.amount)}${expense.note ? ` · ${expense.note}` : ''}`
     );
-    void useSyncStore.getState().sync({ id: userId, local: [expense] });
+    void useSyncStore.getState().sync({
+      id: userId,
+      local: useExpenses.getState().expenses,
+    });
   },
 
   updateExpense: (id, patch) => {
@@ -156,7 +159,11 @@ export const useExpenses = create<Store>((setState, getState) => ({
           });
           void useSyncStore
             .getState()
-            .sync({ id: userId, local: [restored], deletedIds: [] })
+            .sync({
+              id: userId,
+              local: useExpenses.getState().expenses,
+              deletedIds: [],
+            })
             .then((ok) => {
               if (ok) {
                 const prevLabel =
@@ -177,12 +184,11 @@ export const useExpenses = create<Store>((setState, getState) => ({
       },
     });
 
-    // Include note: null so clearing a note is persisted (JSON drops undefined)
     void useSyncStore
       .getState()
       .sync({
         id: userId,
-        local: [{ ...next, note: cleanedNote ?? null } as Expense],
+        local: useExpenses.getState().expenses,
         deletedIds: [],
       });
   },
@@ -233,7 +239,11 @@ export const useExpenses = create<Store>((setState, getState) => ({
                 .setPendingDeletedIds((prev) => prev.filter((x) => x !== id));
               void useSyncStore
                 .getState()
-                .sync({ id: userId, local: [restored], deletedIds: [] })
+                .sync({
+                  id: userId,
+                  local: useExpenses.getState().expenses,
+                  deletedIds: [],
+                })
                 .then((restoredOk) => {
                   if (restoredOk) {
                     toast.success('Expense restored', description);

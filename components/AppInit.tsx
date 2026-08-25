@@ -5,6 +5,7 @@ import { idbSet } from '@/lib/idb';
 import { useAuthStore } from '@/lib/auth-store';
 import { useSyncStore } from '@/lib/sync-store';
 import { useExpenses } from '@/lib/store';
+import { useCategoryStore } from '@/lib/category-store';
 import { useThemeStore } from '@/lib/theme-store';
 import { ThemeSync } from '@/components/ThemeSync';
 import { ToastHost } from '@/components/ToastHost';
@@ -41,18 +42,44 @@ export const AppInit = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     useSyncStore.getState().setOnline(navigator.onLine);
-    const on = () => useSyncStore.getState().setOnline(true);
-    const off = () => useSyncStore.getState().setOnline(false);
-    addEventListener('online', on);
-    addEventListener('offline', off);
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const onOnline = () => {
+      useSyncStore.getState().setOnline(true);
+      const userId = useAuthStore.getState().userId;
+      if (!userId) return;
+      clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => {
+        const expenses = useExpenses.getState().expenses;
+        const pendingDeletedIds = useSyncStore.getState().pendingDeletedIds;
+        void useSyncStore.getState().sync({
+          id: userId,
+          local: expenses,
+          deletedIds: pendingDeletedIds,
+        });
+      }, 2000);
+    };
+
+    const onOffline = () => {
+      clearTimeout(reconnectTimer);
+      useSyncStore.getState().setOnline(false);
+    };
+
+    addEventListener('online', onOnline);
+    addEventListener('offline', onOffline);
     return () => {
-      removeEventListener('online', on);
-      removeEventListener('offline', off);
+      clearTimeout(reconnectTimer);
+      removeEventListener('online', onOnline);
+      removeEventListener('offline', onOffline);
     };
   }, []);
 
   useEffect(() => {
-    if (hydrated && userId) void idbSet(`pocket-expenses-${userId}`, expenses);
+    if (!hydrated || !userId) return;
+    // Never persist until bootstrap finished for this user — avoids writing a
+    // previous account's in-memory list under a new user's IDB key mid-login.
+    if (!useSyncStore.getState().profileHydrated) return;
+    void idbSet(`pocket-expenses-${userId}`, expenses);
   }, [expenses, hydrated, userId]);
 
   // Persist deletions still awaiting a successful sync so an offline delete
@@ -65,7 +92,8 @@ export const AppInit = ({ children }: { children: React.ReactNode }) => {
   // Only re-bootstrap when the signed-in user changes — not on every sync/expense update
   useEffect(() => {
     if (!userId) {
-      useSyncStore.getState().resetProfileHydrated();
+      useSyncStore.getState().resetOnLogout();
+      useCategoryStore.getState().resetOnLogout();
       return;
     }
     let cancelled = false;

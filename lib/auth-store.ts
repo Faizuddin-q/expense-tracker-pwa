@@ -4,6 +4,7 @@ import { normalizePhone, isValidIndianMobile } from '@/lib/utils';
 import { useExpenses } from '@/lib/store';
 import { useSyncStore } from '@/lib/sync-store';
 import { useProfileStore } from '@/lib/profile-store';
+import { useCategoryStore } from '@/lib/category-store';
 import { toast } from '@/components/ToastHost';
 
 interface AuthStore {
@@ -83,6 +84,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
     set({ error: '' });
 
+    // Wipe in-memory state before switching userId — otherwise AppInit persists
+    // the previous account's expenses/categories under the new user's IDB keys.
+    useSyncStore.getState().resetOnLogout();
+    useCategoryStore.getState().resetOnLogout();
+    useExpenses.getState().hydrate([]);
+    useProfileStore.getState().resetOnLogout();
+
     let data: { error?: string; passwordIsDefault?: boolean };
     try {
       const response = await fetch('/api/auth/login', {
@@ -142,6 +150,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
     set({ error: '' });
 
+    useSyncStore.getState().resetOnLogout();
+    useCategoryStore.getState().resetOnLogout();
+    useExpenses.getState().hydrate([]);
+    useProfileStore.getState().resetOnLogout();
+
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -193,7 +206,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   logout: async () => {
-    useSyncStore.getState().resetProfileHydrated();
+    useSyncStore.getState().resetOnLogout();
+    useCategoryStore.getState().resetOnLogout();
     void fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     await idbDel('pocket-user-id');
     set({ userId: '', phone: '', password: '' });
@@ -203,6 +217,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   handleSessionExpired: (message) => {
+    useSyncStore.getState().resetOnLogout();
+    useCategoryStore.getState().resetOnLogout();
+    useExpenses.getState().hydrate([]);
+    useProfileStore.getState().resetOnLogout();
     set({ userId: '', error: message });
   },
 }));
