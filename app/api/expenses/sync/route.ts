@@ -188,7 +188,12 @@ export const POST = async (request: Request) => {
 
     await profiles.updateOne(
       { userId },
-      { $set: profileUpdate },
+      {
+        $set: profileUpdate,
+        // Dead leftover from the old built-in-shadow model. Categories
+        // now store label/tone/icon on the row itself.
+        $unset: { categoryOverrides: '', categoryIconOverrides: '' },
+      },
       { upsert: true }
     );
 

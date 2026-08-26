@@ -8,6 +8,7 @@ import {
   getCycleKey,
   getCycleRange,
   getCurrentCycleKey,
+  getDaysRemainingInCycle,
   formatCycleLabel,
   toDateInputValue,
 } from '@/lib/cycle';
@@ -270,6 +271,21 @@ export const Dashboard = ({
     return activeSpend / Math.max(days, 1);
   }, [filteredExpenses, activeSpend]);
 
+  /** Remaining budget ÷ days left in the active cycle. Only meaningful when
+   *  Overview is on the current cycle (past cycles have no days left). */
+  const daysLeftInCycle = useMemo(() => {
+    if (!showTargets) return 0;
+    if (activeMonthKey !== getCurrentCycleKey(cycleStartDay)) return 0;
+    return getDaysRemainingInCycle(cycleStartDay);
+  }, [showTargets, activeMonthKey, cycleStartDay]);
+
+  const canShowDailyRoom = showTargets && target > 0 && daysLeftInCycle > 0;
+  const dailyRoom = canShowDailyRoom
+    ? remaining > 0
+      ? remaining / daysLeftInCycle
+      : 0
+    : null;
+
   const radius = 38;
   const circumference = 2 * Math.PI * radius;
   let accumulated = 0;
@@ -383,7 +399,7 @@ export const Dashboard = ({
       </div>
 
       {/* Stat strip */}
-      <div className="mt-3 grid grid-cols-2 divide-x divide-y divide-border overflow-hidden rounded-xl border border-border bg-card sm:mt-4 sm:grid-cols-4 sm:divide-y-0">
+      <div className="mt-3 grid grid-cols-2 divide-x divide-y divide-border overflow-hidden rounded-xl border border-border bg-card sm:mt-4 sm:grid-cols-3 lg:grid-cols-5 lg:divide-y-0">
         <Stat
           label="Spent"
           emphasize={activeSpend > 0}
@@ -429,7 +445,30 @@ export const Dashboard = ({
         >
           {showTargets ? <Money value={Math.abs(remaining)} /> : '—'}
         </Stat>
-        <Stat label="Daily avg">
+        <Stat
+          label="Can spend / day"
+          tone={
+            dailyRoom === null
+              ? 'default'
+              : over
+                ? 'destructive'
+                : dailyRoom > 0
+                  ? 'positive'
+                  : 'default'
+          }
+          meter={
+            canShowDailyRoom
+              ? {
+                  value: over ? 0 : remainOfTargetPercent,
+                  color: over ? 'var(--destructive)' : 'var(--positive)',
+                  caption: `for next ${daysLeftInCycle} day${daysLeftInCycle === 1 ? '' : 's'}`,
+                }
+              : null
+          }
+        >
+          {dailyRoom === null ? '—' : <Money value={dailyRoom} />}
+        </Stat>
+        <Stat label="Avg. spent / day">
           <Money value={dailyAverage} />
         </Stat>
       </div>

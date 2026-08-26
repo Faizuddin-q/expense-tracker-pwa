@@ -202,9 +202,12 @@ export const normalizePhone = (value: string): string => {
   return digits;
 };
 
-/** Indian mobiles: exactly 10 digits, starting with 6–9. */
-export const isValidIndianMobile = (value: string): boolean =>
-  /^[6-9]\d{9}$/.test(normalizePhone(value));
+/** Indian mobiles: exactly 10 digits, starting with 6–9.
+ *  `1234567890` is the seeded demo account and is allowed through. */
+export const isValidIndianMobile = (value: string): boolean => {
+  const digits = normalizePhone(value);
+  return /^[6-9]\d{9}$/.test(digits) || digits === '1234567890';
+};
 
 export const formatIndianMobileDisplay = (value: string): string => {
   const digits = normalizePhone(value);

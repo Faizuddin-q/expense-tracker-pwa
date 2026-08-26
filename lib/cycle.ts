@@ -80,6 +80,30 @@ export function getCurrentCycleKey(
   return getCycleKey(now, cycleStartDay);
 }
 
+/** Inclusive calendar days from today through the current cycle's end day
+ *  (local time). Respects any cycleStartDay, including 29–31 clamps.
+ *  Returns 0 if `now` is somehow past the cycle end. */
+export function getDaysRemainingInCycle(
+  cycleStartDay: number,
+  now: Date = new Date()
+): number {
+  const key = getCurrentCycleKey(cycleStartDay, now);
+  const { end } = getCycleRange(key, cycleStartDay);
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+  const endOfCycleDay = new Date(
+    end.getFullYear(),
+    end.getMonth(),
+    end.getDate()
+  );
+  const ms = endOfCycleDay.getTime() - startOfToday.getTime();
+  if (ms < 0) return 0;
+  return Math.floor(ms / (24 * 60 * 60 * 1000)) + 1;
+}
+
 /** Display label for a cycle. cycleStartDay=1 reduces to today's format
  *  exactly ("August 2026"). Otherwise spans two months: "5 Jul – 4 Aug 2026". */
 export function formatCycleLabel(key: CycleKey, cycleStartDay: number): string {
