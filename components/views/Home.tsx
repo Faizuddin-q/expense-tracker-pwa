@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Category, CategoryId, Expense } from '@/types/expense';
-import { builtInCategories, quickRelogItems } from '@/lib/constants';
+import { Category, CategoryId, Expense, Payment } from '@/types/expense';
+import { builtInCategories, PAYMENT_METHODS, quickRelogItems } from '@/lib/constants';
 import { useProfileStore } from '@/lib/profile-store';
 import { Money } from '@/components/Money';
 import { CategoryIcon } from '@/components/CategoryIcon';
@@ -24,6 +24,7 @@ interface HomeProps {
       note?: string;
       category: CategoryId;
       date: string;
+      paymentMethod?: Payment;
     }
   ) => void;
   displayed: Expense[];
@@ -56,11 +57,23 @@ export const Home = ({
   const name = useProfileStore((s) => s.name);
   const [editing, setEditing] = useState<Expense | null>(null);
   const [deleting, setDeleting] = useState<Expense | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<Payment>('upi');
   const displayedTotal = displayed.reduce(
     (s: number, e: Expense) => s + e.amount,
     0
   );
   const hasAmount = Number(amount.replace(/,/g, '')) > 0;
+
+  const handleAddExpense = (
+    category: CategoryId,
+    preset?: Partial<Expense>
+  ) => {
+    addExpense(category, {
+      ...preset,
+      paymentMethod: preset?.paymentMethod ?? paymentMethod,
+    });
+    setPaymentMethod('upi');
+  };
 
   return (
     <section className="mx-auto max-w-6xl">
@@ -135,7 +148,7 @@ export const Home = ({
                   <button
                     key={cat.id}
                     type="button"
-                    onClick={() => addExpense(cat.id)}
+                    onClick={() => handleAddExpense(cat.id)}
                     style={
                       {
                         '--cat-color': color,
@@ -166,6 +179,30 @@ export const Home = ({
             </div>
           </div>
 
+          {/* Payment method */}
+          <div className="mt-6">
+            <h2 className="label mb-2.5">Payment method</h2>
+            <div className="flex flex-wrap gap-1.5">
+              {PAYMENT_METHODS.map((method) => {
+                const active = paymentMethod === method.id;
+                return (
+                  <button
+                    key={method.id}
+                    type="button"
+                    onClick={() => setPaymentMethod(method.id)}
+                    className={`h-8 cursor-pointer rounded-lg border px-3 text-[12px] font-medium transition-colors ${
+                      active
+                        ? 'border-accent bg-accent text-accent-foreground'
+                        : 'border-accent/50 bg-card text-muted-foreground hover:border-accent hover:text-foreground'
+                    }`}
+                  >
+                    {method.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Quick re-log */}
           <div className="mt-6">
             <h2 className="label mb-2.5">Frequent</h2>
@@ -181,7 +218,7 @@ export const Home = ({
                     key={item.label}
                     type="button"
                     onClick={() =>
-                      addExpense(item.category, {
+                      handleAddExpense(item.category, {
                         amount: item.amount,
                         note: item.label,
                       })

@@ -31,7 +31,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { Category, CategoryId, Expense } from '@/types/expense';
-import { builtInCategories } from '@/lib/constants';
+import { builtInCategories, PAYMENT_LABELS } from '@/lib/constants';
 
 export const cn = (...inputs: ClassValue[]) => {
   return twMerge(clsx(inputs));
@@ -275,19 +275,30 @@ export const formatRelativeTime = (iso: string | null | undefined): string => {
   return `${Math.floor(months / 12)}y ago`;
 };
 
+const formatCsvDate = (iso: string): string => {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  const date = `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`;
+  const time = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  return `${date} ${time}`;
+};
+
 export const downloadCsv = (
   expenses: Expense[],
   customCategories: Category[] = []
 ) => {
+  const total = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   const rows = [
-    ['Date', 'Category', 'Amount', 'Note', 'Payment'],
+    ['Date', 'Category', 'Note', 'Payment', 'Amount'],
     ...expenses.map((e) => [
-      new Date(e.date).toISOString(),
+      formatCsvDate(e.date),
       categoryFor(e.category, customCategories).label,
-      String(e.amount),
       e.note ?? '',
-      e.paymentMethod ?? '',
+      e.paymentMethod ? (PAYMENT_LABELS[e.paymentMethod] ?? e.paymentMethod) : '',
+      String(e.amount),
     ]),
+    ['', '', '', 'Total', String(total)],
   ];
   const blob = new Blob(
     [

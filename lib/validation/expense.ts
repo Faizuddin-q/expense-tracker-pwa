@@ -36,4 +36,5 @@ export const adminExpenseSchema = z.object({
   category: z.string().min(1, 'Amount and category are required'),
   note: z.string().nullable().optional(),
   date: z.string().optional(),
+  paymentMethod: z.string().optional(),
 });

@@ -11,9 +11,10 @@ import {
   X,
 } from 'lucide-react';
 import { List, type RowComponentProps } from 'react-window';
-import { Category, Expense } from '@/types/expense';
+import { Category, Expense, Payment } from '@/types/expense';
 import { categoryFor, downloadCsv, getCategoryColor, getCategoryIcon } from '@/lib/utils';
 import { useProfileStore } from '@/lib/profile-store';
+import { PAYMENT_LABELS } from '@/lib/constants';
 import {
   groupByCycle,
   getCycleKey,
@@ -45,15 +46,6 @@ type SortDir = 'asc' | 'desc';
 type TimeRangeOption = 'all' | '1d' | '7d' | '14d' | '30d' | 'month' | 'custom';
 
 const EMPTY_CATEGORIES: Category[] = [];
-
-const PAYMENT_LABELS: Record<string, string> = {
-  upi: 'UPI',
-  card: 'Card',
-  cash: 'Cash',
-  netbanking: 'Net banking',
-  wallet: 'Wallet',
-  other: 'Other',
-};
 
 // Same order as the Overview (Dashboard) date-range filter, for consistency.
 const RANGES: { key: TimeRangeOption; label: string }[] = [
@@ -102,6 +94,7 @@ interface ExpensesProps {
       note?: string;
       category: string;
       date: string;
+      paymentMethod?: Payment;
     }
   ) => void;
   categories?: Category[];

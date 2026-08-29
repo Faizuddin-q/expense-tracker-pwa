@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { KeyRound, Plus, Trash2 } from 'lucide-react';
+import { Payment } from '@/types/expense';
 import { AdminUserDetail } from '@/lib/admin-types';
 import { builtInCategories } from '@/lib/constants';
 import { getCategoryIcon, moneyExact } from '@/lib/utils';
@@ -116,6 +117,7 @@ export const AdminUserPanel = ({
       note?: string;
       category: string;
       date: string;
+      paymentMethod?: Payment;
     }
   ) => {
     try {
