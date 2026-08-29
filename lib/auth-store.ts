@@ -53,8 +53,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       const res = await fetch('/api/auth/session');
       if (res.ok) {
-        const data = await res.json();
-        if (data.authenticated && typeof data.userId === 'string') {
+        const { data } = await res.json();
+        if (data?.authenticated && typeof data.userId === 'string') {
           set({ userId: data.userId });
         }
       }
@@ -86,20 +86,21 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     clearSessionState();
 
     try {
-      let data: { error?: string; passwordIsDefault?: boolean };
+      let data: { passwordIsDefault?: boolean };
       try {
         const response = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone: normalized, password }),
         });
-        data = await response.json();
+        const body = await response.json();
         if (!response.ok) {
-          const msg = data.error || 'Could not sign in';
+          const msg = body.error?.message || 'Could not sign in';
           set({ error: msg });
           toast.error('Could not sign in', msg);
           return;
         }
+        data = body.data;
       } catch {
         const msg =
           'Could not reach the server. Check your connection and try again.';
@@ -155,9 +156,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone: normalized, password }),
         });
-        const data = await response.json();
+        const body = await response.json();
         if (!response.ok) {
-          const msg = data.error || 'Could not create account';
+          const msg = body.error?.message || 'Could not create account';
           set({ error: msg });
           toast.error('Could not create account', msg);
           return;
@@ -188,7 +189,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       });
       const data = await response.json();
       if (!response.ok) {
-        toast.error('Could not update password', data.error || 'Try again');
+        toast.error('Could not update password', data.error?.message || 'Try again');
         return false;
       }
       toast.success('Password updated', 'Use it next time you sign in');

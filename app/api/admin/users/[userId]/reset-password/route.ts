@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
-import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { adminDb } from '@/lib/admin-db';
-import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
+import { clientIp } from '@/lib/rate-limit';
+import { ok, fail } from '@/lib/api/response';
+import { withAdminAuth } from '@/lib/api/handler';
 
-type Params = { params: Promise<{ userId: string }> };
+type Params = { userId: string };
 
 /**
  * POST /api/admin/users/:userId/reset-password — clears whatever password
@@ -14,34 +14,24 @@ type Params = { params: Promise<{ userId: string }> };
  * Note: this doesn't revoke a session that's already active on another
  * device — only the ability to start a new one with the old password.
  */
-export const POST = async (request: Request, { params }: Params) => {
-  if (!(await isAdminAuthenticated()))
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  // Tighter cap than the general admin-write budget — this is the most
-  // sensitive action here (grants sign-in access), worth extra friction.
-  const limited = rateLimitOrResponse(
-    `admin-reset-password:${clientIp(request)}`,
-    10,
-    15 * 60 * 1000
-  );
-  if (limited) return limited;
-
-  const { userId } = await params;
-
-  try {
+export const POST = withAdminAuth<Params>(
+  'admin:reset-password',
+  async ({ params }) => {
+    const { userId } = params;
     const db = await adminDb();
     const profile = await db.collection('profiles').findOne({ userId });
-    if (!profile)
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    if (!profile) return fail('User not found', 404);
 
     await db.collection('users').deleteOne({ userId });
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    console.error('[admin] password reset failed', error);
-    return NextResponse.json(
-      { error: 'Failed to reset password' },
-      { status: 503 }
-    );
+    return ok({ ok: true });
+  },
+  {
+    // Tighter cap than the general admin-write budget — this is the most
+    // sensitive action here (grants sign-in access), worth extra friction.
+    rateLimit: {
+      key: (req) => `admin-reset-password:${clientIp(req)}`,
+      limit: 10,
+      windowMs: 15 * 60 * 1000,
+    },
   }
-};
+);

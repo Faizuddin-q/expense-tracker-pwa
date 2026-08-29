@@ -12,8 +12,8 @@ export default function AdminPage() {
   const checkSession = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/session', { cache: 'no-store' });
-      const data = await res.json();
-      setAuthState(data.authenticated ? 'signed-in' : 'signed-out');
+      const { data } = await res.json();
+      setAuthState(data?.authenticated ? 'signed-in' : 'signed-out');
     } catch {
       setAuthState('signed-out');
     }
