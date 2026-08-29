@@ -204,3 +204,63 @@ if (userId && !profileHydrated) {
 **Verification**: `npx tsc --noEmit` clean (aside from the same 4 pre-existing unrelated `TS5097` errors noted in §2). Not yet manually clicked through in a running browser as of this entry — do that before considering this fully done if it matters for this change specifically.
 
 **If skeleton content is later asked to be page-specific again** (e.g. an Expenses-shaped skeleton instead of the generic one): `AppSkeleton`'s content section (inside the `<section className="mx-auto max-w-6xl">` block) is the only part that would need to branch per-route; the shell chrome around it is already shared and shouldn't need touching.
+
+### 6. Admin panel: show Added/Updated dates on expenses, filtered by each user's own billing cycle
+
+**Ask**: the admin panel's expense list should show when each expense was added/updated, and any month-style filter should respect each individual user's `cycleStartDay` setting, not a fixed calendar month.
+
+**Investigation before writing anything**: checked whether this already existed somewhere reusable rather than building it fresh. It did — the regular app's own `/expenses` page (`components/views/Expenses.tsx`) already had both: Added/Updated columns (`createdAt`/`updatedAt`, formatted via `formatDateTime`) and a cycle-aware Month filter built on `lib/cycle.ts`'s `getCycleKey`/`groupByCycle`/`formatCycleLabel`. The admin panel (`components/admin/AdminUserPanel.tsx`) was instead using a separate, simpler `ExpenseRow`-based list with just a search box — no dates, no cycle filter, duplicated logic that had drifted from the real page.
+
+**Decision**: reuse the existing `Expenses` component in the admin panel instead of adding the same feature twice. Offered two options — reuse vs. hand-add the same columns/filter to the admin's own simpler list — user picked reuse.
+
+**Why this needed a small `Expenses` API change, not just a drop-in**: `Expenses.tsx` read `cycleStartDay` and `hideAmounts` directly from `useProfileStore()` — the **signed-in user's own** store. Dropping it into the admin panel as-is would have filtered/hidden based on the logged-in **admin's** settings, not the settings of whichever account the admin is viewing. Fixed by adding two optional props, `cycleStartDay?: number` and `hideAmounts?: boolean`, that override the store read when provided (`cycleStartDayProp ?? ownCycleStartDay`), defaulting to the old store-read behavior when omitted — so the only existing caller, `app/(app)/expenses/page.tsx`, needed zero changes.
+
+**A rejected first draft, caught before it shipped**: the very first version conflated the two new props — `hideAmounts` was derived from *whether `cycleStartDayProp` was passed* (`cycleStartDayProp !== undefined ? false : ownHideAmounts`), instead of being its own explicit prop. That would have silently force-shown amounts for any account viewed via the admin panel, even ones with `hideAmounts: true` set. Caught immediately on review before running anything — fixed by giving `hideAmounts` its own independent prop instead of coupling it to an unrelated one. Lesson: two independent pieces of "whose settings am I showing" state need two independent props, even when they happen to be introduced in the same change — don't let one stand in for the other as a shortcut.
+
+**`AdminUserPanel.tsx` rewrite**: removed its own `query`/`editing`/`deleting`/`busyExpenseId` state, the `ExpenseRow`-based virtualized list, and the inline `ExpenseEditDialog`/`ExpenseDeleteDialog` usage — all of that now lives inside `Expenses` itself. `saveEdit`/`confirmDelete` were reshaped from "act on whatever's in `editing`/`deleting` state" to plain `updateExpense(id, patch)` / `removeExpense(id)` functions matching `Expenses`'s prop signature directly, since `Expenses` owns its own edit/delete dialog state internally.
+
+**API/type change needed**: `AdminUserProfile` (`lib/admin-types.ts`) didn't include `cycleStartDay` at all — added it. `GET /api/admin/users/:userId` (`app/api/admin/users/[userId]/route.ts`) didn't return it either — added the same clamped-to-[1,31]-defaulting-to-1 read pattern already used elsewhere in the codebase for this field.
+
+**Verified**: `tsc --noEmit` clean, `next build` clean, and a live curl check against `/api/admin/users/:userId` confirming `cycleStartDay` and per-expense `createdAt`/`updatedAt` are actually present in the response payload (not just present in the TS type).
+
+### 7. Bug found via this feature: admin Overview (Dashboard) was silently ignoring the viewed user's cycle start day
+
+**How it surfaced**: after §6 shipped, user reported the Month filter's range still didn't match a user's cycle start day. First investigation pass (Expenses list) found nothing wrong — that component's cycle wiring was correct per §6. User then clarified: it was the **Overview tab** (which renders `Dashboard`, a separate component from `Expenses`), not the expense list, and the specific symptom was the month label looking like a plain calendar month ("August 2026") instead of a cycle-span label ("15 Jul – 14 Aug 2026").
+
+**Root cause, found by reading `formatCycleLabel`**: it special-cases `cycleStartDay === 1` to render a plain "Month Year" label (since a cycle starting on the 1st IS a calendar month) and only renders the span-style label otherwise. A calendar-month-looking label for a non-1 cycle start day is only possible if the value reaching that function is actually `1` — meaning some caller wasn't passing the real value at all.
+
+**Actual cause**: unlike `Expenses.tsx` (fixed in §6), `Dashboard.tsx` already had a `cycleStartDay?: number` prop with a default of `1` — from before this session, already correctly designed for exactly this reuse case. But `AdminUserPanel.tsx`'s render of `<Dashboard>` in the "Overview" section simply never passed it:
+```tsx
+<Dashboard
+  expenses={expenses}
+  income={profile.monthlyIncome}
+  budget={profile.monthlyBudget}
+  categories={categories}
+  {/* cycleStartDay missing here — silently fell back to the default of 1 */}
+/>
+```
+So every viewed user's Overview used a plain calendar month regardless of their real setting, while the sibling Expenses list (fixed moments earlier in the same session) was already correct — explaining why the user could clearly say "expenses is correct, overview is not."
+
+**Fix**: one line — added `cycleStartDay={profile.cycleStartDay}` to that `<Dashboard>` call.
+
+**Lesson for future sessions**: when adding a "pass X through as a prop" fix to one component, grep for sibling components with the *same* prop-shape need before considering the feature done — `Dashboard` and `Expenses` are structurally parallel (both already had/needed `cycleStartDay`, `income`/`budget`-vs-`hideAmounts` split), and fixing one without checking the other left this one behind. A single `grep -n "cycleStartDay" components/admin/*.tsx` after §6 would have caught this immediately instead of needing a second bug report.
+
+**Confirmed no public-user impact** (user asked directly): both `cycleStartDay` and `hideAmounts` on `Expenses`/`Dashboard` are optional props that default to reading the signed-in user's own `useProfileStore()` when omitted — exactly the pre-existing behavior. The only public-facing caller (`app/(app)/expenses/page.tsx`) never passes these props, so nothing changed for regular users; the prop-passing only exists inside admin-only code (`AdminUserPanel.tsx`) that a regular user never loads. The API route change (`GET /api/admin/users/:userId` now returning `cycleStartDay`) is behind `withAdminAuth` and likewise never touched by regular-user flows.
+
+### 8. Admin panel's expanded user detail (Overview + Expenses) was not mobile-responsive, despite the same components being responsive for public users
+
+**Symptom**: on mobile, opening a user's row in the admin panel to see their Overview/Expenses looked broken/not-reflowing, while the exact same `Dashboard`/`Expenses` components render correctly on mobile for regular users on their own `/dashboard` and `/expenses` pages.
+
+**Root cause, found by reading the actual DOM structure, not just the component code**: the components themselves were never the problem — they're identical between the two contexts. The admin panel's users list is a `<table className="w-full min-w-[720px]">` inside an `overflow-x-auto` wrapper (`components/admin/AdminDashboard.tsx`), and the expanded row's detail content (`AdminUserPanel`, containing `Dashboard` + `Expenses`) was rendered **inside a `<td colSpan={7}>` of that same table** (`components/admin/AdminUserRow.tsx`). A `<table>`'s `min-width` applies to the whole table including every cell's contents — so the expanded panel was trapped inside a fixed 720px-wide horizontally-scrolling box on mobile, regardless of how responsive its own internal markup was. Same components, structurally incompatible container.
+
+**Options offered**: (a) keep the summary list as a table (normal/expected for a data grid) but move the expanded detail panel outside the table's scroll/min-width wrapper entirely, rendering it as a plain block below the table instead of inside a `<td>`; or (b) a bigger rework switching the whole summary list to a card layout on mobile / table on desktop. User picked (a) — the targeted structural fix, not the bigger visual rework.
+
+**Implementation**:
+- `components/admin/AdminUserRow.tsx` — stripped back down to *only* the summary `<tr>` (columns: chevron, user, expense count, total spent, income, budget, last active). No more embedded fetch/loading/detail state.
+- `components/admin/AdminUserDetailSection.tsx` (new) — owns the per-user detail fetch (moved here verbatim from the old `AdminUserRow`, including the `summaryFromDetail` reducer used to keep the summary row's numbers in sync after an edit) and renders `AdminUserPanel`. Meant to be rendered as a normal sibling block, not inside a table cell.
+- `components/admin/AdminDashboard.tsx` — the `<table>` now renders summary rows only (via `AdminUserRow`, which now only needs `user`/`expanded`/`onToggle` — no more `onUserDeleted`/`onUserChanged` threaded through it). Below the table (`</div>` closing the table's card, sibling `<div>` after it), `{expandedId && <AdminUserDetailSection key={expandedId} .../>}` renders the detail panel as its own full-width bordered block — completely outside the table's `overflow-x-auto`/`min-w-[720px]` constraint, free to reflow on mobile exactly like the public-facing pages do.
+- Removed a now-redundant `border-t border-border` from both `AdminUserPanel.tsx`'s outer wrapper and `AdminUserDetailSection.tsx`'s loading state — that border existed to visually separate the panel from the table row above it; now that both render inside their own `rounded-xl border border-border bg-card` container from `AdminDashboard`, the old inner border would have doubled up at the seam.
+
+**Verified**: `tsc --noEmit` clean, `next build` clean, confirmed `/admin` still returns 200. Not pixel-verified in an actual mobile viewport/device as part of this fix — the structural claim (component is no longer inside the table's min-width container) is confirmed by reading the resulting DOM structure, but a real visual check on a phone or responsive devtools is still worth doing before calling this fully closed.
+
+**If a similar "works standalone, breaks inside admin" bug shows up again**: check the DOM ancestry the shared component is being mounted into before assuming the component itself regressed — a table, a fixed-width flex item, or an `overflow-hidden` ancestor with its own sizing constraints can silently override a perfectly responsive component from the outside.
