@@ -1,21 +1,12 @@
-import { NextResponse } from 'next/server';
-import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { adminDb } from '@/lib/admin-db';
-import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
+import { clientIp } from '@/lib/rate-limit';
+import { ok } from '@/lib/api/response';
+import { withAdminAuth } from '@/lib/api/handler';
 
 /** GET /api/admin/users — every account, with lightweight totals for the table. */
-export const GET = async (request: Request) => {
-  if (!(await isAdminAuthenticated()))
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const limited = rateLimitOrResponse(
-    `admin-users-list:${clientIp(request)}`,
-    60,
-    60 * 1000
-  );
-  if (limited) return limited;
-
-  try {
+export const GET = withAdminAuth(
+  'admin:users:list',
+  async () => {
     const db = await adminDb();
     const [profiles, expenseAgg] = await Promise.all([
       db.collection('profiles').find({}).toArray(),
@@ -39,12 +30,8 @@ export const GET = async (request: Request) => {
         .toArray(),
     ]);
 
-    const aggByUser = new Map(
-      expenseAgg.map((a) => [a._id as string, a])
-    );
-    const profileByUser = new Map(
-      profiles.map((p) => [p.userId as string, p])
-    );
+    const aggByUser = new Map(expenseAgg.map((a) => [a._id as string, a]));
+    const profileByUser = new Map(profiles.map((p) => [p.userId as string, p]));
     const userIds = new Set<string>([
       ...profiles.map((p) => p.userId as string),
       ...expenseAgg.map((a) => a._id as string),
@@ -62,19 +49,14 @@ export const GET = async (request: Request) => {
           ? new Date(profile.updatedAt).toISOString()
           : null;
         const lastActivity =
-          [lastExpenseAt, profileUpdatedAt].filter(Boolean).sort().at(-1) ??
-          null;
+          [lastExpenseAt, profileUpdatedAt].filter(Boolean).sort().at(-1) ?? null;
 
         return {
           userId,
           monthlyIncome:
-            typeof profile?.monthlyIncome === 'number'
-              ? profile.monthlyIncome
-              : 0,
+            typeof profile?.monthlyIncome === 'number' ? profile.monthlyIncome : 0,
           monthlyBudget:
-            typeof profile?.monthlyBudget === 'number'
-              ? profile.monthlyBudget
-              : 0,
+            typeof profile?.monthlyBudget === 'number' ? profile.monthlyBudget : 0,
           hideAmounts: profile?.hideAmounts === true,
           onboardingComplete: profile?.onboardingComplete === true,
           expenseCount: agg?.expenseCount ?? 0,
@@ -101,11 +83,13 @@ export const GET = async (request: Request) => {
       ).length,
     };
 
-    return NextResponse.json({ users, summary });
-  } catch (error) {
-    console.error('[admin] users list failed', error);
-    const message =
-      error instanceof Error ? error.message : 'Failed to load users';
-    return NextResponse.json({ error: message }, { status: 503 });
+    return ok({ users, summary });
+  },
+  {
+    rateLimit: {
+      key: (req) => `admin-users-list:${clientIp(req)}`,
+      limit: 60,
+      windowMs: 60 * 1000,
+    },
   }
-};
+);

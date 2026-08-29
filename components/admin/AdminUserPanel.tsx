@@ -129,11 +129,11 @@ export const AdminUserPanel = ({
           hideAmounts: hideAmountsDraft,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to save');
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error?.message || 'Failed to save');
       onDetailChange({
         ...detail,
-        profile: { ...profile, ...data.profile },
+        profile: { ...profile, ...body.data.profile },
       });
       toast.success('Profile updated', `Saved for +91 ${userId}`);
     } catch (err) {
@@ -158,11 +158,11 @@ export const AdminUserPanel = ({
         headers: jsonHeaders,
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to add expense');
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error?.message || 'Failed to add expense');
       onDetailChange({
         ...detail,
-        expenses: [data.expense, ...expenses],
+        expenses: [body.data.expense, ...expenses],
       });
       setAdding(false);
       toast.success('Expense added', moneyExact(payload.amount));
@@ -191,8 +191,8 @@ export const AdminUserPanel = ({
           body: JSON.stringify(patch),
         }
       );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to save');
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error?.message || 'Failed to save');
       onDetailChange({
         ...detail,
         expenses: expenses.map((e) =>
@@ -221,8 +221,8 @@ export const AdminUserPanel = ({
         `/api/admin/users/${userId}/expenses/${deleting.id}`,
         { method: 'DELETE' }
       );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to delete');
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error?.message || 'Failed to delete');
       onDetailChange({
         ...detail,
         expenses: expenses.filter((e) => e.id !== deleting.id),
@@ -246,7 +246,7 @@ export const AdminUserPanel = ({
         method: 'POST',
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to reset password');
+      if (!res.ok) throw new Error(data.error?.message || 'Failed to reset password');
       toast.success(
         'Password reset',
         `+91 ${userId} can sign in with their phone number as the password`
@@ -267,7 +267,7 @@ export const AdminUserPanel = ({
         method: 'DELETE',
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to delete account');
+      if (!res.ok) throw new Error(data.error?.message || 'Failed to delete account');
       toast.success('Account deleted', `+91 ${userId} is gone for good`);
       onUserDeleted();
     } catch (err) {

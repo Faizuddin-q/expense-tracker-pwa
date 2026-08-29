@@ -29,7 +29,7 @@ export const AdminLogin = ({ onSuccess }: AdminLoginProps) => {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Invalid username or password');
+        setError(data.error?.message || 'Invalid username or password');
         return;
       }
       onSuccess();

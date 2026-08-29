@@ -9,6 +9,7 @@ const pkg = JSON.parse(
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: false,
   typescript: {
     ignoreBuildErrors: true,
   },

@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import {
   ADMIN_SESSION_COOKIE,
@@ -6,43 +5,40 @@ import {
   createAdminSessionToken,
   verifyAdminCredentials,
 } from '@/lib/admin-auth';
-import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
+import { clientIp } from '@/lib/rate-limit';
+import { ok, fail } from '@/lib/api/response';
+import { withPublic } from '@/lib/api/handler';
+import { adminLoginSchema } from '@/lib/validation/auth';
 
-export const POST = async (request: Request) => {
-  const body = await request.json().catch(() => null);
-  const username = typeof body?.username === 'string' ? body.username : '';
-  const password = typeof body?.password === 'string' ? body.password : '';
+export const POST = withPublic(
+  'admin:login',
+  async ({ request }) => {
+    const body = await request.json().catch(() => null);
+    const parsed = adminLoginSchema.safeParse(body);
+    if (!parsed.success)
+      return fail('Enter a username and password', 400);
 
-  if (!username || !password)
-    return NextResponse.json(
-      { error: 'Enter a username and password' },
-      { status: 400 }
-    );
+    const { username, password } = parsed.data;
 
-  // Same brute-force guard as the regular user login: at most 8 attempts
-  // per IP every 15 minutes — the admin password is a fixed value, so this
-  // is the one door worth throttling hard.
-  const limited = rateLimitOrResponse(
-    `admin-login:${clientIp(request)}`,
-    8,
-    15 * 60 * 1000
-  );
-  if (limited) return limited;
+    if (!verifyAdminCredentials(username, password))
+      return fail('Invalid username or password', 401);
 
-  if (!verifyAdminCredentials(username, password))
-    return NextResponse.json(
-      { error: 'Invalid username or password' },
-      { status: 401 }
-    );
+    const store = await cookies();
+    store.set(ADMIN_SESSION_COOKIE, createAdminSessionToken(), {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
+    });
 
-  const store = await cookies();
-  store.set(ADMIN_SESSION_COOKIE, createAdminSessionToken(), {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
-  });
-
-  return NextResponse.json({ ok: true });
-};
+    return ok({ ok: true });
+  },
+  {
+    rateLimit: {
+      key: (req) => `admin-login:${clientIp(req)}`,
+      limit: 8,
+      windowMs: 15 * 60 * 1000,
+    },
+  }
+);

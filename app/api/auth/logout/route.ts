@@ -1,19 +1,21 @@
-import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { SESSION_COOKIE } from '@/lib/auth';
-import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
+import { clientIp } from '@/lib/rate-limit';
+import { ok } from '@/lib/api/response';
+import { withPublic } from '@/lib/api/handler';
 
-export const POST = async (request: Request) => {
-  // Logout has no secret to guess and no destructive effect, but every
-  // route gets a limit — this one's just generous since it's harmless.
-  const limited = rateLimitOrResponse(
-    `logout:${clientIp(request)}`,
-    20,
-    60 * 1000
-  );
-  if (limited) return limited;
-
-  const store = await cookies();
-  store.delete(SESSION_COOKIE);
-  return NextResponse.json({ ok: true });
-};
+export const POST = withPublic(
+  'auth:logout',
+  async () => {
+    const store = await cookies();
+    store.delete(SESSION_COOKIE);
+    return ok({ ok: true });
+  },
+  {
+    rateLimit: {
+      key: (req) => `logout:${clientIp(req)}`,
+      limit: 20,
+      windowMs: 60 * 1000,
+    },
+  }
+);

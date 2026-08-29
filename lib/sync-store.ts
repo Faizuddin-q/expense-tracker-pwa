@@ -25,6 +25,92 @@ type SyncSet = (
 ) => void;
 type SyncGet = () => SyncStore;
 
+type FetchJsonResult<T> =
+  | { ok: true; status: number; data: T }
+  | { ok: false; status: number; message: string };
+
+async function fetchJson<T>(
+  input: string,
+  init?: RequestInit
+): Promise<FetchJsonResult<T>> {
+  const response = await fetch(input, init);
+  const body = await response.json();
+  if (!response.ok) {
+    return {
+      ok: false,
+      status: response.status,
+      message: body?.error?.message ?? 'Request failed',
+    };
+  }
+  return { ok: true, status: response.status, data: body.data as T };
+}
+
+type ProfileResponse = {
+  monthlyIncome: number | null;
+  monthlyBudget: number | null;
+  hideAmounts: boolean | null;
+  onboardingComplete: boolean;
+  categories: Category[];
+  name: string | null;
+  theme: 'dark' | 'light' | null;
+  cycleStartDay: number | null;
+};
+
+const applyProfileResponse = (
+  profileData: ProfileResponse,
+  cloudExpenseCount: number
+) => {
+  const profile = useProfileStore.getState();
+
+  const cloudIncome =
+    typeof profileData.monthlyIncome === 'number' && profileData.monthlyIncome > 0
+      ? profileData.monthlyIncome
+      : 0;
+  const onboardingDone = profileData.onboardingComplete === true;
+
+  if (cloudIncome > 0) {
+    profile.setIncome(cloudIncome);
+    profile.setIncomeDraft(String(cloudIncome));
+    profile.setNeedsIncome(false);
+  } else if (cloudExpenseCount > 0 || onboardingDone) {
+    profile.setIncome(0);
+    profile.setIncomeDraft('');
+    profile.setNeedsIncome(false);
+  } else {
+    profile.setIncome(0);
+    profile.setIncomeDraft('');
+    profile.setNeedsIncome(true);
+  }
+
+  if (typeof profileData.monthlyBudget === 'number' && profileData.monthlyBudget > 0) {
+    profile.setBudget(profileData.monthlyBudget);
+    profile.setBudgetDraft(String(profileData.monthlyBudget));
+  } else {
+    profile.setBudget(0);
+    profile.setBudgetDraft('');
+  }
+
+  if (typeof profileData.hideAmounts === 'boolean') {
+    profile.setHideAmountsState(profileData.hideAmounts);
+  }
+
+  if (typeof profileData.name === 'string' && profileData.name) {
+    profile.setNameState(profileData.name);
+  }
+
+  if (profileData.theme === 'dark' || profileData.theme === 'light') {
+    useThemeStore.getState().setThemeState(profileData.theme);
+  }
+
+  if (
+    typeof profileData.cycleStartDay === 'number' &&
+    profileData.cycleStartDay >= 1 &&
+    profileData.cycleStartDay <= 31
+  ) {
+    profile.setCycleStartDayState(profileData.cycleStartDay);
+  }
+};
+
 async function runSync(
   options: SyncOptions,
   set: SyncSet,
@@ -48,70 +134,103 @@ async function runSync(
   set({ syncing: true });
   useAuthStore.getState().setError('');
   try {
-    const payload: Record<string, unknown> = {
-      userId: id,
-      deletedIds,
-    };
-    if (!options.pullOnly) {
-      payload.expenses = local;
-    }
-    if (categories !== null) {
-      payload.categories = categories.map(
-        ({ id: catId, label, tone, iconName, custom }) => ({
-          id: catId,
-          label,
-          tone,
-          iconName,
-          custom,
+    const jsonHeaders = { 'Content-Type': 'application/json' };
+
+    // Writes first (order doesn't matter between these three — independent
+    // resources), then pull fresh expenses + profile once writes settle.
+    const writes: Array<Promise<FetchJsonResult<unknown>>> = [];
+
+    if (!options.pullOnly && local.length) {
+      writes.push(
+        fetchJson('/api/expenses', {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify({ expenses: local }),
         })
       );
     }
-    if (Array.isArray(deletedCategoryIds) && deletedCategoryIds.length > 0) {
-      payload.deletedCategoryIds = deletedCategoryIds;
+
+    if (deletedIds.length > 0) {
+      writes.push(
+        fetchJson('/api/expenses', {
+          method: 'DELETE',
+          headers: jsonHeaders,
+          body: JSON.stringify({ ids: deletedIds }),
+        })
+      );
     }
-    if (typeof income === 'number' && income > 0) {
-      payload.monthlyIncome = income;
+
+    if (categories !== null) {
+      writes.push(
+        fetchJson('/api/categories', {
+          method: 'PUT',
+          headers: jsonHeaders,
+          body: JSON.stringify({
+            categories: categories.map(
+              ({ id: catId, label, tone, iconName, custom }) => ({
+                id: catId,
+                label,
+                tone,
+                iconName,
+                custom,
+              })
+            ),
+            deletedCategoryIds:
+              Array.isArray(deletedCategoryIds) && deletedCategoryIds.length > 0
+                ? deletedCategoryIds
+                : undefined,
+          }),
+        })
+      );
     }
-    if (typeof budget === 'number' && budget > 0) {
-      payload.monthlyBudget = budget;
-    }
-    if (typeof hideAmounts === 'boolean') {
-      payload.hideAmounts = hideAmounts;
-    }
-    if (typeof onboardingComplete === 'boolean') {
-      payload.onboardingComplete = onboardingComplete;
-    }
-    if (typeof name === 'string' && name.trim()) {
-      payload.name = name.trim();
-    }
-    if (theme === 'dark' || theme === 'light') {
-      payload.theme = theme;
-    }
+
+    const profilePatch: Record<string, unknown> = {};
+    if (typeof income === 'number' && income > 0) profilePatch.monthlyIncome = income;
+    if (typeof budget === 'number' && budget > 0) profilePatch.monthlyBudget = budget;
+    if (typeof hideAmounts === 'boolean') profilePatch.hideAmounts = hideAmounts;
+    if (typeof onboardingComplete === 'boolean')
+      profilePatch.onboardingComplete = onboardingComplete;
+    if (typeof name === 'string' && name.trim()) profilePatch.name = name.trim();
+    if (theme === 'dark' || theme === 'light') profilePatch.theme = theme;
     if (
       typeof cycleStartDay === 'number' &&
       Number.isInteger(cycleStartDay) &&
       cycleStartDay >= 1 &&
       cycleStartDay <= 31
-    ) {
-      payload.cycleStartDay = cycleStartDay;
+    )
+      profilePatch.cycleStartDay = cycleStartDay;
+
+    if (Object.keys(profilePatch).length > 0) {
+      writes.push(
+        fetchJson('/api/profile', {
+          method: 'PATCH',
+          headers: jsonHeaders,
+          body: JSON.stringify(profilePatch),
+        })
+      );
     }
 
-    const response = await fetch('/api/expenses/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      if (response.status === 401 || response.status === 403) {
-        set({ profileHydrated: false });
-        const msg = 'Your session expired. Please sign in again.';
-        useAuthStore.getState().handleSessionExpired(msg);
-        toast.error('Signed out', msg);
-        return false;
-      }
-      throw new Error(data.error);
+    const writeResults = await Promise.all(writes);
+    const authFailure = writeResults.find(
+      (r) => !r.ok && (r.status === 401 || r.status === 403)
+    );
+    if (authFailure) {
+      set({ profileHydrated: false });
+      const msg = 'Your session expired. Please sign in again.';
+      useAuthStore.getState().handleSessionExpired(msg);
+      toast.error('Signed out', msg);
+      return false;
     }
+    const firstFailure = writeResults.find((r) => !r.ok);
+    if (firstFailure && !firstFailure.ok) throw new Error(firstFailure.message);
+
+    const [expensesResult, profileResult] = await Promise.all([
+      fetchJson<{ expenses: Expense[] }>('/api/expenses'),
+      fetchJson<ProfileResponse>('/api/profile'),
+    ]);
+
+    if (!expensesResult.ok) throw new Error(expensesResult.message);
+    if (!profileResult.ok) throw new Error(profileResult.message);
 
     const deletedIdSet = new Set(deletedIds);
 
@@ -123,80 +242,24 @@ async function runSync(
 
     const { hydrate } = useExpenses.getState();
 
-    if (Array.isArray(data.expenses)) {
-      const activeExpenses: Expense[] = [];
-      for (const e of data.expenses as Expense[]) {
-        const eid = e.localId ?? e.id;
-        if (deletedIdSet.has(eid) || e.deletedAt) continue;
-        activeExpenses.push({
-          ...e,
-          id: eid,
-          amount: Number(e.amount) || 0,
-        });
-      }
-      hydrate(activeExpenses);
+    const cloudExpenses = expensesResult.data.expenses;
+    const activeExpenses: Expense[] = [];
+    for (const e of cloudExpenses) {
+      const eid = e.localId ?? e.id;
+      if (deletedIdSet.has(eid) || e.deletedAt) continue;
+      activeExpenses.push({
+        ...e,
+        id: eid,
+        amount: Number(e.amount) || 0,
+      });
     }
+    hydrate(activeExpenses);
 
-    const profile = useProfileStore.getState();
+    applyProfileResponse(profileResult.data, cloudExpenses.length);
 
-    const cloudIncome =
-      typeof data.profile?.monthlyIncome === 'number' &&
-      data.profile.monthlyIncome > 0
-        ? data.profile.monthlyIncome
-        : 0;
-    const cloudExpenseCount = Array.isArray(data.expenses)
-      ? data.expenses.length
-      : 0;
-    const onboardingDone = data.profile?.onboardingComplete === true;
-
-    if (cloudIncome > 0) {
-      profile.setIncome(cloudIncome);
-      profile.setIncomeDraft(String(cloudIncome));
-      profile.setNeedsIncome(false);
-    } else if (cloudExpenseCount > 0 || onboardingDone) {
-      profile.setIncome(0);
-      profile.setIncomeDraft('');
-      profile.setNeedsIncome(false);
-    } else {
-      profile.setIncome(0);
-      profile.setIncomeDraft('');
-      profile.setNeedsIncome(true);
-    }
-
-    if (
-      typeof data.profile?.monthlyBudget === 'number' &&
-      data.profile.monthlyBudget > 0
-    ) {
-      profile.setBudget(data.profile.monthlyBudget);
-      profile.setBudgetDraft(String(data.profile.monthlyBudget));
-    } else {
-      profile.setBudget(0);
-      profile.setBudgetDraft('');
-    }
-
-    if (typeof data.profile?.hideAmounts === 'boolean') {
-      profile.setHideAmountsState(data.profile.hideAmounts);
-    }
-
-    if (typeof data.profile?.name === 'string' && data.profile.name) {
-      profile.setNameState(data.profile.name);
-    }
-
-    if (data.profile?.theme === 'dark' || data.profile?.theme === 'light') {
-      useThemeStore.getState().setThemeState(data.profile.theme);
-    }
-
-    if (
-      typeof data.profile?.cycleStartDay === 'number' &&
-      data.profile.cycleStartDay >= 1 &&
-      data.profile.cycleStartDay <= 31
-    ) {
-      profile.setCycleStartDayState(data.profile.cycleStartDay);
-    }
-
-    if (Array.isArray(data.profile?.categories)) {
-      const cloudCategories: Category[] = data.profile.categories.map(
-        (c: Category) => ({ ...c, Icon: getCategoryIcon(c) })
+    if (Array.isArray(profileResult.data.categories) && profileResult.data.categories.length) {
+      const cloudCategories: Category[] = profileResult.data.categories.map(
+        (c) => ({ ...c, Icon: getCategoryIcon(c) })
       );
       await useCategoryStore.getState().setCategories(cloudCategories);
     }

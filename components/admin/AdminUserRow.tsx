@@ -43,9 +43,9 @@ export const AdminUserRow = ({
     setLoading(true);
     try {
       const res = await fetch(`/api/admin/users/${user.userId}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to load user');
-      setDetail(data);
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error?.message || 'Failed to load user');
+      setDetail(body.data);
     } catch (err) {
       toast.error(
         'Could not load account',

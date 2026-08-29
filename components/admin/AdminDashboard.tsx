@@ -62,10 +62,10 @@ export const AdminDashboard = ({ onSignedOut }: AdminDashboardProps) => {
     setError('');
     try {
       const res = await fetch('/api/admin/users', { cache: 'no-store' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to load users');
-      setUsers(data.users);
-      setSummary(data.summary);
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error?.message || 'Failed to load users');
+      setUsers(body.data.users);
+      setSummary(body.data.summary);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to load users';
       setError(msg);

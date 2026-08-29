@@ -1,44 +1,28 @@
 import { randomUUID } from 'crypto';
-import { NextResponse } from 'next/server';
-import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { adminDb } from '@/lib/admin-db';
-import { clientIp, rateLimitOrResponse } from '@/lib/rate-limit';
+import { clientIp } from '@/lib/rate-limit';
+import { ok, fail } from '@/lib/api/response';
+import { withAdminAuth } from '@/lib/api/handler';
+import { adminExpenseSchema } from '@/lib/validation/expense';
 
-type Params = { params: Promise<{ userId: string }> };
+type Params = { userId: string };
 
 /** POST /api/admin/users/:userId/expenses — log a new expense on the user's behalf. */
-export const POST = async (request: Request, { params }: Params) => {
-  if (!(await isAdminAuthenticated()))
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export const POST = withAdminAuth<Params>(
+  'admin:expenses:create',
+  async ({ request, params }) => {
+    const { userId } = params;
+    const body = await request.json().catch(() => null);
+    const parsed = adminExpenseSchema.safeParse(body);
+    if (!parsed.success)
+      return fail('Amount and category are required', 400);
 
-  const limited = rateLimitOrResponse(
-    `admin-expense-write:${clientIp(request)}`,
-    30,
-    60 * 1000
-  );
-  if (limited) return limited;
+    const { amount, category } = parsed.data;
+    const now = new Date();
+    const date = parsed.data.date || now.toISOString();
+    const note = parsed.data.note?.trim() ? parsed.data.note.trim() : null;
+    const localId = randomUUID();
 
-  const { userId } = await params;
-  const body = await request.json().catch(() => null);
-  const amount = Number(body?.amount);
-  const category = typeof body?.category === 'string' ? body.category : '';
-
-  if (!Number.isFinite(amount) || amount <= 0 || !category)
-    return NextResponse.json(
-      { error: 'Amount and category are required' },
-      { status: 400 }
-    );
-
-  const now = new Date();
-  const date =
-    typeof body?.date === 'string' && body.date ? body.date : now.toISOString();
-  const note =
-    typeof body?.note === 'string' && body.note.trim()
-      ? body.note.trim()
-      : null;
-  const localId = randomUUID();
-
-  try {
     const db = await adminDb();
     await db.collection('expenses').insertOne({
       userId,
@@ -51,8 +35,7 @@ export const POST = async (request: Request, { params }: Params) => {
       updatedAt: now,
     });
 
-    return NextResponse.json({
-      ok: true,
+    return ok({
       expense: {
         id: localId,
         amount,
@@ -63,11 +46,12 @@ export const POST = async (request: Request, { params }: Params) => {
         updatedAt: now.toISOString(),
       },
     });
-  } catch (error) {
-    console.error('[admin] add expense failed', error);
-    return NextResponse.json(
-      { error: 'Failed to add expense' },
-      { status: 503 }
-    );
+  },
+  {
+    rateLimit: {
+      key: (req) => `admin-expense-write:${clientIp(req)}`,
+      limit: 30,
+      windowMs: 60 * 1000,
+    },
   }
-};
+);
