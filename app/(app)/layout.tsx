@@ -13,6 +13,7 @@ import { NavButton } from '@/components/NavButton';
 import { CategoryDialog } from '@/components/CategoryDialog';
 import { IncomeSetup } from '@/components/IncomeSetup';
 import { HomeSkeleton } from '@/components/HomeSkeleton';
+import { AppSkeleton } from '@/components/AppSkeleton';
 import { PwaProvider } from '@/components/PwaProvider';
 import { navItems } from '@/lib/constants';
 import { formatIndianMobileDisplay } from '@/lib/utils';
@@ -64,7 +65,11 @@ function AppShell({ children }: { children: React.ReactNode }) {
   }, [initializing, userId, router]);
 
   if (userId && !profileHydrated) {
-    return <HomeSkeleton title={pageTitle} />;
+    return pathname === '/' ? (
+      <HomeSkeleton title={pageTitle} />
+    ) : (
+      <AppSkeleton title={pageTitle} pathname={pathname} />
+    );
   }
 
   if (initializing) {

@@ -168,3 +168,39 @@ A single `useEffect` with an empty dependency array, called exactly once in the 
 **Current state of `next.config.mjs`** after this change — `reactStrictMode: false` sits alongside pre-existing `typescript: { ignoreBuildErrors: true }` (already in the codebase before today, unrelated to this session — worth knowing this project already runs production builds without failing on type errors, so `tsc --noEmit` run manually, as done throughout today's session, is the real type-safety gate, not `next build`).
 
 **If effect-related bugs show up later** (duplicate side effects, state mutated twice, subscriptions/listeners leaking, double network calls reappearing somewhere new) that Strict Mode would normally have caught in dev: temporarily flip `reactStrictMode` back to `true` (or delete the line) as a first diagnostic step to see if the symptom is a double-invoke sensitivity, before assuming it's something else.
+
+### 5. `HomeSkeleton` was showing on every tab, not just Home — split into a shared `AppSkeleton`
+
+**Symptom**: user noticed the loading skeleton appeared not just on `/`, but also when switching to `/expenses`, `/settings`, etc., and on hard refresh of any of those routes.
+
+**Investigation**: traced the gate in `app/(app)/layout.tsx`:
+```tsx
+if (userId && !profileHydrated) {
+  return <HomeSkeleton title={pageTitle} />;
+}
+```
+This lives in the **shared layout** for the `(app)` route group, which wraps every route (`/`, `/dashboard`, `/summary`, `/expenses`, `/settings` — per the `PAGE_TITLES` map in the same file). So `HomeSkeleton` was never home-specific in behavior — it was the app-shell-level loading state, just visually shaped like the Home page's content (category grid, "Frequent" chips, transaction list) regardless of which route triggered it.
+
+**Confirmed via code, not just guess**: grepped every place `profileHydrated` is set to `false` (`lib/sync-store.ts:218` on a 401/403 during a sync write, and `:347` at the start of every `bootstrapUser` call). `bootstrapUser` early-returns if already hydrated for the same `userId` (`sync-store.ts:338`), so a plain client-side tab click does **not** re-trigger it — only a hard refresh (full state reset) or genuine session expiry does. This matched what the user was actually seeing (hard refresh on any tab), not a code bug in the hydration gating itself.
+
+**Decision**: user chose to keep `HomeSkeleton`'s existing UI completely untouched for `/`, and add a **new, separate, generic skeleton** for every other route rather than either (a) restricting the skeleton to `/` only and leaving other routes with no loading state, or (b) removing the blocking gate entirely. Both alternatives were offered and neither was chosen — the ask was specifically "keep Home's skeleton as-is, add a common one for the rest."
+
+**Implementation** — new `components/AppSkeleton.tsx`:
+- Copies `HomeSkeleton`'s exact shell chrome verbatim (sidebar with `navItems`, header with title + theme icon, mobile tab bar) so the loading state visually matches the real shell precisely — no shell "jump" when real content swaps in.
+- Replaces `HomeSkeleton`'s Home-specific content bones (income card, category grid, frequent chips, transaction list) with **neutral, generic placeholders**: one card with a few text-line bones, a 6-tile stat-card grid, and a 5-row list block — reusable-looking for Dashboard, Summary, Expenses, or Settings without pretending to know that page's actual layout.
+- Takes `pathname` (not `title`) to compute which nav item is "active," matching against `navItems[].href` — **not** against `title`, because `navItems[0].label` is `'Quick add'` while `PAGE_TITLES['/']` is `'Add expense'`; matching by title string would have silently produced no active-tab highlight. Caught by reading `lib/constants.ts`'s actual `navItems` shape before wiring this up, rather than assuming the two label sets lined up.
+
+**Wiring** — `app/(app)/layout.tsx`:
+```tsx
+if (userId && !profileHydrated) {
+  return pathname === '/' ? (
+    <HomeSkeleton title={pageTitle} />
+  ) : (
+    <AppSkeleton title={pageTitle} pathname={pathname} />
+  );
+}
+```
+
+**Verification**: `npx tsc --noEmit` clean (aside from the same 4 pre-existing unrelated `TS5097` errors noted in §2). Not yet manually clicked through in a running browser as of this entry — do that before considering this fully done if it matters for this change specifically.
+
+**If skeleton content is later asked to be page-specific again** (e.g. an Expenses-shaped skeleton instead of the generic one): `AppSkeleton`'s content section (inside the `<section className="mx-auto max-w-6xl">` block) is the only part that would need to branch per-route; the shell chrome around it is already shared and shouldn't need touching.
