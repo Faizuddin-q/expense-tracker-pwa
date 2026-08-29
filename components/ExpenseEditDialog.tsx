@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
-import { Category, Expense } from '@/types/expense';
+import { Category, Expense, Payment } from '@/types/expense';
 import {
   formatIndianNumber,
   getCategoryColor,
   getCategoryIcon,
   parseRawNumber,
 } from '@/lib/utils';
+import { PAYMENT_METHODS } from '@/lib/constants';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { useFocusTrap } from '@/lib/useFocusTrap';
 import { useDialogExit } from '@/lib/useDialogExit';
@@ -21,6 +22,7 @@ interface ExpenseEditDialogProps {
     note?: string;
     category: string;
     date: string;
+    paymentMethod?: Payment;
   }) => void;
   onClose: () => void;
 }
@@ -36,6 +38,9 @@ export const ExpenseEditDialog = ({
   );
   const [noteDraft, setNoteDraft] = useState(expense.note ?? '');
   const [category, setCategory] = useState(expense.category);
+  const [paymentMethod, setPaymentMethod] = useState<Payment | null>(
+    expense.paymentMethod ?? null
+  );
   const [dateDraft, setDateDraft] = useState(() => {
     const d = new Date(expense.date);
     if (isNaN(d.getTime())) return '';
@@ -67,6 +72,7 @@ export const ExpenseEditDialog = ({
       date: dateDraft
         ? new Date(`${dateDraft}T12:00:00`).toISOString()
         : expense.date,
+      paymentMethod: paymentMethod ?? undefined,
     });
   };
 
@@ -182,6 +188,33 @@ export const ExpenseEditDialog = ({
                     <span className="truncate text-[12px] font-medium text-foreground">
                       {c.label}
                     </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <p className="label mb-1.5">Payment method</p>
+            <div className="flex flex-wrap gap-1.5">
+              {PAYMENT_METHODS.map((method) => {
+                const active = paymentMethod === method.id;
+                return (
+                  <button
+                    key={method.id}
+                    type="button"
+                    onClick={() =>
+                      setPaymentMethod((prev) =>
+                        prev === method.id ? null : method.id
+                      )
+                    }
+                    className={`h-8 cursor-pointer rounded-lg border px-3 text-[12px] font-medium transition-colors ${
+                      active
+                        ? 'border-accent bg-accent text-accent-foreground'
+                        : 'border-accent/50 bg-background text-muted-foreground hover:border-accent hover:text-foreground'
+                    }`}
+                  >
+                    {method.label}
                   </button>
                 );
               })}

@@ -10,7 +10,7 @@ import {
   ShoppingBag,
   Utensils,
 } from 'lucide-react';
-import { Category } from '@/types/expense';
+import { Category, Payment } from '@/types/expense';
 
 export const builtInCategories: Category[] = [
   { id: 'food', label: 'Food', tone: 'mint', iconName: 'utensils', Icon: Utensils },
@@ -39,6 +39,20 @@ export const builtInCategories: Category[] = [
   },
   { id: 'other', label: 'Other', tone: 'gray', iconName: 'plus', Icon: Plus },
 ];
+
+/** The 4 payment methods surfaced in the UI (picker, list, CSV export). The
+ *  `Payment` type also allows 'wallet' | 'other' for legacy/future data, but
+ *  those aren't offered as picker choices. */
+export const PAYMENT_METHODS: { id: Payment; label: string }[] = [
+  { id: 'upi', label: 'UPI' },
+  { id: 'card', label: 'Card' },
+  { id: 'cash', label: 'Cash' },
+  { id: 'netbanking', label: 'Net banking' },
+];
+
+export const PAYMENT_LABELS: Record<string, string> = Object.fromEntries(
+  PAYMENT_METHODS.map((p) => [p.id, p.label])
+);
 
 export const navItems = [
   { id: 'home', label: 'Quick add', shortLabel: 'Add', icon: Plus, href: '/' },

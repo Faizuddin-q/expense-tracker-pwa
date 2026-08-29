@@ -16,7 +16,7 @@ export const PATCH = withAdminAuth<Params>(
     if (!parsed.success)
       return fail('Amount and category are required', 400);
 
-    const { amount, category, date } = parsed.data;
+    const { amount, category, date, paymentMethod } = parsed.data;
     const update: Record<string, unknown> = {
       amount,
       category,
@@ -24,6 +24,7 @@ export const PATCH = withAdminAuth<Params>(
       note: parsed.data.note?.trim() ? parsed.data.note.trim() : null,
     };
     if (date) update.date = date;
+    if (paymentMethod) update.paymentMethod = paymentMethod;
 
     const db = await adminDb();
     const result = await db.collection('expenses').updateOne(

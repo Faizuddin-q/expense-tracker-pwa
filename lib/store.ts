@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { create } from 'zustand';
-import { Category, CategoryId, Expense } from '@/types/expense';
+import { Category, CategoryId, Expense, Payment } from '@/types/expense';
 import { builtInCategories } from '@/lib/constants';
 import { parseRawNumber, formatIndianNumber, money } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth-store';
@@ -31,7 +31,13 @@ interface Store {
   addExpense: (category: CategoryId, preset?: Partial<Expense>) => void;
   updateExpense: (
     id: string,
-    patch: { amount: number; note?: string; category: CategoryId; date: string }
+    patch: {
+      amount: number;
+      note?: string;
+      category: CategoryId;
+      date: string;
+      paymentMethod?: Payment;
+    }
   ) => void;
   handleDeleteExpense: (id: string) => void;
 }
@@ -112,6 +118,7 @@ export const useExpenses = create<Store>((setState, getState) => ({
       note: cleanedNote,
       category: patch.category,
       date: patch.date,
+      paymentMethod: patch.paymentMethod,
       updatedAt: now,
       deletedAt: null,
     };
