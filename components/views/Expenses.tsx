@@ -105,6 +105,12 @@ interface ExpensesProps {
     }
   ) => void;
   categories?: Category[];
+  /** Whose cycle to filter by, and whether to hide amounts. Both default to
+   *  the signed-in user's own settings (from useProfileStore) — pass
+   *  explicitly when showing someone else's expenses, e.g. the admin panel
+   *  viewing a specific user's account. */
+  cycleStartDay?: number;
+  hideAmounts?: boolean;
 }
 
 const SortHeader = ({
@@ -234,6 +240,8 @@ export const Expenses = ({
   remove,
   updateExpense,
   categories = EMPTY_CATEGORIES,
+  cycleStartDay: cycleStartDayProp,
+  hideAmounts: hideAmountsProp,
 }: ExpensesProps) => {
   const [query, setQuery] = useState('');
   const [timeRange, setTimeRange] = useState<TimeRangeOption>('month');
@@ -244,8 +252,10 @@ export const Expenses = ({
   const [deleting, setDeleting] = useState<Expense | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
-  const hideAmounts = useProfileStore((s) => s.hideAmounts);
-  const cycleStartDay = useProfileStore((s) => s.cycleStartDay);
+  const ownHideAmounts = useProfileStore((s) => s.hideAmounts);
+  const ownCycleStartDay = useProfileStore((s) => s.cycleStartDay);
+  const hideAmounts = hideAmountsProp ?? ownHideAmounts;
+  const cycleStartDay = cycleStartDayProp ?? ownCycleStartDay;
 
   const toggleSort = (key: SortKey) => {
     if (sortBy === key) {

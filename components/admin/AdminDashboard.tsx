@@ -19,6 +19,7 @@ import { useThemeStore } from '@/lib/theme-store';
 import { Brand } from '@/components/Brand';
 import { toast } from '@/components/ToastHost';
 import { AdminUserRow } from '@/components/admin/AdminUserRow';
+import { AdminUserDetailSection } from '@/components/admin/AdminUserDetailSection';
 
 interface AdminDashboardProps {
   onSignedOut: () => void;
@@ -192,7 +193,10 @@ export const AdminDashboard = ({ onSignedOut }: AdminDashboardProps) => {
           </span>
         </div>
 
-        {/* Table */}
+        {/* Table — summary rows only. The expanded account panel renders as
+            a full-width block below (see AdminUserDetailSection), not inside
+            a table cell, so it can reflow correctly on mobile instead of
+            being trapped in this table's horizontal-scroll min-width. */}
         <div className="mt-3 overflow-hidden rounded-xl border border-border bg-card">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-left">
@@ -233,8 +237,6 @@ export const AdminDashboard = ({ onSignedOut }: AdminDashboardProps) => {
                           prev === user.userId ? null : user.userId
                         )
                       }
-                      onUserDeleted={handleUserDeleted}
-                      onUserChanged={handleUserChanged}
                     />
                   ))
                 ) : (
@@ -248,6 +250,17 @@ export const AdminDashboard = ({ onSignedOut }: AdminDashboardProps) => {
             </table>
           </div>
         </div>
+
+        {expandedId && (
+          <div className="mt-3 overflow-hidden rounded-xl border border-border bg-card">
+            <AdminUserDetailSection
+              key={expandedId}
+              userId={expandedId}
+              onUserDeleted={() => handleUserDeleted(expandedId)}
+              onUserChanged={handleUserChanged}
+            />
+          </div>
+        )}
       </main>
     </div>
   );

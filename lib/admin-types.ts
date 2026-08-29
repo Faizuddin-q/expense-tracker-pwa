@@ -24,6 +24,7 @@ export interface AdminUserProfile {
   hideAmounts: boolean;
   onboardingComplete: boolean;
   categories: Category[];
+  cycleStartDay: number;
   updatedAt: string | null;
 }
 

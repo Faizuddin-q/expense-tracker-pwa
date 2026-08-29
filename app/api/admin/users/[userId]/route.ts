@@ -37,6 +37,12 @@ export const GET = withAdminAuth<Params>(
         hideAmounts: profile?.hideAmounts === true,
         onboardingComplete: profile?.onboardingComplete === true,
         categories: Array.isArray(profile?.categories) ? profile.categories : [],
+        cycleStartDay:
+          typeof profile?.cycleStartDay === 'number' &&
+          profile.cycleStartDay >= 1 &&
+          profile.cycleStartDay <= 31
+            ? profile.cycleStartDay
+            : 1,
         updatedAt: profile?.updatedAt
           ? new Date(profile.updatedAt).toISOString()
           : null,
