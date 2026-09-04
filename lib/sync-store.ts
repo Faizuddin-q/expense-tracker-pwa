@@ -9,6 +9,8 @@ import { useThemeStore } from '@/lib/theme-store';
 import { toast } from '@/components/ToastHost';
 import type { SyncOptions } from '@/lib/sync-types';
 import { mergeSyncOptions } from '@/lib/sync-merge-options';
+import { fetchJson } from '@/lib/api-client';
+import type { ProfileResponse } from '@/lib/profile-map';
 
 export type { SyncOptions } from '@/lib/sync-types';
 
@@ -24,37 +26,6 @@ type SyncSet = (
     | ((state: SyncStore) => Partial<SyncStore>)
 ) => void;
 type SyncGet = () => SyncStore;
-
-type FetchJsonResult<T> =
-  | { ok: true; status: number; data: T }
-  | { ok: false; status: number; message: string };
-
-async function fetchJson<T>(
-  input: string,
-  init?: RequestInit
-): Promise<FetchJsonResult<T>> {
-  const response = await fetch(input, init);
-  const body = await response.json();
-  if (!response.ok) {
-    return {
-      ok: false,
-      status: response.status,
-      message: body?.error?.message ?? 'Request failed',
-    };
-  }
-  return { ok: true, status: response.status, data: body.data as T };
-}
-
-type ProfileResponse = {
-  monthlyIncome: number | null;
-  monthlyBudget: number | null;
-  hideAmounts: boolean | null;
-  onboardingComplete: boolean;
-  categories: Category[];
-  name: string | null;
-  theme: 'dark' | 'light' | null;
-  cycleStartDay: number | null;
-};
 
 const applyProfileResponse = (
   profileData: ProfileResponse,
@@ -111,6 +82,39 @@ const applyProfileResponse = (
   }
 };
 
+const applyCloudExpenses = (
+  cloudExpenses: Expense[],
+  deletedIdSet: Set<string>
+) => {
+  const activeExpenses: Expense[] = [];
+  for (const e of cloudExpenses) {
+    const eid = e.localId ?? e.id;
+    if (deletedIdSet.has(eid) || e.deletedAt) continue;
+    activeExpenses.push({
+      ...e,
+      id: eid,
+      amount: Number(e.amount) || 0,
+    });
+  }
+  useExpenses.getState().hydrate(activeExpenses);
+};
+
+const applyPulledState = (
+  cloudExpenses: Expense[],
+  profileData: ProfileResponse,
+  deletedIdSet: Set<string>
+) => {
+  applyCloudExpenses(cloudExpenses, deletedIdSet);
+  applyProfileResponse(profileData, cloudExpenses.length);
+
+  if (Array.isArray(profileData.categories) && profileData.categories.length) {
+    const cloudCategories: Category[] = (
+      profileData.categories as Category[]
+    ).map((c) => ({ ...c, Icon: getCategoryIcon(c) }));
+    useCategoryStore.getState().setCategories(cloudCategories);
+  }
+};
+
 async function runSync(
   options: SyncOptions,
   set: SyncSet,
@@ -136,9 +140,7 @@ async function runSync(
   try {
     const jsonHeaders = { 'Content-Type': 'application/json' };
 
-    // Writes first (order doesn't matter between these three — independent
-    // resources), then pull fresh expenses + profile once writes settle.
-    const writes: Array<Promise<FetchJsonResult<unknown>>> = [];
+    const writes: Array<ReturnType<typeof fetchJson>> = [];
 
     if (!options.pullOnly && local.length) {
       writes.push(
@@ -229,7 +231,16 @@ async function runSync(
       fetchJson<ProfileResponse>('/api/profile'),
     ]);
 
-    if (!expensesResult.ok) throw new Error(expensesResult.message);
+    if (!expensesResult.ok) {
+      if (expensesResult.status === 401 || expensesResult.status === 403) {
+        set({ profileHydrated: false });
+        const msg = 'Your session expired. Please sign in again.';
+        useAuthStore.getState().handleSessionExpired(msg);
+        toast.error('Signed out', msg);
+        return false;
+      }
+      throw new Error(expensesResult.message);
+    }
     if (!profileResult.ok) throw new Error(profileResult.message);
 
     const deletedIdSet = new Set(deletedIds);
@@ -240,29 +251,11 @@ async function runSync(
       );
     }
 
-    const { hydrate } = useExpenses.getState();
-
-    const cloudExpenses = expensesResult.data.expenses;
-    const activeExpenses: Expense[] = [];
-    for (const e of cloudExpenses) {
-      const eid = e.localId ?? e.id;
-      if (deletedIdSet.has(eid) || e.deletedAt) continue;
-      activeExpenses.push({
-        ...e,
-        id: eid,
-        amount: Number(e.amount) || 0,
-      });
-    }
-    hydrate(activeExpenses);
-
-    applyProfileResponse(profileResult.data, cloudExpenses.length);
-
-    if (Array.isArray(profileResult.data.categories) && profileResult.data.categories.length) {
-      const cloudCategories: Category[] = profileResult.data.categories.map(
-        (c) => ({ ...c, Icon: getCategoryIcon(c) })
-      );
-      await useCategoryStore.getState().setCategories(cloudCategories);
-    }
+    applyPulledState(
+      expensesResult.data.expenses,
+      profileResult.data,
+      deletedIdSet
+    );
 
     return true;
   } catch (err: unknown) {

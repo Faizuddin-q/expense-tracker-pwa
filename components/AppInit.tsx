@@ -12,6 +12,14 @@ export const AppInit = ({ children }: { children: React.ReactNode }) => {
   const userId = useAuthStore((s) => s.userId);
 
   useEffect(() => {
+    try {
+      localStorage.removeItem('pockett:snapshot:v1');
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
     const onVisibility = () =>
       useThemeStore.getState().setScreenObscured(document.hidden);
     document.addEventListener('visibilitychange', onVisibility);

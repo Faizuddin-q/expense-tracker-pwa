@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useExpenses } from '@/lib/store';
 import { useAuthStore } from '@/lib/auth-store';
 import { useProfileStore } from '@/lib/profile-store';
@@ -8,6 +9,11 @@ import { useSyncStore } from '@/lib/sync-store';
 import { useThemeStore } from '@/lib/theme-store';
 import { Settings } from '@/components/views/Settings';
 import { toast } from '@/components/ToastHost';
+import {
+  getRecentFetchTimings,
+  shortApiPath,
+  subscribeFetchTimings,
+} from '@/lib/api-client';
 
 export default function SettingsPage() {
   const expenses = useExpenses((s) => s.expenses);
@@ -30,6 +36,9 @@ export default function SettingsPage() {
   const { categories: customCategories } = useCategoryStore();
   const sync = useSyncStore((s) => s.sync);
   const { theme, setTheme } = useThemeStore();
+  const [fetchTimings, setFetchTimings] = useState(getRecentFetchTimings);
+
+  useEffect(() => subscribeFetchTimings(setFetchTimings), []);
 
   return (
     <Settings
@@ -58,6 +67,12 @@ export default function SettingsPage() {
       setHideAmounts={setHideAmounts}
       cycleStartDay={cycleStartDay}
       setCycleStartDay={setCycleStartDay}
+      lastFetchTimings={fetchTimings.map((timing) => ({
+        method: timing.method,
+        path: shortApiPath(timing.url),
+        ms: timing.ms,
+        serverMs: timing.serverMs,
+      }))}
     />
   );
 }

@@ -5,6 +5,7 @@ import { useSyncStore } from '@/lib/sync-store';
 import { useProfileStore } from '@/lib/profile-store';
 import { useCategoryStore } from '@/lib/category-store';
 import { toast } from '@/components/ToastHost';
+import { fetchJson } from '@/lib/api-client';
 
 interface AuthStore {
   userId: string;
@@ -51,17 +52,27 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   restoreSession: async () => {
     try {
-      const res = await fetch('/api/auth/session');
-      if (res.ok) {
-        const { data } = await res.json();
-        if (data?.authenticated && typeof data.userId === 'string') {
-          set({ userId: data.userId });
-        }
+      const result = await fetchJson<{
+        authenticated: boolean;
+        userId?: string;
+      }>('/api/auth/session');
+      if (
+        result.ok &&
+        result.data.authenticated &&
+        typeof result.data.userId === 'string'
+      ) {
+        set({ userId: result.data.userId });
+        return;
+      }
+      if (result.ok || result.status === 401 || result.status === 403) {
+        clearSessionState();
+        set({ userId: '' });
       }
     } catch {
       // Cloud-only — no local session fallback.
+    } finally {
+      set({ initializing: false });
     }
-    set({ initializing: false });
   },
 
   signIn: async () => {
