@@ -1,50 +1,22 @@
 import { getDb } from '@/lib/db';
-import { ok, fail } from '@/lib/api/response';
+import { ok, fail, stampServerTiming } from '@/lib/api/response';
 import { withUserAuth } from '@/lib/api/handler';
+import { toProfileResponse } from '@/lib/profile-map';
+import { findProfile } from '@/lib/user-data';
 import { profileUpdateSchema } from '@/lib/validation/profile';
-
-type ProfileResponse = {
-  monthlyIncome: number | null;
-  monthlyBudget: number | null;
-  hideAmounts: boolean | null;
-  onboardingComplete: boolean;
-  categories: unknown[];
-  name: string | null;
-  theme: 'dark' | 'light' | null;
-  cycleStartDay: number | null;
-};
-
-const toProfileResponse = (
-  profile: Record<string, unknown> | null
-): ProfileResponse => ({
-  monthlyIncome:
-    typeof profile?.monthlyIncome === 'number' ? profile.monthlyIncome : null,
-  monthlyBudget:
-    typeof profile?.monthlyBudget === 'number' ? profile.monthlyBudget : null,
-  hideAmounts:
-    typeof profile?.hideAmounts === 'boolean' ? profile.hideAmounts : null,
-  onboardingComplete: profile?.onboardingComplete === true,
-  categories: Array.isArray(profile?.categories) ? profile.categories : [],
-  name: typeof profile?.name === 'string' ? profile.name : null,
-  theme:
-    profile?.theme === 'dark' || profile?.theme === 'light'
-      ? profile.theme
-      : null,
-  cycleStartDay:
-    typeof profile?.cycleStartDay === 'number' &&
-    profile.cycleStartDay >= 1 &&
-    profile.cycleStartDay <= 31
-      ? profile.cycleStartDay
-      : null,
-});
 
 /** GET /api/profile — the caller's profile. */
 export const GET = withUserAuth(
   'profile:get',
   async ({ userId }) => {
+    const t0 = performance.now();
     const db = await getDb();
-    const profile = await db.collection('profiles').findOne({ userId });
-    return ok(toProfileResponse(profile));
+    const tDb = performance.now();
+    const profile = await findProfile(db, userId);
+    return stampServerTiming(ok(profile), [
+      ['db', tDb - t0],
+      ['query', performance.now() - tDb],
+    ]);
   },
   {
     rateLimit: {
@@ -82,7 +54,7 @@ export const PATCH = withUserAuth(
     );
 
     const profile = await profiles.findOne({ userId });
-    return ok(toProfileResponse(profile));
+    return ok(toProfileResponse((profile as Record<string, unknown> | null) ?? null));
   },
   {
     rateLimit: {

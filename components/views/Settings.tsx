@@ -7,6 +7,7 @@ import {
   formatIndianNumber,
 } from '@/lib/utils';
 import { toast } from '@/components/ToastHost';
+import { formatFetchMs } from '@/lib/api-client';
 
 interface SettingsProps {
   nameDraft: string;
@@ -34,6 +35,7 @@ interface SettingsProps {
   setHideAmounts: (v: boolean) => void;
   cycleStartDay: number;
   setCycleStartDay: (v: number) => void;
+  lastFetchTimings?: { method: string; path: string; ms: number; serverMs: number | null }[];
 }
 
 /** A labelled settings row: description on the left, control on the right. */
@@ -372,6 +374,7 @@ export const Settings = ({
   setHideAmounts,
   cycleStartDay,
   setCycleStartDay,
+  lastFetchTimings = [],
 }: SettingsProps) => {
   return (
     <div className="mx-auto max-w-6xl">
@@ -393,7 +396,25 @@ export const Settings = ({
           </Row>
           <Row
             title="Sync"
-            description="Push local changes to the cloud and pull the latest."
+            description={
+              lastFetchTimings.length > 0 ? (
+                <>
+                  Client time includes network. Last calls:{' '}
+                  {lastFetchTimings
+                    .slice(-3)
+                    .map((timing) => {
+                      const server =
+                        timing.serverMs != null
+                          ? ` / server ${formatFetchMs(timing.serverMs)}`
+                          : '';
+                      return `${timing.method} ${timing.path} ${formatFetchMs(timing.ms)}${server}`;
+                    })
+                    .join(' · ')}
+                </>
+              ) : (
+                'Push local changes to the cloud and pull the latest.'
+              )
+            }
           >
             <div className="flex gap-1.5">
               <GhostButton onClick={() => sync()}>Sync now</GhostButton>

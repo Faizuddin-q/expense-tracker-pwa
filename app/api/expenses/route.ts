@@ -1,7 +1,7 @@
 import { getDb } from '@/lib/db';
-import { clientIp } from '@/lib/rate-limit';
-import { ok, fail } from '@/lib/api/response';
+import { ok, fail, stampServerTiming } from '@/lib/api/response';
 import { withUserAuth } from '@/lib/api/handler';
+import { listActiveExpenses } from '@/lib/user-data';
 import {
   EXPENSE_UPSERT_FIELDS,
   expensesDeleteSchema,
@@ -22,18 +22,14 @@ const pickExpenseFields = (
 export const GET = withUserAuth(
   'expenses:list',
   async ({ userId }) => {
+    const t0 = performance.now();
     const db = await getDb();
-    const records = await db
-      .collection('expenses')
-      .find({
-        userId,
-        $or: [{ deletedAt: { $exists: false } }, { deletedAt: null }],
-      })
-      .sort({ updatedAt: -1 })
-      .limit(10000)
-      .toArray();
-
-    return ok({ expenses: records });
+    const tDb = performance.now();
+    const expenses = await listActiveExpenses(db, userId);
+    return stampServerTiming(ok({ expenses }), [
+      ['db', tDb - t0],
+      ['query', performance.now() - tDb],
+    ]);
   },
   {
     rateLimit: {
