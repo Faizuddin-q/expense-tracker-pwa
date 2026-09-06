@@ -1,20 +1,17 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ArrowDown,
-  ArrowUp,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
   Download,
-  Pencil,
+  LayoutList,
   Search,
-  Trash2,
   X,
 } from 'lucide-react';
-import { List, type RowComponentProps } from 'react-window';
+import { List } from 'react-window';
 import { Category, Expense, Payment } from '@/types/expense';
-import { categoryFor, downloadCsv, getCategoryColor, getCategoryIcon } from '@/lib/utils';
+import { categoryFor, downloadCsv } from '@/lib/utils';
 import { useProfileStore } from '@/lib/profile-store';
-import { PAYMENT_LABELS } from '@/lib/constants';
 import {
   groupByCycle,
   getCycleKey,
@@ -23,31 +20,31 @@ import {
   formatCycleLabel,
   toDateInputValue,
 } from '@/lib/cycle';
+import { toLocalDateKey } from '@/lib/cycle-calendar';
 import { Money } from '@/components/Money';
-import { CategoryIcon } from '@/components/CategoryIcon';
 import { ExpenseEditDialog } from '@/components/ExpenseEditDialog';
 import { ExpenseDeleteDialog } from '@/components/ExpenseDeleteDialog';
+import { ExpenseCalendarGrid } from '@/components/expenses/ExpenseCalendarGrid';
+import { ExpenseDayDialog } from '@/components/expenses/ExpenseDayDialog';
+import {
+  ExpenseListRow,
+  ExpenseTableHeader,
+  LIST_INNER,
+  LIST_MAX_HEIGHT,
+  ROW_HEIGHT,
+  SortDir,
+  SortKey,
+  type ExpenseListRowData,
+} from '@/components/expenses/expense-table';
 import { toast } from '@/components/ToastHost';
 
-const ROW_HEIGHT = 44;
-const LIST_MAX_HEIGHT = 480;
+const VIEW_STORAGE_KEY = 'pocket-expenses-view';
 
-/** Shared column template so header / rows / footer stay aligned.
- *  Mobile: date · category · amount · actions — amount/actions sized so
- *  figures like ₹99,999.00 and both action buttons never collide. */
-const COLS =
-  'grid w-full grid-cols-[4.5rem_minmax(0,1fr)_auto_4.25rem] sm:grid-cols-[7rem_minmax(0,1fr)_minmax(0,1.2fr)_5.5rem_3.5rem] md:grid-cols-[7.5rem_minmax(7rem,1fr)_minmax(6rem,1.2fr)_6.5rem_8.25rem_8.25rem_6.25rem_4rem]';
-
-const LIST_INNER =
-  'w-full max-w-full min-w-0 sm:min-w-[620px] md:min-w-[980px]';
-
-type SortKey = 'date' | 'category' | 'amount' | 'createdAt' | 'updatedAt';
-type SortDir = 'asc' | 'desc';
+type ViewMode = 'list' | 'calendar';
 type TimeRangeOption = 'all' | '1d' | '7d' | '14d' | '30d' | 'month' | 'custom';
 
 const EMPTY_CATEGORIES: Category[] = [];
 
-// Same order as the Overview (Dashboard) date-range filter, for consistency.
 const RANGES: { key: TimeRangeOption; label: string }[] = [
   { key: 'month', label: 'Month' },
   { key: '7d', label: '7D' },
@@ -57,31 +54,11 @@ const RANGES: { key: TimeRangeOption; label: string }[] = [
   { key: 'custom', label: 'Custom' },
 ];
 
-const formatDate = (iso: string, withYear = true) => {
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    ...(withYear ? { year: 'numeric' as const } : {}),
-  });
-};
-
-const formatDateTime = (iso?: string) => {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return '—';
-  // Date + time joined manually — en-IN toLocaleString inserts "at".
-  const date = d.toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-  });
-  const time = d.toLocaleTimeString('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-  return `${date} ${time}`;
+const readViewMode = (): ViewMode => {
+  if (typeof window === 'undefined') return 'list';
+  return localStorage.getItem(VIEW_STORAGE_KEY) === 'calendar'
+    ? 'calendar'
+    : 'list';
 };
 
 interface ExpensesProps {
@@ -98,135 +75,9 @@ interface ExpensesProps {
     }
   ) => void;
   categories?: Category[];
-  /** Whose cycle to filter by, and whether to hide amounts. Both default to
-   *  the signed-in user's own settings (from useProfileStore) — pass
-   *  explicitly when showing someone else's expenses, e.g. the admin panel
-   *  viewing a specific user's account. */
   cycleStartDay?: number;
   hideAmounts?: boolean;
 }
-
-const SortHeader = ({
-  label,
-  active,
-  dir,
-  onClick,
-  align = 'left',
-  className = '',
-}: {
-  label: string;
-  active: boolean;
-  dir: SortDir;
-  onClick: () => void;
-  align?: 'left' | 'right';
-  className?: string;
-}) => (
-  <div
-    className={`px-2.5 py-2 font-medium sm:px-3 ${align === 'right' ? 'text-right' : 'text-left'} ${className}`}
-  >
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex cursor-pointer items-center gap-1 transition-colors hover:text-foreground ${
-        align === 'right' ? 'flex-row-reverse' : ''
-      } ${active ? 'text-primary' : ''}`}
-    >
-      {label}
-      <span className="grid size-3 place-items-center">
-        {active &&
-          (dir === 'asc' ? (
-            <ArrowUp className="size-3" strokeWidth={2.2} />
-          ) : (
-            <ArrowDown className="size-3" strokeWidth={2.2} />
-          ))}
-      </span>
-    </button>
-  </div>
-);
-
-type ExpenseListRowProps = {
-  expenses: Expense[];
-  categories: Category[];
-  hideAmounts: boolean;
-  onEdit: (expense: Expense) => void;
-  onDelete: (expense: Expense) => void;
-};
-
-const ExpenseListRow = ({
-  index,
-  style,
-  ariaAttributes,
-  expenses,
-  categories,
-  hideAmounts,
-  onEdit,
-  onDelete,
-}: RowComponentProps<ExpenseListRowProps>) => {
-  const e = expenses[index];
-  if (!e) return null;
-  const c = categoryFor(e.category, categories);
-  const color = getCategoryColor(c.tone);
-
-  return (
-    <div
-      {...ariaAttributes}
-      style={style}
-      className={`group ${COLS} items-center border-b border-border text-[13px] transition-colors hover:bg-primary/[0.055]`}
-    >
-      <div className="font-mono-numbers px-2 py-2 text-[12px] whitespace-nowrap text-muted-foreground transition-shadow group-hover:shadow-[inset_2px_0_0_var(--primary)] sm:px-3 sm:text-[13px]">
-        <span className="sm:hidden">{formatDate(e.date, false)}</span>
-        <span className="hidden sm:inline">{formatDate(e.date)}</span>
-      </div>
-      <div className="min-w-0 px-2 py-2 sm:px-3">
-        <span className="inline-flex max-w-full items-center gap-1.5 sm:gap-2">
-          <CategoryIcon color={color} icon={getCategoryIcon(c)} size="xs" />
-          <span className="truncate font-medium text-foreground">{c.label}</span>
-        </span>
-      </div>
-      <div className="hidden min-w-0 truncate px-3 py-2 text-muted-foreground sm:block">
-        {e.note || <span className="text-faint">—</span>}
-      </div>
-      <div className="hidden px-3 py-2 whitespace-nowrap text-muted-foreground md:block">
-        {e.paymentMethod ? (
-          PAYMENT_LABELS[e.paymentMethod] ?? e.paymentMethod
-        ) : (
-          <span className="text-faint">—</span>
-        )}
-      </div>
-      <div className="font-mono-numbers hidden min-w-0 truncate px-3 py-2 text-[12px] tabular-nums text-faint md:block">
-        {formatDateTime(e.createdAt)}
-      </div>
-      <div className="font-mono-numbers hidden min-w-0 truncate px-3 py-2 text-[12px] tabular-nums text-faint md:block">
-        {e.updatedAt ? formatDateTime(e.updatedAt) : '—'}
-      </div>
-      <div className="font-mono-numbers px-1 py-2 text-right font-medium whitespace-nowrap tabular-nums text-foreground sm:px-3">
-        <Money value={e.amount} precise />
-      </div>
-      <div className="px-0.5 py-2 sm:px-3">
-        <div className="flex items-center justify-end gap-0">
-          {!hideAmounts && (
-            <button
-              type="button"
-              aria-label="Edit expense"
-              onClick={() => onEdit(e)}
-              className="press grid size-7 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-primary/12 hover:text-primary sm:size-6 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
-            >
-              <Pencil className="size-3.5" strokeWidth={1.9} />
-            </button>
-          )}
-          <button
-            type="button"
-            aria-label="Delete expense"
-            onClick={() => onDelete(e)}
-            className="press grid size-7 cursor-pointer place-items-center rounded text-faint transition-colors hover:bg-destructive/10 hover:text-destructive sm:size-6 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
-          >
-            <Trash2 className="size-3.5" strokeWidth={1.9} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export const Expenses = ({
   expenses,
@@ -241,6 +92,8 @@ export const Expenses = ({
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [viewMode, setViewMode] = useState<ViewMode>(readViewMode);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [editing, setEditing] = useState<Expense | null>(null);
   const [deleting, setDeleting] = useState<Expense | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>('date');
@@ -249,6 +102,20 @@ export const Expenses = ({
   const ownCycleStartDay = useProfileStore((s) => s.cycleStartDay);
   const hideAmounts = hideAmountsProp ?? ownHideAmounts;
   const cycleStartDay = cycleStartDayProp ?? ownCycleStartDay;
+
+  useEffect(() => {
+    if (viewMode === 'calendar') {
+      setTimeRange('month');
+    }
+  }, [viewMode]);
+
+  const handleViewChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    localStorage.setItem(VIEW_STORAGE_KEY, mode);
+    if (mode === 'calendar') {
+      setTimeRange('month');
+    }
+  };
 
   const toggleSort = (key: SortKey) => {
     if (sortBy === key) {
@@ -275,14 +142,18 @@ export const Expenses = ({
 
   const handleRangeSelect = (key: TimeRangeOption) => {
     setTimeRange(key);
-    // First time landing on Custom, default the range to the user's current
-    // cycle so it starts pre-filled with something meaningful.
     if (key === 'custom' && !startDate && !endDate) {
-      const { start, end } = getCycleRange(getCurrentCycleKey(cycleStartDay), cycleStartDay);
+      const { start, end } = getCycleRange(
+        getCurrentCycleKey(cycleStartDay),
+        cycleStartDay
+      );
       setStartDate(toDateInputValue(start));
       setEndDate(toDateInputValue(end));
     }
   };
+
+  const effectiveTimeRange =
+    viewMode === 'calendar' ? 'month' : timeRange;
 
   const filtered = useMemo(() => {
     const now = new Date();
@@ -300,16 +171,16 @@ export const Expenses = ({
       const eDate = new Date(e.date);
       if (isNaN(eDate.getTime())) return true;
 
-      if (timeRange === '1d') return eDate >= daysAgo(1);
-      if (timeRange === '7d') return eDate >= daysAgo(7);
-      if (timeRange === '14d') return eDate >= daysAgo(14);
-      if (timeRange === '30d') return eDate >= daysAgo(30);
+      if (effectiveTimeRange === '1d') return eDate >= daysAgo(1);
+      if (effectiveTimeRange === '7d') return eDate >= daysAgo(7);
+      if (effectiveTimeRange === '14d') return eDate >= daysAgo(14);
+      if (effectiveTimeRange === '30d') return eDate >= daysAgo(30);
 
-      if (timeRange === 'month') {
+      if (effectiveTimeRange === 'month') {
         return getCycleKey(eDate, cycleStartDay) === activeMonthKey;
       }
 
-      if (timeRange === 'custom') {
+      if (effectiveTimeRange === 'custom') {
         if (startDate) {
           const start = new Date(startDate);
           start.setHours(0, 0, 0, 0);
@@ -328,7 +199,7 @@ export const Expenses = ({
   }, [
     expenses,
     query,
-    timeRange,
+    effectiveTimeRange,
     activeMonthKey,
     startDate,
     endDate,
@@ -369,8 +240,15 @@ export const Expenses = ({
     });
   }, [filtered, sortBy, sortDir, categories]);
 
+  const selectedDayExpenses = useMemo(() => {
+    if (!selectedDay) return [];
+    return sorted.filter(
+      (e) => toLocalDateKey(new Date(e.date)) === selectedDay
+    );
+  }, [sorted, selectedDay]);
+
   const filtersActive =
-    timeRange !== 'month' || Boolean(query || startDate || endDate);
+    effectiveTimeRange !== 'month' || Boolean(query || startDate || endDate);
 
   const resetFilters = () => {
     setQuery('');
@@ -400,7 +278,7 @@ export const Expenses = ({
   );
 
   const listRowKey = useCallback(
-    (index: number, data: ExpenseListRowProps) =>
+    (index: number, data: ExpenseListRowData) =>
       data.expenses[index]?.id ?? index,
     []
   );
@@ -409,30 +287,61 @@ export const Expenses = ({
     <section className="mx-auto max-w-6xl">
       {/* Toolbar */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="field-shell group/search flex h-12 min-h-12 flex-1 items-center gap-2.5 rounded-lg border border-border bg-card px-3 md:h-8 md:min-h-8 md:gap-2 md:px-2.5">
-          <Search
-            className={`size-4 shrink-0 transition-colors group-focus-within/search:text-primary md:size-3.5 ${
-              query ? 'text-primary' : 'text-faint'
-            }`}
-            strokeWidth={2}
-          />
-          <input
-            aria-label="Search expenses"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search note or category"
-            className="h-full min-h-12 w-full bg-transparent text-[16px] leading-normal text-foreground outline-none placeholder:text-faint md:min-h-0 md:text-[13px]"
-          />
-          {query && (
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="field-shell group/search flex h-12 min-h-12 min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-border bg-card px-3 md:h-8 md:min-h-8 md:gap-2 md:px-2.5">
+            <Search
+              className={`size-4 shrink-0 transition-colors group-focus-within/search:text-primary md:size-3.5 ${
+                query ? 'text-primary' : 'text-faint'
+              }`}
+              strokeWidth={2}
+            />
+            <input
+              aria-label="Search expenses"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search note or category"
+              className="h-full min-h-12 w-full min-w-0 bg-transparent text-[16px] leading-normal text-foreground outline-none placeholder:text-faint md:min-h-0 md:text-[13px]"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                aria-label="Clear search"
+                className="press grid size-8 shrink-0 cursor-pointer place-items-center rounded text-faint transition-colors hover:text-foreground md:size-4"
+              >
+                <X className="size-4 md:size-3.5" strokeWidth={2} />
+              </button>
+            )}
+          </div>
+
+          <div className="inline-flex shrink-0 rounded-lg border border-border bg-card p-0.5">
             <button
               type="button"
-              onClick={() => setQuery('')}
-              aria-label="Clear search"
-              className="press grid size-8 shrink-0 cursor-pointer place-items-center rounded text-faint transition-colors hover:text-foreground md:size-4"
+              onClick={() => handleViewChange('list')}
+              aria-label="List view"
+              className={`press grid size-10 cursor-pointer place-items-center rounded-md transition-colors sm:flex sm:h-8 sm:min-h-8 sm:w-auto sm:gap-1.5 sm:px-3 sm:text-[12px] sm:font-medium md:min-h-8 ${
+                viewMode === 'list'
+                  ? 'bg-primary/12 text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
-              <X className="size-4 md:size-3.5" strokeWidth={2} />
+              <LayoutList className="size-4 md:size-3.5" strokeWidth={2} />
+              <span className="hidden sm:inline">List</span>
             </button>
-          )}
+            <button
+              type="button"
+              onClick={() => handleViewChange('calendar')}
+              aria-label="Calendar view"
+              className={`press grid size-10 cursor-pointer place-items-center rounded-md transition-colors sm:flex sm:h-8 sm:min-h-8 sm:w-auto sm:gap-1.5 sm:px-3 sm:text-[12px] sm:font-medium md:min-h-8 ${
+                viewMode === 'calendar'
+                  ? 'bg-primary/12 text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <CalendarDays className="size-4 md:size-3.5" strokeWidth={2} />
+              <span className="hidden sm:inline">Calendar</span>
+            </button>
+          </div>
         </div>
 
         <button
@@ -447,24 +356,32 @@ export const Expenses = ({
 
       {/* Filters */}
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <div className="inline-flex rounded-lg border border-border bg-card p-0.5">
-          {RANGES.map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => handleRangeSelect(key)}
-              className={`press h-7 cursor-pointer rounded-md px-2.5 text-[12px] font-medium transition-colors ${
-                timeRange === key
-                  ? 'bg-primary/12 text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        {viewMode === 'list' && (
+          <div className="inline-flex rounded-lg border border-border bg-card p-0.5">
+            {RANGES.map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => handleRangeSelect(key)}
+                className={`press h-7 cursor-pointer rounded-md px-2.5 text-[12px] font-medium transition-colors ${
+                  timeRange === key
+                    ? 'bg-primary/12 text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
 
-        {timeRange === 'month' && (
-          <div className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-card px-1">
+        {(viewMode === 'calendar' || timeRange === 'month') && (
+          <div
+            className={`inline-flex items-center gap-1 rounded-lg border border-border bg-card px-1 ${
+              viewMode === 'calendar'
+                ? 'h-10 w-full justify-between sm:h-8 sm:w-auto'
+                : 'h-8'
+            }`}
+          >
             <button
               onClick={() =>
                 monthIndex < availableMonths.length - 1 &&
@@ -472,11 +389,17 @@ export const Expenses = ({
               }
               disabled={monthIndex >= availableMonths.length - 1}
               aria-label="Previous month"
-              className="press grid size-6 cursor-pointer place-items-center rounded text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+              className="press grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-30 sm:size-6 sm:rounded"
             >
               <ChevronLeft className="size-4" strokeWidth={1.9} />
             </button>
-            <span className="min-w-[112px] text-center text-[12px] font-medium text-foreground">
+            <span
+              className={`text-center font-medium text-foreground ${
+                viewMode === 'calendar'
+                  ? 'min-w-0 flex-1 truncate px-1 text-[11px] sm:min-w-[112px] sm:flex-none sm:text-[12px]'
+                  : 'min-w-[112px] text-[12px]'
+              }`}
+            >
               {availableMonths[monthIndex]?.label ?? 'Select month'}
             </span>
             <button
@@ -486,14 +409,14 @@ export const Expenses = ({
               }
               disabled={monthIndex <= 0}
               aria-label="Next month"
-              className="press grid size-6 cursor-pointer place-items-center rounded text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+              className="press grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-30 sm:size-6 sm:rounded"
             >
               <ChevronRight className="size-4" strokeWidth={1.9} />
             </button>
           </div>
         )}
 
-        {timeRange === 'custom' && (
+        {viewMode === 'list' && timeRange === 'custom' && (
           <div className="flex items-center gap-1.5">
             <input
               type="date"
@@ -535,57 +458,33 @@ export const Expenses = ({
         </span>
       </div>
 
-      {/* Virtualized expense list */}
-      {sorted.length ? (
+      {viewMode === 'calendar' ? (
+        <>
+          <ExpenseCalendarGrid
+            expenses={filtered}
+            cycleKey={activeMonthKey}
+            cycleStartDay={cycleStartDay}
+            hideAmounts={hideAmounts}
+            onDayClick={setSelectedDay}
+          />
+          <div className="mt-2 flex w-full items-center justify-between gap-3 rounded-xl border border-primary/25 bg-primary/[0.07] px-3 py-2.5">
+            <span className="text-[11px] font-semibold tracking-[0.04em] text-primary uppercase">
+              Cycle total
+            </span>
+            <span className="font-mono-numbers text-right text-[13px] font-semibold whitespace-nowrap tabular-nums text-foreground">
+              <Money value={filteredTotal} precise />
+            </span>
+          </div>
+        </>
+      ) : sorted.length ? (
         <div className="mt-3 max-w-full overflow-hidden rounded-xl border border-border bg-card [contain:layout]">
           <div className="max-w-full overflow-x-auto overscroll-x-contain sm:overflow-x-auto">
             <div className={LIST_INNER}>
-              <div
-                className={`sticky-head ${COLS} border-b border-border text-[11px] tracking-[0.04em] text-muted-foreground uppercase`}
-              >
-                <SortHeader
-                  label="Date"
-                  active={sortBy === 'date'}
-                  dir={sortDir}
-                  onClick={() => toggleSort('date')}
-                />
-                <SortHeader
-                  label="Category"
-                  active={sortBy === 'category'}
-                  dir={sortDir}
-                  onClick={() => toggleSort('category')}
-                />
-                <div className="hidden px-3 py-2 text-left font-medium sm:block">
-                  Note
-                </div>
-                <div className="hidden px-3 py-2 text-left font-medium md:block">
-                  Payment
-                </div>
-                <SortHeader
-                  label="Added"
-                  active={sortBy === 'createdAt'}
-                  dir={sortDir}
-                  onClick={() => toggleSort('createdAt')}
-                  className="hidden md:block"
-                />
-                <SortHeader
-                  label="Updated"
-                  active={sortBy === 'updatedAt'}
-                  dir={sortDir}
-                  onClick={() => toggleSort('updatedAt')}
-                  className="hidden md:block"
-                />
-                <SortHeader
-                  label="Amount"
-                  active={sortBy === 'amount'}
-                  dir={sortDir}
-                  onClick={() => toggleSort('amount')}
-                  align="right"
-                />
-                <div className="px-1 py-2 sm:px-3">
-                  <span className="sr-only">Actions</span>
-                </div>
-              </div>
+              <ExpenseTableHeader
+                sortBy={sortBy}
+                sortDir={sortDir}
+                onSort={toggleSort}
+              />
 
               <List
                 rowComponent={ExpenseListRow}
@@ -626,6 +525,18 @@ export const Expenses = ({
             </button>
           )}
         </div>
+      )}
+
+      {selectedDay && (
+        <ExpenseDayDialog
+          dateKey={selectedDay}
+          expenses={selectedDayExpenses}
+          categories={categories}
+          hideAmounts={hideAmounts}
+          onEdit={onEditExpense}
+          onDelete={onDeleteExpense}
+          onClose={() => setSelectedDay(null)}
+        />
       )}
 
       {editing && (

@@ -257,6 +257,18 @@ export const moneyExact = (n: number, hidden = false): string => {
   })}`;
 };
 
+/** Short k/L amount for tight spaces (e.g. calendar cells). Always 2 decimal places. */
+export const moneyCompact = (n: number, hidden = false): string => {
+  if (hidden) return MASKED_MONEY;
+  if (!Number.isFinite(n) || n === 0) return '—';
+  if (n >= 100_000) return `₹${(n / 100_000).toFixed(2)}L`;
+  if (n >= 1_000) return `₹${(n / 1_000).toFixed(2)}k`;
+  return `₹${n.toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+};
+
 /** "3h ago" / "5d ago" style label — used for admin "Last active" columns. */
 export const formatRelativeTime = (iso: string | null | undefined): string => {
   if (!iso) return 'Never';
