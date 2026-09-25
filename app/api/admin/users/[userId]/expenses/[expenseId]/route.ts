@@ -6,7 +6,7 @@ import { adminExpenseSchema } from '@/lib/validation/expense';
 
 type Params = { userId: string; expenseId: string };
 
-/** PATCH /api/admin/users/:userId/expenses/:expenseId — edit one expense on the user's behalf. */
+/** PATCH /api/admin/users/:userId/expenses/:expenseId - edit one expense on the user's behalf. */
 export const PATCH = withAdminAuth<Params>(
   'admin:expenses:update',
   async ({ request, params }) => {
@@ -43,7 +43,7 @@ export const PATCH = withAdminAuth<Params>(
   }
 );
 
-/** DELETE /api/admin/users/:userId/expenses/:expenseId — soft-delete, same as the app's own delete. */
+/** DELETE /api/admin/users/:userId/expenses/:expenseId - soft-delete, same as the app's own delete. */
 export const DELETE = withAdminAuth<Params>(
   'admin:expenses:delete',
   async ({ params }) => {

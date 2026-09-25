@@ -220,7 +220,7 @@ export const useExpenses = create<Store>((setState, getState) => ({
       .then((ok) => {
         if (!ok) return;
         toast.success('Deleted an expense', description, {
-          // Soft-deleted in Mongo — Undo available for ~5s while toast is visible
+          // Soft-deleted in Mongo - Undo available for ~5s while toast is visible
           action: {
             label: 'Undo',
             onClick: () => {
@@ -252,7 +252,7 @@ export const useExpenses = create<Store>((setState, getState) => ({
   },
 }));
 
-// ─── Derived selectors (React hooks — mirror the old context's memoized values) ───
+// ─── Derived selectors (React hooks - mirror the old context's memoized values) ───
 
 export const useMonthSpend = (): number => {
   const expenses = useExpenses((s) => s.expenses);

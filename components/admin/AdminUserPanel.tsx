@@ -38,7 +38,7 @@ export const AdminUserPanel = ({
 
   const categories = useMemo(() => {
     // Accounts now own their full category list (seeded with the defaults at
-    // signup — no separate built-in list). This fallback only fills in
+    // signup - no separate built-in list). This fallback only fills in
     // defaults for an older account that hasn't synced since that change.
     const ownedIds = new Set(profile.categories.map((c) => c.id));
     const merged = [
@@ -283,7 +283,7 @@ export const AdminUserPanel = ({
         </div>
       </div>
 
-      {/* Overview — identical metrics to the user-facing Overview tab */}
+      {/* Overview - identical metrics to the user-facing Overview tab */}
       <div>
         <h3 className="label mb-2">Overview</h3>
         <Dashboard
@@ -295,7 +295,7 @@ export const AdminUserPanel = ({
         />
       </div>
 
-      {/* Expense management — same view the user sees, filtered by their own
+      {/* Expense management - same view the user sees, filtered by their own
           billing cycle, with Added/Updated timestamps for support/audit use. */}
       <div>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">

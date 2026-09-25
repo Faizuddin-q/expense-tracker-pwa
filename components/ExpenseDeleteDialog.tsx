@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { Trash2, X } from 'lucide-react';
-import { Category, Expense } from '@/types/expense';
+import { Category } from '@/types/expense';
 import { categoryFor, getCategoryColor, getCategoryIcon } from '@/lib/utils';
 import { Money } from '@/components/Money';
 import { CategoryIcon } from '@/components/CategoryIcon';
@@ -10,19 +10,26 @@ import { builtInCategories } from '@/lib/constants';
 import { useFocusTrap } from '@/lib/useFocusTrap';
 import { useDialogExit } from '@/lib/useDialogExit';
 
-interface ExpenseDeleteDialogProps {
-  expense: Expense;
+/** The fields this dialog reads - satisfied by both `Expense` and `ChapterEntry`. */
+interface ExpenseLike {
+  category: string;
+  note?: string;
+  amount: number;
+}
+
+interface ExpenseDeleteDialogProps<T extends ExpenseLike> {
+  expense: T;
   categories?: Category[];
   onConfirm: () => void;
   onClose: () => void;
 }
 
-export const ExpenseDeleteDialog = ({
+export const ExpenseDeleteDialog = <T extends ExpenseLike>({
   expense,
   categories = builtInCategories,
   onConfirm,
   onClose,
-}: ExpenseDeleteDialogProps) => {
+}: ExpenseDeleteDialogProps<T>) => {
   const c = categoryFor(expense.category, categories);
   const color = getCategoryColor(c.tone);
   const Icon = getCategoryIcon(c);

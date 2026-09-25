@@ -18,7 +18,7 @@ const pickExpenseFields = (
   return picked;
 };
 
-/** GET /api/expenses — pull the caller's active expenses. */
+/** GET /api/expenses - pull the caller's active expenses. */
 export const GET = withUserAuth(
   'expenses:list',
   async ({ userId }) => {
@@ -40,7 +40,7 @@ export const GET = withUserAuth(
   }
 );
 
-/** POST /api/expenses — bulk upsert the caller's expenses. */
+/** POST /api/expenses - bulk upsert the caller's expenses. */
 export const POST = withUserAuth(
   'expenses:upsert',
   async ({ request, userId }) => {
@@ -98,7 +98,7 @@ export const POST = withUserAuth(
   }
 );
 
-/** DELETE /api/expenses — bulk soft-delete by id. */
+/** DELETE /api/expenses - bulk soft-delete by id. */
 export const DELETE = withUserAuth(
   'expenses:delete',
   async ({ request, userId }) => {

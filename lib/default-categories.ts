@@ -1,6 +1,6 @@
 // Server-safe (no React/Lucide imports) mirror of lib/constants.ts's
 // builtInCategories ids/labels/tones/icons. Used once, to seed a brand-new
-// account's own category list — after that, they're just this account's
+// account's own category list - after that, they're just this account's
 // categories, `custom: true` like anything else, fully editable/deletable.
 // Keep in sync with lib/constants.ts if the defaults ever change.
 export const defaultCategorySeed = [

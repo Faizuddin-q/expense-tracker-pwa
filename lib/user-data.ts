@@ -73,7 +73,7 @@ export const findProfile = async (
 
 let indexesEnsured = false;
 
-/** Idempotent — safe to call on every process start. */
+/** Idempotent - safe to call on every process start. */
 export const ensureUserDataIndexes = async (db: Db) => {
   if (indexesEnsured) return;
   indexesEnsured = true;
@@ -81,6 +81,10 @@ export const ensureUserDataIndexes = async (db: Db) => {
     await Promise.all([
       db.collection('expenses').createIndex({ userId: 1, updatedAt: -1 }),
       db.collection('profiles').createIndex({ userId: 1 }, { unique: true }),
+      db.collection('chapters').createIndex({ userId: 1, updatedAt: -1 }),
+      db
+        .collection('chapterEntries')
+        .createIndex({ userId: 1, chapterId: 1, updatedAt: -1 }),
     ]);
   } catch (error) {
     console.error('[db] ensure indexes failed', error);

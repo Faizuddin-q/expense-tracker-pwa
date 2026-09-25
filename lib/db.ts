@@ -5,7 +5,7 @@ declare global {
   var __pockettMongoClient: MongoClient | undefined;
 }
 
-/** Shared Mongo connection for every API route — the one "pocket" database the app syncs to. */
+/** Shared Mongo connection for every API route - the one "pocket" database the app syncs to. */
 export const getDb = async () => {
   if (!process.env.MONGODB_URI)
     throw new Error('MONGODB_URI is not configured');

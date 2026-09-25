@@ -24,7 +24,7 @@ interface AdminAddExpenseDialogProps {
   onClose: () => void;
 }
 
-/** Same shell as ExpenseEditDialog, but seeded blank — for logging a new expense on a user's behalf. */
+/** Same shell as ExpenseEditDialog, but seeded blank - for logging a new expense on a user's behalf. */
 export const AdminAddExpenseDialog = ({
   categories,
   onSave,

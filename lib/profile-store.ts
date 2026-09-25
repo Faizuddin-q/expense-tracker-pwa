@@ -87,7 +87,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
               v ? 'Amounts hidden' : 'Amounts visible',
               v
                 ? 'Synced to your account'
-                : 'Synced — amounts show normally again'
+                : 'Synced - amounts show normally again'
             );
           }
         });

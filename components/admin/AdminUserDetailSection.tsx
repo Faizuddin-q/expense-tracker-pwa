@@ -25,7 +25,7 @@ const summaryFromDetail = (detail: AdminUserDetail): AdminUserSummary => ({
 });
 
 /** Rendered as a full-width block below the (horizontally-scrollable) users
- *  table, not inside a <td> — so Dashboard/Expenses can reflow to the actual
+ *  table, not inside a <td> - so Dashboard/Expenses can reflow to the actual
  *  viewport width on mobile instead of being trapped in the table's
  *  min-width scroll container. */
 export const AdminUserDetailSection = ({

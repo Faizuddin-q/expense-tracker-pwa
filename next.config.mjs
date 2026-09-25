@@ -16,7 +16,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Bumped automatically on every merge to main — see
+  // Bumped automatically on every merge to main - see
   // .github/workflows/bump-version.yml. Read in Settings via
   // process.env.NEXT_PUBLIC_APP_VERSION.
   env: {
