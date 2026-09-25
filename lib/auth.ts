@@ -8,7 +8,7 @@ export const SESSION_COOKIE = 'pocket_session';
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 export const SESSION_MAX_AGE_SECONDS = SESSION_TTL_MS / 1000;
 
-// Shared with lib/admin-auth.ts (admin sessions) — one signing secret for the
+// Shared with lib/admin-auth.ts (admin sessions) - one signing secret for the
 // whole app. Falls back to a fixed dev secret so auth still works without
 // extra env setup locally; set SESSION_SECRET in production for a real
 // signing key.
@@ -24,7 +24,7 @@ export const isValidPhone = (value: string): boolean =>
 
 // ─── Passwords ──────────────────────────────────────────────────────────────
 
-/** `salt:hash`, both hex — scrypt with a random salt per user. */
+/** `salt:hash`, both hex - scrypt with a random salt per user. */
 export const hashPassword = async (password: string): Promise<string> => {
   const salt = randomBytes(16);
   const derived = (await scryptAsync(

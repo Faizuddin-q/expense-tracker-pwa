@@ -5,7 +5,7 @@ import { toProfileResponse } from '@/lib/profile-map';
 import { findProfile } from '@/lib/user-data';
 import { profileUpdateSchema } from '@/lib/validation/profile';
 
-/** GET /api/profile — the caller's profile. */
+/** GET /api/profile - the caller's profile. */
 export const GET = withUserAuth(
   'profile:get',
   async ({ userId }) => {
@@ -27,7 +27,7 @@ export const GET = withUserAuth(
   }
 );
 
-/** PATCH /api/profile — partial update of scalar profile fields. */
+/** PATCH /api/profile - partial update of scalar profile fields. */
 export const PATCH = withUserAuth(
   'profile:patch',
   async ({ request, userId }) => {

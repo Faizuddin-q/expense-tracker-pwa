@@ -2,7 +2,7 @@
 
 import { Moon, Sun } from 'lucide-react';
 import { Brand } from '@/components/Brand';
-import { navItems } from '@/lib/constants';
+import { navItems, mobileNavItems, moreNavItem } from '@/lib/constants';
 import { useThemeStore } from '@/lib/theme-store';
 
 function Bone({ className }: { className?: string }) {

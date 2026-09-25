@@ -1,4 +1,4 @@
-# API load work — 4 Sep 2026
+# API load work - 4 Sep 2026
 
 What shipped **today** to make the mobile loading skeleton shorter, written in simple English, with a before/after example for **every** change that is still in the tree.
 
@@ -25,11 +25,11 @@ Theme still uses `pocket-theme` in localStorage (light/dark only). That was alre
 
 On first paint of a signed-in session you will still see the skeleton. It should be shorter because the two data APIs themselves got cheaper.
 
-### Example — the three responses (signed in)
+### Example - the three responses (signed in)
 
 Every success body is `{ "data": ... }`. Failures are `{ "error": { "message": "..." } }`.
 
-**1. Session** — cookie only, no Mongo.
+**1. Session** - cookie only, no Mongo.
 
 ```http
 GET /api/auth/session
@@ -137,7 +137,7 @@ GET /api/expenses
 
 Status **401**. The app signs you out.
 
-### Example — time on a warm laptop vs a phone
+### Example - time on a warm laptop vs a phone
 
 Laptop (measured today, after connect):
 
@@ -162,7 +162,7 @@ The APIs did not merge. Two round trips is the price of keeping them separate.
 
 ---
 
-## Change 1 — Lean expense list (`GET /api/expenses`)
+## Change 1 - Lean expense list (`GET /api/expenses`)
 
 **Files:** `lib/user-data.ts` (`listActiveExpenses`, `toClientExpense`), `app/api/expenses/route.ts`
 
@@ -199,8 +199,8 @@ Problems: `_id` is Mongo’s internal id. `userId` is already in the cookie. Dat
 
 **After today:** the same filter and sort, but:
 
-1. `.project({ ... })` — only fields the UI uses
-2. `toClientExpense` — `id` from `localId`, amount as a number, dates as ISO strings, empty notes dropped
+1. `.project({ ... })` - only fields the UI uses
+2. `toClientExpense` - `id` from `localId`, amount as a number, dates as ISO strings, empty notes dropped
 
 ```js
 .find({ userId, /* not deleted */ })
@@ -238,7 +238,7 @@ Example row now:
 }
 ```
 
-### Example — `toClientExpense` step by step
+### Example - `toClientExpense` step by step
 
 Mongo might hand the helper something messy:
 
@@ -254,7 +254,7 @@ Mongo might hand the helper something messy:
   date: new Date("2026-09-04T08:12:00.000Z"),
   createdAt: new Date("2026-09-04T08:12:00.000Z"),
   updatedAt: new Date("2026-09-04T08:12:00.000Z"),
-  debugFlag: true                  // leftover field — projection never fetches it
+  debugFlag: true                  // leftover field - projection never fetches it
 }
 ```
 
@@ -266,7 +266,7 @@ What the phone gets:
   localId: "a1b2-c3d4-e5f6",
   amount: 240,                     // Number(...)
   category: "food",
-  // note omitted — trim was empty
+  // note omitted - trim was empty
   paymentMethod: "upi",
   date: "2026-09-04T08:12:00.000Z",
   createdAt: "2026-09-04T08:12:00.000Z",
@@ -294,7 +294,7 @@ return stampServerTiming(ok({ expenses }), [
 
 `POST` / `DELETE` on `/api/expenses` were **not** rewritten. Writes are unchanged.
 
-### Example — what a write still looks like (unchanged)
+### Example - what a write still looks like (unchanged)
 
 Add an expense on the phone → `POST /api/expenses`:
 
@@ -320,7 +320,7 @@ Then the client **pulls** again with the same two GETs (`/api/expenses` + `/api/
 
 ---
 
-## Change 2 — Lean profile read (`GET /api/profile`)
+## Change 2 - Lean profile read (`GET /api/profile`)
 
 **Files:** `lib/profile-map.ts` (`toProfileResponse`), `lib/user-data.ts` (`findProfile`), `app/api/profile/route.ts`
 
@@ -348,7 +348,7 @@ Only these fields go to the phone:
 | `theme` | `'dark'` / `'light'` / null |
 | `cycleStartDay` | 1–31 or null |
 
-### Example — Mongo document vs API `data`
+### Example - Mongo document vs API `data`
 
 What Mongo can store (extra leftovers included):
 
@@ -421,7 +421,7 @@ Profile was already a single `findOne`, so it was never the heavy query. This ch
 
 ---
 
-## Change 3 — Indexes
+## Change 3 - Indexes
 
 **File:** `lib/user-data.ts` → `ensureUserDataIndexes`, called from `lib/db.ts` after connect (does not block the first query; it runs in the background).
 
@@ -439,7 +439,7 @@ profiles.createIndex({ userId: 1 }, { unique: true })
 
 If `createIndex` fails (for example old duplicate profile rows), we log `[db] ensure indexes failed` and keep serving. We do **not** crash every API.
 
-### Example — drawer vs labelled tabs
+### Example - drawer vs labelled tabs
 
 Imagine 50,000 expense rows from many people.
 
@@ -451,7 +451,7 @@ For **152** demo rows, a scan is still cheap. The bench examined **153** docs fo
 
 ---
 
-## Change 4 — Reuse the Mongo client
+## Change 4 - Reuse the Mongo client
 
 **File:** `lib/db.ts`
 
@@ -481,7 +481,7 @@ return db;
 
 `connect()` on an already-open client is cheap. Pool size 10 is enough for this app; min 0 so idle serverless does not hold sockets.
 
-### Example — cold vs warm (this session, demo account)
+### Example - cold vs warm (this session, demo account)
 
 **Cold** (first hit after idle, new connection):
 
@@ -505,7 +505,7 @@ This is the main reason **HTTP** went from ~350–500ms (cold) to ~20–40ms (wa
 
 ---
 
-## Change 5 — Shared query helpers
+## Change 5 - Shared query helpers
 
 **New files:** `lib/user-data.ts`, `lib/profile-map.ts`
 
@@ -517,13 +517,13 @@ This is the main reason **HTTP** went from ~350–500ms (cold) to ~20–40ms (wa
 |---|---|
 | `listActiveExpenses(db, userId)` | projected, mapped expense list |
 | `findProfile(db, userId)` | projected profile as `ProfileResponse` |
-| `toProfileResponse(doc)` | shape for GET/PATCH (no Mongo import — client-safe) |
+| `toProfileResponse(doc)` | shape for GET/PATCH (no Mongo import - client-safe) |
 | `toClientExpense(doc)` | one lean expense |
 | `ensureUserDataIndexes(db)` | indexes, once per process |
 
 `user-data.ts` imports Mongo types. Do **not** import it from client components. `profile-map.ts` is the client-safe half.
 
-### Example — who calls what
+### Example - who calls what
 
 ```
 GET /api/expenses
@@ -553,7 +553,7 @@ const [expensesResult, profileResult] = await Promise.all([
 
 ---
 
-## Change 6 — See which API is slow
+## Change 6 - See which API is slow
 
 Three layers. None of them change the JSON body.
 
@@ -583,7 +583,7 @@ Same-origin `fetch` can read this. DevTools → Network → the request → head
 
 The wrapper also logs `[expenses:list] 37ms` so Vercel / `next dev` show the same number.
 
-### Example — reading headers in DevTools
+### Example - reading headers in DevTools
 
 1. Open the app, then DevTools → **Network**.
 2. Reload while signed in.
@@ -609,8 +609,8 @@ If `query` is 33ms and the **Timing** waterfall says 200ms, the extra 167ms is D
 
 Sync and session restore go through `fetchJson` instead of raw `fetch`. Each call records:
 
-- **ms** — time on the phone (includes network)
-- **serverMs** — parsed from `handler;dur=` (or `total;dur=`)
+- **ms** - time on the phone (includes network)
+- **serverMs** - parsed from `handler;dur=` (or `total;dur=`)
 - url, method, ok/fail
 
 Last 12 calls are kept. Console:
@@ -633,7 +633,7 @@ The in-memory record looks like:
 }
 ```
 
-### Example — how to read phone vs server
+### Example - how to read phone vs server
 
 | What you see | What it means |
 |---|---|
@@ -659,7 +659,7 @@ That is how you check timings **on a phone** without a laptop inspector. Tap **S
 
 ---
 
-## Change 7 — One-time leftover key wipe
+## Change 7 - One-time leftover key wipe
 
 **File:** `components/AppInit.tsx`
 
@@ -673,7 +673,7 @@ localStorage.removeItem('pockett:snapshot:v1')
 
 so a phone that already saved that key drops it. After that, the key should not come back.
 
-### Example — Application tab
+### Example - Application tab
 
 **Before the wipe** (if you loaded the app during the short window today):
 
@@ -774,7 +774,7 @@ Previous expense keys: `_id`, `amount`, `category`, `createdAt`, `date`, `localI
 
 Today’s expense keys: `amount`, `category`, `createdAt`, `date`, `deletedAt`, `id`, `localId`, `note`, `paymentMethod`, `updatedAt`.
 
-### Example — same two keys, one row
+### Example - same two keys, one row
 
 ```
 Before:  _id + userId + localId + amount + …
@@ -787,7 +787,7 @@ After:   id  + localId + amount + … + deletedAt
 
 Real route handlers, not only Mongo.
 
-**Before this work** — first load this session, connection still cold:
+**Before this work** - first load this session, connection still cold:
 
 | API | Time |
 |---|---|
@@ -796,7 +796,7 @@ Real route handlers, not only Mongo.
 | `GET /api/profile` | **500–563 ms** |
 | Startup wait (session, then the two together) | **~500–600 ms** |
 
-**After today** — warm, same account, 6 runs, still three APIs:
+**After today** - warm, same account, 6 runs, still three APIs:
 
 | API | Avg | Payload | Server-Timing |
 |---|---|---|---|
@@ -805,7 +805,7 @@ Real route handlers, not only Mongo.
 | `GET /api/profile` | 18 ms | 1.2 KB | query 6.2 ms |
 | Startup wait (session, then the two together) | **42 ms** | 46.5 KB | |
 
-### Example — startup wait formula
+### Example - startup wait formula
 
 ```
 wait = session_time + max(expenses_time, profile_time)

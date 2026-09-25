@@ -22,7 +22,7 @@ const WEEKDAYS = [
   { short: 'S', full: 'Sun' },
 ];
 
-/** Shared sizing — mobile stays compact; desktop cells are wider, slightly shorter. */
+/** Shared sizing - mobile stays compact; desktop cells are wider, slightly shorter. */
 const CELL_SIZE =
   'min-h-11 p-0.5 sm:min-h-[4.25rem] sm:p-2 md:min-h-[4.75rem] md:p-2';
 
@@ -120,10 +120,10 @@ export const ExpenseCalendarGrid = ({
                     }`}
                   >
                     <span className="sm:hidden">
-                      {total > 0 ? moneyCompact(total, hideAmounts) : '—'}
+                      {total > 0 ? moneyCompact(total, hideAmounts) : '-'}
                     </span>
                     <span className="hidden sm:inline">
-                      {total > 0 ? moneyExact(total, hideAmounts) : '—'}
+                      {total > 0 ? moneyExact(total, hideAmounts) : '-'}
                     </span>
                   </span>
                 </button>

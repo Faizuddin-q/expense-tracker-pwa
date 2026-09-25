@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import { LogOut, Moon, Sun } from 'lucide-react';
+import { ArrowLeft, LogOut, Moon, Sun } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 import { useProfileStore } from '@/lib/profile-store';
 import { useSyncStore } from '@/lib/sync-store';
@@ -15,7 +15,7 @@ import { IncomeSetup } from '@/components/IncomeSetup';
 import { HomeSkeleton } from '@/components/HomeSkeleton';
 import { AppSkeleton } from '@/components/AppSkeleton';
 import { PwaProvider } from '@/components/PwaProvider';
-import { navItems } from '@/lib/constants';
+import { navItems, mobileNavItems, moreNavItem, secondaryNavItems } from '@/lib/constants';
 import { formatIndianMobileDisplay } from '@/lib/utils';
 
 // ─── Page titles ──────────────────────────────────────────────────────────────
@@ -25,7 +25,9 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Overview',
   '/summary': 'Summary',
   '/expenses': 'Expenses',
+  '/chapters': 'Chapters',
   '/settings': 'Settings',
+  '/more': 'More',
 };
 
 // ─── Inner shell (needs context) ──────────────────────────────────────────────
@@ -55,7 +57,16 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
   const router = useRouter();
   const pathname = usePathname();
-  const pageTitle = PAGE_TITLES[pathname] ?? 'Pockett';
+  const isMoreSectionActive =
+    pathname === moreNavItem.href ||
+    secondaryNavItems.some((item) => item.href === pathname);
+  // The section (Summary / Chapters / Settings) this page lives under, whether it's the
+  // section's own top-level page or a nested sub-page (e.g. /chapters/[id]).
+  const moreSection = secondaryNavItems.find(
+    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
+  );
+  const isNestedMorePage = Boolean(moreSection);
+  const pageTitle = PAGE_TITLES[pathname] ?? moreSection?.label ?? 'Pockett';
 
   // Auth guard
   useEffect(() => {
@@ -157,9 +168,28 @@ function AppShell({ children }: { children: React.ReactNode }) {
       {/* Main */}
       <main className="pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:ml-56 lg:pb-10">
         <header className="sticky top-0 z-30 flex h-12 items-center justify-between bg-background/85 px-4 backdrop-blur-md sm:px-6 lg:px-8 relative after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-3 after:bg-gradient-to-b after:from-border/60 after:to-transparent">
-          <h1 className="text-[14px] font-semibold tracking-tight text-foreground">
-            {pageTitle}
-          </h1>
+          <div className="flex min-w-0 items-center gap-1">
+            {isNestedMorePage ? (
+              <button
+                type="button"
+                onClick={() => router.back()}
+                aria-label={`Back to ${pageTitle}`}
+                className="press -ml-1.5 flex min-w-0 cursor-pointer items-center gap-1 rounded-md py-1 pr-2 text-[14px] font-semibold tracking-tight text-foreground transition-colors hover:bg-secondary lg:hidden"
+              >
+                <ArrowLeft className="size-4 shrink-0" strokeWidth={1.9} />
+                <span className="truncate">{pageTitle}</span>
+              </button>
+            ) : (
+              <h1 className="truncate text-[14px] font-semibold tracking-tight text-foreground">
+                {pageTitle}
+              </h1>
+            )}
+            {isNestedMorePage && (
+              <h1 className="hidden truncate text-[14px] font-semibold tracking-tight text-foreground lg:block">
+                {pageTitle}
+              </h1>
+            )}
+          </div>
 
           <div className="flex items-center gap-1">
             <span className="mr-1 hidden items-center gap-1.5 text-[11px] font-medium text-muted-foreground sm:flex lg:hidden">
@@ -205,9 +235,10 @@ function AppShell({ children }: { children: React.ReactNode }) {
         className="fixed inset-x-0 bottom-0 z-50 px-3 pt-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] lg:hidden"
       >
         <div className="mx-auto flex h-14 max-w-md items-stretch rounded-xl border border-border bg-card/95 px-1 shadow-lg shadow-black/5 backdrop-blur-xl dark:shadow-black/30">
-          {navItems.map((item) => (
+          {mobileNavItems.map((item) => (
             <NavButton key={item.id} {...item} mobile />
           ))}
+          <NavButton {...moreNavItem} mobile forceActive={isMoreSectionActive} />
         </div>
       </nav>
     </div>

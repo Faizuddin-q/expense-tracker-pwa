@@ -7,7 +7,7 @@ import { adminExpenseSchema } from '@/lib/validation/expense';
 
 type Params = { userId: string };
 
-/** POST /api/admin/users/:userId/expenses — log a new expense on the user's behalf. */
+/** POST /api/admin/users/:userId/expenses - log a new expense on the user's behalf. */
 export const POST = withAdminAuth<Params>(
   'admin:expenses:create',
   async ({ request, params }) => {

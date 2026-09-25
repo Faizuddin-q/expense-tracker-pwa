@@ -46,5 +46,21 @@ export const mergeSyncOptions = (
       next.cycleStartDay !== undefined && next.cycleStartDay !== null
         ? next.cycleStartDay
         : base.cycleStartDay,
+    chapters:
+      next.chapters !== undefined && next.chapters !== null
+        ? next.chapters
+        : base.chapters,
+    deletedChapterIds: mergeDeleted(
+      base.deletedChapterIds,
+      next.deletedChapterIds
+    ),
+    chapterEntries:
+      next.chapterEntries !== undefined && next.chapterEntries !== null
+        ? next.chapterEntries
+        : base.chapterEntries,
+    deletedChapterEntryIds: mergeDeleted(
+      base.deletedChapterEntryIds,
+      next.deletedChapterEntryIds
+    ),
   };
 };

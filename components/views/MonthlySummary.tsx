@@ -112,7 +112,7 @@ export const MonthlySummary = ({
 
   return (
     <section className="mx-auto max-w-6xl">
-      {/* Stat strip — same card chrome as Expenses table */}
+      {/* Stat strip - same card chrome as Expenses table */}
       <div className="grid grid-cols-3 divide-x divide-border overflow-hidden rounded-xl border border-border bg-card">
         <div className="px-3 py-2.5 sm:px-4 sm:py-3">
           <p className="label">Months</p>
@@ -283,7 +283,7 @@ export const MonthlySummary = ({
             })}
           </div>
 
-          {/* Footer total — mirrors Expenses table footer */}
+          {/* Footer total - mirrors Expenses table footer */}
           <div className="flex items-center justify-between border-t border-primary/25 bg-primary/[0.07] px-3 py-2.5 sm:px-4">
             <span className="text-[11px] font-semibold tracking-[0.04em] text-primary uppercase">
               All months

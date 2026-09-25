@@ -4,8 +4,8 @@ import { AppInit } from '@/components/AppInit';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Pockett — Spend with clarity',
-  description: 'A calm expense tracker for everyday spending — synced to your account.',
+  title: 'Pockett - Spend with clarity',
+  description: 'A calm expense tracker for everyday spending - synced to your account.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -43,6 +43,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="light bg-background">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className="antialiased">
         <AppInit>{children}</AppInit>
         {process.env.NODE_ENV === 'production' && <Analytics />}

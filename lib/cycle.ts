@@ -26,7 +26,7 @@ const normalize = (cycleStartDay: number | undefined | null): number => {
 const daysInMonth = (year: number, month0: number): number =>
   new Date(year, month0 + 1, 0).getDate();
 
-/** The day a cycle actually starts on for a given calendar month — the
+/** The day a cycle actually starts on for a given calendar month - the
  *  requested day, or that month's last day when the month is shorter
  *  (e.g. cycleStartDay=31 starts on the 28th/29th in February). */
 const effectiveStartDay = (
@@ -125,13 +125,13 @@ export function formatCycleLabel(key: CycleKey, cycleStartDay: number): string {
 }
 
 /** Format a Date as a "YYYY-MM-DD" string suitable for an <input type="date">
- *  value — local calendar date, no timezone conversion. */
+ *  value - local calendar date, no timezone conversion. */
 export function toDateInputValue(date: Date): string {
   return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
 }
 
 /** Bucket a list of dated items into a Map<CycleKey, T[]>, always including
- *  the current cycle even if empty — mirrors the "always show current
+ *  the current cycle even if empty - mirrors the "always show current
  *  month" behavior the Dashboard/Expenses/MonthlySummary views want. */
 export function groupByCycle<T>(
   items: T[],

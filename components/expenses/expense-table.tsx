@@ -2,12 +2,23 @@
 
 import { ArrowDown, ArrowUp, Pencil, Trash2 } from 'lucide-react';
 import type { RowComponentProps } from 'react-window';
-import { Category, Expense } from '@/types/expense';
+import { Category, Expense, Payment } from '@/types/expense';
 import { categoryFor, getCategoryColor, getCategoryIcon } from '@/lib/utils';
 import { PAYMENT_LABELS } from '@/lib/constants';
 import { Money } from '@/components/Money';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { ExpenseDateDisplay } from '@/components/expenses/ExpenseDateDisplay';
+
+/** The fields this table reads - satisfied by both `Expense` and `ChapterEntry`. */
+interface ExpenseLike {
+  date: string;
+  category: string;
+  note?: string;
+  paymentMethod?: Payment;
+  createdAt?: string;
+  updatedAt?: string;
+  amount: number;
+}
 
 export const ROW_HEIGHT = 44;
 export const LIST_MAX_HEIGHT = 480;
@@ -23,9 +34,9 @@ export type SortKey = 'date' | 'category' | 'amount' | 'createdAt' | 'updatedAt'
 export type SortDir = 'asc' | 'desc';
 
 const formatDateTime = (iso?: string) => {
-  if (!iso) return '—';
+  if (!iso) return '-';
   const d = new Date(iso);
-  if (isNaN(d.getTime())) return '—';
+  if (isNaN(d.getTime())) return '-';
   const date = d.toLocaleDateString('en-IN', {
     day: '2-digit',
     month: 'short',
@@ -76,21 +87,21 @@ export const SortHeader = ({
   </div>
 );
 
-export type ExpenseTableRowProps = {
-  expense: Expense;
+export type ExpenseTableRowProps<T extends ExpenseLike> = {
+  expense: T;
   categories: Category[];
   hideAmounts: boolean;
-  onEdit: (expense: Expense) => void;
-  onDelete: (expense: Expense) => void;
+  onEdit: (expense: T) => void;
+  onDelete: (expense: T) => void;
 };
 
-export const ExpenseTableRow = ({
+export const ExpenseTableRow = <T extends ExpenseLike>({
   expense: e,
   categories,
   hideAmounts,
   onEdit,
   onDelete,
-}: ExpenseTableRowProps) => {
+}: ExpenseTableRowProps<T>) => {
   const c = categoryFor(e.category, categories);
   const color = getCategoryColor(c.tone);
 
@@ -113,20 +124,20 @@ export const ExpenseTableRow = ({
         </span>
       </div>
       <div className="hidden min-w-0 truncate px-3 py-2 text-muted-foreground sm:block">
-        {e.note || <span className="text-faint">—</span>}
+        {e.note || <span className="text-faint">-</span>}
       </div>
       <div className="hidden px-3 py-2 whitespace-nowrap text-muted-foreground md:block">
         {e.paymentMethod ? (
           PAYMENT_LABELS[e.paymentMethod] ?? e.paymentMethod
         ) : (
-          <span className="text-faint">—</span>
+          <span className="text-faint">-</span>
         )}
       </div>
       <div className="font-mono-numbers hidden min-w-0 truncate px-3 py-2 text-[12px] tabular-nums text-faint md:block">
         {formatDateTime(e.createdAt)}
       </div>
       <div className="font-mono-numbers hidden min-w-0 truncate px-3 py-2 text-[12px] tabular-nums text-faint md:block">
-        {e.updatedAt ? formatDateTime(e.updatedAt) : '—'}
+        {e.updatedAt ? formatDateTime(e.updatedAt) : '-'}
       </div>
       <div className="font-mono-numbers px-1 py-2 text-right font-medium whitespace-nowrap tabular-nums text-foreground sm:px-3">
         <Money value={e.amount} precise />
@@ -157,15 +168,15 @@ export const ExpenseTableRow = ({
   );
 };
 
-export type ExpenseListRowData = {
-  expenses: Expense[];
+export type ExpenseListRowData<T extends ExpenseLike = Expense> = {
+  expenses: T[];
   categories: Category[];
   hideAmounts: boolean;
-  onEdit: (expense: Expense) => void;
-  onDelete: (expense: Expense) => void;
+  onEdit: (expense: T) => void;
+  onDelete: (expense: T) => void;
 };
 
-export const ExpenseListRow = ({
+export const ExpenseListRow = <T extends ExpenseLike>({
   index,
   style,
   ariaAttributes,
@@ -174,7 +185,7 @@ export const ExpenseListRow = ({
   hideAmounts,
   onEdit,
   onDelete,
-}: RowComponentProps<ExpenseListRowData>) => {
+}: RowComponentProps<ExpenseListRowData<T>>) => {
   const e = expenses[index];
   if (!e) return null;
 
@@ -255,7 +266,7 @@ export const ExpenseDayMobileRow = ({
   hideAmounts,
   onEdit,
   onDelete,
-}: ExpenseTableRowProps) => {
+}: ExpenseTableRowProps<Expense>) => {
   const c = categoryFor(e.category, categories);
   const color = getCategoryColor(c.tone);
 

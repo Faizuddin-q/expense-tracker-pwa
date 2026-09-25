@@ -6,7 +6,7 @@ import { adminProfilePatchSchema } from '@/lib/validation/profile';
 
 type Params = { userId: string };
 
-/** GET /api/admin/users/:userId — full profile + active expenses for the expanded row. */
+/** GET /api/admin/users/:userId - full profile + active expenses for the expanded row. */
 export const GET = withAdminAuth<Params>(
   'admin:users:detail',
   async ({ params }) => {
@@ -68,7 +68,7 @@ export const GET = withAdminAuth<Params>(
   }
 );
 
-/** PATCH /api/admin/users/:userId — edit income / budget / hide-amounts on the user's behalf. */
+/** PATCH /api/admin/users/:userId - edit income / budget / hide-amounts on the user's behalf. */
 export const PATCH = withAdminAuth<Params>(
   'admin:users:patch',
   async ({ request, params }) => {
@@ -107,7 +107,7 @@ export const PATCH = withAdminAuth<Params>(
   }
 );
 
-/** DELETE /api/admin/users/:userId — permanently remove the account and all of its expenses. */
+/** DELETE /api/admin/users/:userId - permanently remove the account and all of its expenses. */
 export const DELETE = withAdminAuth<Params>(
   'admin:users:delete',
   async ({ params }) => {
@@ -120,7 +120,7 @@ export const DELETE = withAdminAuth<Params>(
     return ok({ ok: true });
   },
   {
-    // Tighter cap — irreversible, so this is the one write worth throttling
+    // Tighter cap - irreversible, so this is the one write worth throttling
     // harder than the general 30/min admin-write budget.
     rateLimit: {
       key: (req) => `admin-user-delete:${clientIp(req)}`,

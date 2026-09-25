@@ -93,7 +93,7 @@ const Stat = ({
   </div>
 );
 
-/** Labeled % meter — used for spend vs budget / salary. */
+/** Labeled % meter - used for spend vs budget / salary. */
 const PercentMeter = ({
   label,
   percent,
@@ -319,7 +319,7 @@ export const Dashboard = ({
 
   return (
     <section className="mx-auto max-w-6xl">
-      {/* Range control — same segment pattern as Expenses */}
+      {/* Range control - same segment pattern as Expenses */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="inline-flex rounded-lg border border-border bg-card p-0.5">
           {RANGES.map(({ key, label }) => (
@@ -428,7 +428,7 @@ export const Dashboard = ({
               : null
           }
         >
-          {showTargets ? <Money value={target} /> : '—'}
+          {showTargets ? <Money value={target} /> : '-'}
         </Stat>
         <Stat
           label={over ? 'Over by' : 'Remaining'}
@@ -443,7 +443,7 @@ export const Dashboard = ({
               : null
           }
         >
-          {showTargets ? <Money value={Math.abs(remaining)} /> : '—'}
+          {showTargets ? <Money value={Math.abs(remaining)} /> : '-'}
         </Stat>
         <Stat
           label="Can spend / day"
@@ -466,14 +466,14 @@ export const Dashboard = ({
               : null
           }
         >
-          {dailyRoom === null ? '—' : <Money value={dailyRoom} />}
+          {dailyRoom === null ? '-' : <Money value={dailyRoom} />}
         </Stat>
         <Stat label="Avg. spent / day">
           <Money value={dailyAverage} />
         </Stat>
       </div>
 
-      {/* Spend vs budget / salary — visual meters */}
+      {/* Spend vs budget / salary - visual meters */}
       {showTargets && (hasBudget || income > 0) && (
         <div
           className={`mt-3 rounded-xl border bg-card px-3 py-3.5 sm:px-4 sm:py-4 ${

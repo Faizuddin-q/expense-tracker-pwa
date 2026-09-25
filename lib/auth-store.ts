@@ -4,6 +4,8 @@ import { useExpenses } from '@/lib/store';
 import { useSyncStore } from '@/lib/sync-store';
 import { useProfileStore } from '@/lib/profile-store';
 import { useCategoryStore } from '@/lib/category-store';
+import { useChapters } from '@/lib/chapter-store';
+import { useChapterEntries } from '@/lib/chapter-entry-store';
 import { toast } from '@/components/ToastHost';
 import { fetchJson } from '@/lib/api-client';
 
@@ -33,6 +35,8 @@ const clearSessionState = () => {
   useCategoryStore.getState().resetOnLogout();
   useExpenses.getState().hydrate([]);
   useProfileStore.getState().resetOnLogout();
+  useChapters.getState().resetOnLogout();
+  useChapterEntries.getState().resetOnLogout();
 };
 
 /** Sync lock so a double tap on mobile can't fire two sign-ins. */
@@ -69,7 +73,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         set({ userId: '' });
       }
     } catch {
-      // Cloud-only — no local session fallback.
+      // Cloud-only - no local session fallback.
     } finally {
       set({ initializing: false });
     }
@@ -126,7 +130,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (data.passwordIsDefault) {
         toast.success(
           'Signed in',
-          'You used your phone number as a temporary password — set a real one in Settings.'
+          'You used your phone number as a temporary password - set a real one in Settings.'
         );
       } else if (ok) {
         toast.success('Signed in', `Account +91 ${normalized}`);

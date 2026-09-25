@@ -1,7 +1,7 @@
 import { randomBytes, createHmac, timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
 
-// Fixed admin credentials — this is a single-operator personal tracker, not
+// Fixed admin credentials - this is a single-operator personal tracker, not
 // a multi-tenant product, so a hardcoded pair (rather than a user table) is
 // the right amount of machinery.
 const ADMIN_USERNAME = 'faizadmin';
@@ -11,7 +11,7 @@ export const ADMIN_SESSION_COOKIE = 'pocket_admin_session';
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
 export const ADMIN_SESSION_MAX_AGE_SECONDS = SESSION_TTL_MS / 1000;
 
-// Shared with lib/auth.ts (user sessions) — one signing secret for the whole
+// Shared with lib/auth.ts (user sessions) - one signing secret for the whole
 // app. Falls back to a fixed dev secret so the panel still works without
 // extra env setup; set SESSION_SECRET in production for a real signing key.
 const SESSION_SECRET =

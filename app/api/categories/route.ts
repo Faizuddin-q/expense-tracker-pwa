@@ -8,7 +8,7 @@ import {
 } from '@/lib/category-sync-merge';
 import { ensureDefaultCategories } from '@/lib/ensure-default-categories';
 
-/** PUT /api/categories — replace/merge the caller's category set. */
+/** PUT /api/categories - replace/merge the caller's category set. */
 export const PUT = withUserAuth(
   'categories:replace',
   async ({ request, userId }) => {

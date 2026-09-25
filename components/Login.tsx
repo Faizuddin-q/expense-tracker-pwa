@@ -69,7 +69,7 @@ export const Login = ({
         </h1>
         <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
           {isSignup
-            ? 'Your mobile number is your account ID. Pick a password — you’ll use both to restore your expenses on any device.'
+            ? 'Your mobile number is your account ID. Pick a password - you’ll use both to restore your expenses on any device.'
             : 'Enter your mobile number and password to access your expenses.'}
         </p>
 
@@ -243,7 +243,7 @@ export const Login = ({
             />
             <p className="text-[12px] leading-relaxed text-foreground">
               <span className="font-medium">Already had an account?</span>{' '}
-              Your password is your phone number — sign in once with that,
+              Your password is your phone number - sign in once with that,
               then set a new password anytime in Settings.
             </p>
           </div>

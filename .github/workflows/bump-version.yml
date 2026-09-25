@@ -1,6 +1,6 @@
 name: Bump version on release
 
-# Fires whenever main gets new commits — i.e. whenever a branch is merged
+# Fires whenever main gets new commits - i.e. whenever a branch is merged
 # into main. Bumps the patch version in package.json (0.0.1 -> 0.0.2 -> ...)
 # and pushes the bump back to main. Also creates an annotated git tag
 # `v0.0.N` on that commit so a deployed release can be checked out later:
@@ -50,5 +50,5 @@ jobs:
             git merge origin/main --no-edit -m "chore: sync version bump from main [skip ci]"
             git push origin dev
           else
-            echo "No dev branch on origin — skipping sync."
+            echo "No dev branch on origin - skipping sync."
           fi

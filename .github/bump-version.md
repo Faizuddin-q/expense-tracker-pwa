@@ -1,6 +1,6 @@
 # Versioning in this project
 
-This app uses a simple **patch-only** version number stored in `package.json` (for example `0.0.18`). You do **not** bump the version by hand during normal development — a GitHub Action does it automatically whenever code is merged into `main`.
+This app uses a simple **patch-only** version number stored in `package.json` (for example `0.0.18`). You do **not** bump the version by hand during normal development - a GitHub Action does it automatically whenever code is merged into `main`.
 
 The version is shown in the app under **Settings → Pockett version**, read from `package.json` at build time via `next.config.mjs`.
 
@@ -45,10 +45,10 @@ sequenceDiagram
 
 **Step by step:**
 
-1. **Trigger** — Any push to `main` (usually a merged PR).
-2. **Bump** — `npm version patch` increases the last number in `package.json` (`0.0.17` → `0.0.18`).
-3. **Commit & tag** — The bot commits only `package.json`, tags the release (e.g. `v0.0.18`), and pushes to `main`.
-4. **Sync to `dev`** — The same version change is merged into `dev` so both branches stay aligned.
+1. **Trigger** - Any push to `main` (usually a merged PR).
+2. **Bump** - `npm version patch` increases the last number in `package.json` (`0.0.17` → `0.0.18`).
+3. **Commit & tag** - The bot commits only `package.json`, tags the release (e.g. `v0.0.18`), and pushes to `main`.
+4. **Sync to `dev`** - The same version change is merged into `dev` so both branches stay aligned.
 
 Commit messages look like:
 
@@ -113,7 +113,7 @@ flowchart TD
 3. The Action bumps the version; Vercel deploys **`main`** automatically.
 4. Check **Settings** in the live app to confirm the new version.
 
-**Do not** edit `package.json` version on feature branches — let the Action handle it on release.
+**Do not** edit `package.json` version on feature branches - let the Action handle it on release.
 
 ---
 
@@ -121,7 +121,7 @@ flowchart TD
 
 The workflow depends on **GitHub Actions**. If Actions is down or the run failed, `main` can merge without a version bump.
 
-**Check:** GitHub → **Actions** → **Bump version on release** — look for a run on your merge commit.
+**Check:** GitHub → **Actions** → **Bump version on release** - look for a run on your merge commit.
 
 **Fix manually** (same commit message as the bot):
 

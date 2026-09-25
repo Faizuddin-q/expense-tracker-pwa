@@ -14,7 +14,7 @@ const monthShort = (d: Date) =>
 type ExpenseDateDisplayProps = {
   date: string | Date;
   withYear?: boolean;
-  /** Calendar cells — day number only (month is in the cycle header). */
+  /** Calendar cells - day number only (month is in the cycle header). */
   dayOnly?: boolean;
   muted?: boolean;
   className?: string;
@@ -28,7 +28,7 @@ export const ExpenseDateDisplay = ({
   className = '',
 }: ExpenseDateDisplayProps) => {
   const d = typeof date === 'string' ? new Date(date) : date;
-  if (isNaN(d.getTime())) return <span>—</span>;
+  if (isNaN(d.getTime())) return <span>-</span>;
 
   const today = isExpenseToday(d);
   const day = d.getDate();

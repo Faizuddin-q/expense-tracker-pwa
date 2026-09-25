@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 
 /**
- * Proportion bar for budget and category breakdowns. Deliberately thin —
+ * Proportion bar for budget and category breakdowns. Deliberately thin -
  * it encodes a value, it is not a decorative element.
  */
 export const Bar = ({
