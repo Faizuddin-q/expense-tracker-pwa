@@ -2,12 +2,23 @@
 
 import { ArrowDown, ArrowUp, Pencil, Trash2 } from 'lucide-react';
 import type { RowComponentProps } from 'react-window';
-import { Category, Expense } from '@/types/expense';
+import { Category, Expense, Payment } from '@/types/expense';
 import { categoryFor, getCategoryColor, getCategoryIcon } from '@/lib/utils';
 import { PAYMENT_LABELS } from '@/lib/constants';
 import { Money } from '@/components/Money';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { ExpenseDateDisplay } from '@/components/expenses/ExpenseDateDisplay';
+
+/** The fields this table reads — satisfied by both `Expense` and `ChapterEntry`. */
+interface ExpenseLike {
+  date: string;
+  category: string;
+  note?: string;
+  paymentMethod?: Payment;
+  createdAt?: string;
+  updatedAt?: string;
+  amount: number;
+}
 
 export const ROW_HEIGHT = 44;
 export const LIST_MAX_HEIGHT = 480;
@@ -76,21 +87,21 @@ export const SortHeader = ({
   </div>
 );
 
-export type ExpenseTableRowProps = {
-  expense: Expense;
+export type ExpenseTableRowProps<T extends ExpenseLike> = {
+  expense: T;
   categories: Category[];
   hideAmounts: boolean;
-  onEdit: (expense: Expense) => void;
-  onDelete: (expense: Expense) => void;
+  onEdit: (expense: T) => void;
+  onDelete: (expense: T) => void;
 };
 
-export const ExpenseTableRow = ({
+export const ExpenseTableRow = <T extends ExpenseLike>({
   expense: e,
   categories,
   hideAmounts,
   onEdit,
   onDelete,
-}: ExpenseTableRowProps) => {
+}: ExpenseTableRowProps<T>) => {
   const c = categoryFor(e.category, categories);
   const color = getCategoryColor(c.tone);
 
@@ -157,15 +168,15 @@ export const ExpenseTableRow = ({
   );
 };
 
-export type ExpenseListRowData = {
-  expenses: Expense[];
+export type ExpenseListRowData<T extends ExpenseLike = Expense> = {
+  expenses: T[];
   categories: Category[];
   hideAmounts: boolean;
-  onEdit: (expense: Expense) => void;
-  onDelete: (expense: Expense) => void;
+  onEdit: (expense: T) => void;
+  onDelete: (expense: T) => void;
 };
 
-export const ExpenseListRow = ({
+export const ExpenseListRow = <T extends ExpenseLike>({
   index,
   style,
   ariaAttributes,
@@ -174,7 +185,7 @@ export const ExpenseListRow = ({
   hideAmounts,
   onEdit,
   onDelete,
-}: RowComponentProps<ExpenseListRowData>) => {
+}: RowComponentProps<ExpenseListRowData<T>>) => {
   const e = expenses[index];
   if (!e) return null;
 
@@ -255,7 +266,7 @@ export const ExpenseDayMobileRow = ({
   hideAmounts,
   onEdit,
   onDelete,
-}: ExpenseTableRowProps) => {
+}: ExpenseTableRowProps<Expense>) => {
   const c = categoryFor(e.category, categories);
   const color = getCategoryColor(c.tone);
 

@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { Category, Payment } from '@/types/expense';
-import { ChapterEntry } from '@/types/chapter';
 import {
   formatIndianNumber,
   getCategoryColor,
@@ -15,10 +14,9 @@ import { CategoryIcon } from '@/components/CategoryIcon';
 import { useFocusTrap } from '@/lib/useFocusTrap';
 import { useDialogExit } from '@/lib/useDialogExit';
 
-interface ChapterEntryFormDialogProps {
-  entry?: ChapterEntry;
+interface ChapterAddEntryDialogProps {
   categories: Category[];
-  onSave: (patch: {
+  onSave: (entry: {
     amount: number;
     note?: string;
     category: string;
@@ -28,23 +26,18 @@ interface ChapterEntryFormDialogProps {
   onClose: () => void;
 }
 
-export const ChapterEntryFormDialog = ({
-  entry,
+/** Same shell as ExpenseEditDialog, but seeded blank — for logging a new expense in a chapter. */
+export const ChapterAddEntryDialog = ({
   categories,
   onSave,
   onClose,
-}: ChapterEntryFormDialogProps) => {
-  const [amountDraft, setAmountDraft] = useState(() =>
-    entry ? formatIndianNumber(entry.amount) : ''
-  );
-  const [noteDraft, setNoteDraft] = useState(entry?.note ?? '');
-  const [category, setCategory] = useState(entry?.category ?? categories[0]?.id ?? '');
-  const [paymentMethod, setPaymentMethod] = useState<Payment | null>(
-    entry?.paymentMethod ?? null
-  );
+}: ChapterAddEntryDialogProps) => {
+  const [amountDraft, setAmountDraft] = useState('');
+  const [noteDraft, setNoteDraft] = useState('');
+  const [category, setCategory] = useState(categories[0]?.id ?? '');
+  const [paymentMethod, setPaymentMethod] = useState<Payment | null>(null);
   const [dateDraft, setDateDraft] = useState(() => {
-    const d = entry ? new Date(entry.date) : new Date();
-    if (isNaN(d.getTime())) return '';
+    const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -94,7 +87,7 @@ export const ChapterEntryFormDialog = ({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="chapter-entry-title"
+        aria-labelledby="chapter-add-entry-title"
         className={`relative z-10 w-full max-w-sm rounded-t-xl border border-border bg-card duration-200 ease-[var(--ease-drawer)] sm:rounded-xl ${
           leaving
             ? 'animate-out fade-out slide-out-to-bottom-4 sm:zoom-out-[0.98] sm:slide-out-to-bottom-0'
@@ -103,10 +96,10 @@ export const ChapterEntryFormDialog = ({
       >
         <div className="flex h-11 items-center justify-between border-b border-border px-4">
           <h2
-            id="chapter-entry-title"
+            id="chapter-add-entry-title"
             className="text-[13px] font-semibold text-foreground"
           >
-            {entry ? 'Edit expense' : 'Add expense'}
+            Add expense
           </h2>
           <button
             type="button"
@@ -120,28 +113,29 @@ export const ChapterEntryFormDialog = ({
 
         <div className="space-y-3.5 px-4 py-4">
           <div>
-            <label htmlFor="chapter-entry-amount" className="label mb-1.5 block">
+            <label htmlFor="chapter-add-amount" className="label mb-1.5 block">
               Amount
             </label>
             <div className="field-shell flex h-9 items-center rounded-lg border border-border bg-background px-2.5">
               <span className="font-mono-numbers text-[13px] text-faint">₹</span>
               <input
-                id="chapter-entry-amount"
+                id="chapter-add-amount"
                 autoFocus
                 inputMode="decimal"
                 value={amountDraft}
                 onChange={(e) => setAmountDraft(formatIndianNumber(e.target.value))}
+                placeholder="0"
                 className="font-mono-numbers w-full min-w-0 bg-transparent px-1.5 text-[13px] font-medium text-foreground outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="chapter-entry-note" className="label mb-1.5 block">
+            <label htmlFor="chapter-add-note" className="label mb-1.5 block">
               Note
             </label>
             <input
-              id="chapter-entry-note"
+              id="chapter-add-note"
               value={noteDraft}
               onChange={(e) => setNoteDraft(e.target.value)}
               placeholder="Optional"
@@ -150,11 +144,11 @@ export const ChapterEntryFormDialog = ({
           </div>
 
           <div>
-            <label htmlFor="chapter-entry-date" className="label mb-1.5 block">
+            <label htmlFor="chapter-add-date" className="label mb-1.5 block">
               Date
             </label>
             <input
-              id="chapter-entry-date"
+              id="chapter-add-date"
               type="date"
               value={dateDraft}
               onChange={(e) => setDateDraft(e.target.value)}
@@ -229,7 +223,7 @@ export const ChapterEntryFormDialog = ({
             disabled={!valid}
             className="h-9 flex-1 cursor-pointer rounded-lg bg-primary text-[13px] font-medium text-primary-foreground press transition-opacity hover:opacity-90 active:opacity-80 disabled:pointer-events-none disabled:opacity-40"
           >
-            {entry ? 'Save' : 'Add expense'}
+            Add expense
           </button>
         </div>
       </div>

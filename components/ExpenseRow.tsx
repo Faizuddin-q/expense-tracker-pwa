@@ -1,23 +1,30 @@
 import { Pencil, Trash2 } from 'lucide-react';
-import { Category, Expense } from '@/types/expense';
+import { Category } from '@/types/expense';
 import { categoryFor, getCategoryColor, getCategoryIcon } from '@/lib/utils';
 import { Money } from '@/components/Money';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { builtInCategories } from '@/lib/constants';
 
-interface ExpenseRowProps {
-  expense: Expense;
-  onDelete: (expense: Expense) => void;
-  onEdit?: (expense: Expense) => void;
+/** The fields this row actually reads — satisfied by both `Expense` and `ChapterEntry`. */
+interface ExpenseLike {
+  category: string;
+  note?: string;
+  amount: number;
+}
+
+interface ExpenseRowProps<T extends ExpenseLike> {
+  expense: T;
+  onDelete: (expense: T) => void;
+  onEdit?: (expense: T) => void;
   categories?: Category[];
 }
 
-export const ExpenseRow = ({
+export const ExpenseRow = <T extends ExpenseLike>({
   expense,
   onDelete,
   onEdit,
   categories = builtInCategories,
-}: ExpenseRowProps) => {
+}: ExpenseRowProps<T>) => {
   const c = categoryFor(expense.category, categories);
   const color = getCategoryColor(c.tone);
   const Icon = getCategoryIcon(c);

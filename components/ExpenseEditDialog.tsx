@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
-import { Category, Expense, Payment } from '@/types/expense';
+import { Category, Payment } from '@/types/expense';
 import {
   formatIndianNumber,
   getCategoryColor,
@@ -14,8 +14,17 @@ import { CategoryIcon } from '@/components/CategoryIcon';
 import { useFocusTrap } from '@/lib/useFocusTrap';
 import { useDialogExit } from '@/lib/useDialogExit';
 
-interface ExpenseEditDialogProps {
-  expense: Expense;
+/** The fields this dialog reads — satisfied by both `Expense` and `ChapterEntry`. */
+interface ExpenseLike {
+  amount: number;
+  note?: string;
+  category: string;
+  date: string;
+  paymentMethod?: Payment;
+}
+
+interface ExpenseEditDialogProps<T extends ExpenseLike> {
+  expense: T;
   categories: Category[];
   onSave: (patch: {
     amount: number;
@@ -27,12 +36,12 @@ interface ExpenseEditDialogProps {
   onClose: () => void;
 }
 
-export const ExpenseEditDialog = ({
+export const ExpenseEditDialog = <T extends ExpenseLike>({
   expense,
   categories,
   onSave,
   onClose,
-}: ExpenseEditDialogProps) => {
+}: ExpenseEditDialogProps<T>) => {
   const [amountDraft, setAmountDraft] = useState(() =>
     formatIndianNumber(expense.amount)
   );
