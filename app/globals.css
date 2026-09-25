@@ -106,6 +106,8 @@ html.light {
 
 html {
   overflow-x: hidden;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
   font-family: 'Inter';
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   text-rendering: optimizeLegibility;
