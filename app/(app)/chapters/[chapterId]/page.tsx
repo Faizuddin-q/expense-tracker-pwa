@@ -1,8 +1,9 @@
 'use client';
 
-import { use } from 'react';
+import { use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useChapters } from '@/lib/chapter-store';
+import { useSyncStore } from '@/lib/sync-store';
 import { ChapterDetail } from '@/components/views/ChapterDetail';
 
 export default function ChapterDetailPage({
@@ -13,6 +14,10 @@ export default function ChapterDetailPage({
   const { chapterId } = use(params);
   const router = useRouter();
   const chapter = useChapters((s) => s.chapters.find((c) => c.id === chapterId));
+
+  useEffect(() => {
+    void useSyncStore.getState().ensureFreshChapters();
+  }, []);
 
   if (!chapter) {
     return (

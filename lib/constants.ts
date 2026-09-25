@@ -5,7 +5,7 @@ import {
   Film,
   HeartPulse,
   LayoutDashboard,
-  MoreHorizontal,
+  Menu,
   Plus,
   Receipt,
   Settings as SettingsIcon,
@@ -107,7 +107,7 @@ export const moreNavItem = {
   id: 'more',
   label: 'More',
   shortLabel: 'More',
-  icon: MoreHorizontal,
+  icon: Menu,
   href: '/more',
 } as const;
 

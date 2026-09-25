@@ -370,6 +370,7 @@ interface SyncStore {
 
   bootstrapUser: (id: string) => Promise<boolean>;
   ensureFreshCategories: () => Promise<void>;
+  ensureFreshChapters: () => Promise<void>;
 }
 
 export const useSyncStore = create<SyncStore>((set, get) => ({
@@ -451,6 +452,12 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
   },
 
   ensureFreshCategories: async () => {
+    const userId = useAuthStore.getState().userId;
+    if (!userId) return;
+    await get().sync({ id: userId, pullOnly: true });
+  },
+
+  ensureFreshChapters: async () => {
     const userId = useAuthStore.getState().userId;
     if (!userId) return;
     await get().sync({ id: userId, pullOnly: true });
