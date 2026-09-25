@@ -1,6 +1,6 @@
 {
   "name": "my-money-tracker-pockett",
-  "version": "0.0.23",
+  "version": "1.0.23",
   "private": true,
   "scripts": {
     "dev": "next dev",
