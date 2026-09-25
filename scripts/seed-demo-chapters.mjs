@@ -1,6 +1,6 @@
 /**
  * Seed (or re-seed) demo Chapters + chapter expenses for the demo account
- * (phone 1234567890 — see scripts/seed-demo-account.mjs). Idempotent: each
+ * (phone 1234567890 - see scripts/seed-demo-account.mjs). Idempotent: each
  * chapter/entry is upserted by a stable localId, so re-running just updates
  * the same rows instead of duplicating them.
  *
@@ -59,48 +59,48 @@ const entries = [
   { chapterId: 'chapter-diwali', localId: 'ds-2', amount: 1600, category: 'food', note: 'Sweets & snacks', paymentMethod: 'cash', date: daysAgo(72) },
   { chapterId: 'chapter-diwali', localId: 'ds-3', amount: 2500, category: 'other', note: 'Gifts', paymentMethod: 'upi', date: daysAgo(70) },
 
-  // Manali Trek — budget 25000, spend ~10100
+  // Manali Trek - budget 25000, spend ~10100
   { chapterId: 'chapter-manali-trek', localId: 'mt-1', amount: 3500, category: 'transport', note: 'Volvo bus tickets', paymentMethod: 'upi', date: daysAgo(34) },
   { chapterId: 'chapter-manali-trek', localId: 'mt-2', amount: 2800, category: 'bills', note: 'Homestay (2 nights)', paymentMethod: 'cash', date: daysAgo(33) },
   { chapterId: 'chapter-manali-trek', localId: 'mt-3', amount: 1600, category: 'food', note: 'Local food', paymentMethod: 'cash', date: daysAgo(32) },
   { chapterId: 'chapter-manali-trek', localId: 'mt-4', amount: 2200, category: 'other', note: 'Trekking gear rental', paymentMethod: 'card', date: daysAgo(32) },
 
-  // MacBook Upgrade — budget 140000, spend ~133100
+  // MacBook Upgrade - budget 140000, spend ~133100
   { chapterId: 'chapter-macbook', localId: 'mb-1', amount: 129900, category: 'other', note: 'MacBook Air M4', paymentMethod: 'card', date: daysAgo(14) },
   { chapterId: 'chapter-macbook', localId: 'mb-2', amount: 3200, category: 'shopping', note: 'Sleeve + adapter', paymentMethod: 'upi', date: daysAgo(13) },
 
-  // Home Renovation — budget 220000, spend ~216000 (near budget)
+  // Home Renovation - budget 220000, spend ~216000 (near budget)
   { chapterId: 'chapter-home-reno', localId: 'hr-1', amount: 85000, category: 'other', note: 'Kitchen cabinets', paymentMethod: 'netbanking', date: daysAgo(58) },
   { chapterId: 'chapter-home-reno', localId: 'hr-2', amount: 62000, category: 'other', note: 'Painting & labor', paymentMethod: 'netbanking', date: daysAgo(45) },
   { chapterId: 'chapter-home-reno', localId: 'hr-3', amount: 48000, category: 'shopping', note: 'Fixtures & fittings', paymentMethod: 'card', date: daysAgo(20) },
   { chapterId: 'chapter-home-reno', localId: 'hr-4', amount: 21000, category: 'other', note: 'Electrician', paymentMethod: 'cash', date: daysAgo(6) },
 
-  // Sister's Wedding Gift — budget 20000, spend ~14500
+  // Sister's Wedding Gift - budget 20000, spend ~14500
   { chapterId: 'chapter-sister-wedding', localId: 'sw-1', amount: 8000, category: 'shopping', note: 'Gold coin gift', paymentMethod: 'card', date: daysAgo(24) },
   { chapterId: 'chapter-sister-wedding', localId: 'sw-2', amount: 4500, category: 'shopping', note: 'Outfit for the wedding', paymentMethod: 'upi', date: daysAgo(20) },
   { chapterId: 'chapter-sister-wedding', localId: 'sw-3', amount: 2000, category: 'transport', note: 'Travel to hometown', paymentMethod: 'cash', date: daysAgo(7) },
 
-  // Bali Honeymoon — budget 180000, spend ~119000
+  // Bali Honeymoon - budget 180000, spend ~119000
   { chapterId: 'chapter-bali-honeymoon', localId: 'bh-1', amount: 62000, category: 'transport', note: 'Return flights', paymentMethod: 'card', date: daysAgo(48) },
   { chapterId: 'chapter-bali-honeymoon', localId: 'bh-2', amount: 45000, category: 'bills', note: 'Resort (5 nights)', paymentMethod: 'card', date: daysAgo(40) },
   { chapterId: 'chapter-bali-honeymoon', localId: 'bh-3', amount: 12000, category: 'entertainment', note: 'Excursions booked', paymentMethod: 'upi', date: daysAgo(15) },
 
-  // Gym Membership (Year) — budget 25000, spend ~22300 (near budget)
+  // Gym Membership (Year) - budget 25000, spend ~22300 (near budget)
   { chapterId: 'chapter-gym-year', localId: 'gy-1', amount: 18000, category: 'health', note: 'Annual membership', paymentMethod: 'card', date: daysAgo(99) },
   { chapterId: 'chapter-gym-year', localId: 'gy-2', amount: 2500, category: 'shopping', note: 'Gym gear', paymentMethod: 'upi', date: daysAgo(90) },
   { chapterId: 'chapter-gym-year', localId: 'gy-3', amount: 1800, category: 'health', note: 'Personal training session', paymentMethod: 'cash', date: daysAgo(20) },
 
-  // Old Laptop Repair — archived, budget 20000, spend ~5600
+  // Old Laptop Repair - archived, budget 20000, spend ~5600
   { chapterId: 'chapter-laptop-repair', localId: 'lr-1', amount: 3200, category: 'other', note: 'Screen replacement', paymentMethod: 'cash', date: daysAgo(199) },
   { chapterId: 'chapter-laptop-repair', localId: 'lr-2', amount: 2400, category: 'other', note: 'Battery replacement', paymentMethod: 'cash', date: daysAgo(185) },
 
-  // Home Office Setup — budget 30000, spend ~23700
+  // Home Office Setup - budget 30000, spend ~23700
   { chapterId: 'chapter-office-setup', localId: 'os-1', amount: 14000, category: 'other', note: 'Standing desk', paymentMethod: 'card', date: daysAgo(11) },
   { chapterId: 'chapter-office-setup', localId: 'os-2', amount: 6500, category: 'other', note: 'Ergonomic chair', paymentMethod: 'card', date: daysAgo(10) },
   { chapterId: 'chapter-office-setup', localId: 'os-3', amount: 3200, category: 'shopping', note: 'Monitor arm + lighting', paymentMethod: 'upi', date: daysAgo(2) },
 ];
 
-// Cordelia Cruise — budget 150000, 30 expenses totaling 210000 (over budget).
+// Cordelia Cruise - budget 150000, 30 expenses totaling 210000 (over budget).
 const cordeliaItems = [
   ['transport', 'Round-trip flights to Mumbai', 18500],
   ['other', 'Cruise cabin booking (balcony)', 74500],
@@ -109,8 +109,8 @@ const cordeliaItems = [
   ['entertainment', 'Casino night', 5000],
   ['entertainment', 'Live show tickets', 2500],
   ['shopping', 'Duty-free shopping', 7200],
-  ['other', 'Port excursion — Lakshadweep', 9500],
-  ['other', 'Port excursion — snorkeling', 6800],
+  ['other', 'Port excursion - Lakshadweep', 9500],
+  ['other', 'Port excursion - snorkeling', 6800],
   ['bills', 'Travel insurance', 3200],
   ['transport', 'Airport cabs', 1800],
   ['food', 'Buffet upgrade package', 2600],

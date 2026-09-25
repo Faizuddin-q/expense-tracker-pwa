@@ -5,7 +5,7 @@ import { Money } from '@/components/Money';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { builtInCategories } from '@/lib/constants';
 
-/** The fields this row actually reads — satisfied by both `Expense` and `ChapterEntry`. */
+/** The fields this row actually reads - satisfied by both `Expense` and `ChapterEntry`. */
 interface ExpenseLike {
   category: string;
   note?: string;

@@ -18,7 +18,7 @@ const pickEntryFields = (
   return picked;
 };
 
-/** GET /api/chapters/entries — pull the caller's active chapter entries. */
+/** GET /api/chapters/entries - pull the caller's active chapter entries. */
 export const GET = withUserAuth(
   'chapter-entries:list',
   async ({ userId }) => {
@@ -35,7 +35,7 @@ export const GET = withUserAuth(
   }
 );
 
-/** POST /api/chapters/entries — bulk upsert the caller's chapter entries. */
+/** POST /api/chapters/entries - bulk upsert the caller's chapter entries. */
 export const POST = withUserAuth(
   'chapter-entries:upsert',
   async ({ request, userId }) => {
@@ -93,7 +93,7 @@ export const POST = withUserAuth(
   }
 );
 
-/** DELETE /api/chapters/entries — bulk soft-delete by id. */
+/** DELETE /api/chapters/entries - bulk soft-delete by id. */
 export const DELETE = withUserAuth(
   'chapter-entries:delete',
   async ({ request, userId }) => {

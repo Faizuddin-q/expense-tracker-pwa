@@ -48,8 +48,8 @@ export const POST = withPublic(
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    // Seed the starter category set as real, owned rows — not a separate
-    // built-in list — so they're editable/deletable from day one, no
+    // Seed the starter category set as real, owned rows - not a separate
+    // built-in list - so they're editable/deletable from day one, no
     // override/shadow mechanism needed.
     await profiles.insertOne({
       userId: phone,

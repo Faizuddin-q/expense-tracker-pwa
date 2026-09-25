@@ -57,14 +57,16 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
   const router = useRouter();
   const pathname = usePathname();
-  const pageTitle = PAGE_TITLES[pathname] ?? 'Pockett';
   const isMoreSectionActive =
     pathname === moreNavItem.href ||
     secondaryNavItems.some((item) => item.href === pathname);
-  // Reached only via the mobile "More" tab, so the header gets a back-to-More button there.
-  const isNestedMorePage = secondaryNavItems.some(
+  // The section (Summary / Chapters / Settings) this page lives under, whether it's the
+  // section's own top-level page or a nested sub-page (e.g. /chapters/[id]).
+  const moreSection = secondaryNavItems.find(
     (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
   );
+  const isNestedMorePage = Boolean(moreSection);
+  const pageTitle = PAGE_TITLES[pathname] ?? moreSection?.label ?? 'Pockett';
 
   // Auth guard
   useEffect(() => {
@@ -167,19 +169,26 @@ function AppShell({ children }: { children: React.ReactNode }) {
       <main className="pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:ml-56 lg:pb-10">
         <header className="sticky top-0 z-30 flex h-12 items-center justify-between bg-background/85 px-4 backdrop-blur-md sm:px-6 lg:px-8 relative after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-3 after:bg-gradient-to-b after:from-border/60 after:to-transparent">
           <div className="flex min-w-0 items-center gap-1">
-            {isNestedMorePage && (
+            {isNestedMorePage ? (
               <button
                 type="button"
-                onClick={() => router.push('/more')}
-                aria-label="Back to More"
-                className="press -ml-1.5 grid size-7 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground lg:hidden"
+                onClick={() => router.back()}
+                aria-label={`Back to ${pageTitle}`}
+                className="press -ml-1.5 flex min-w-0 cursor-pointer items-center gap-1 rounded-md py-1 pr-2 text-[14px] font-semibold tracking-tight text-foreground transition-colors hover:bg-secondary lg:hidden"
               >
-                <ArrowLeft className="size-4" strokeWidth={1.9} />
+                <ArrowLeft className="size-4 shrink-0" strokeWidth={1.9} />
+                <span className="truncate">{pageTitle}</span>
               </button>
+            ) : (
+              <h1 className="truncate text-[14px] font-semibold tracking-tight text-foreground">
+                {pageTitle}
+              </h1>
             )}
-            <h1 className="truncate text-[14px] font-semibold tracking-tight text-foreground">
-              {pageTitle}
-            </h1>
+            {isNestedMorePage && (
+              <h1 className="hidden truncate text-[14px] font-semibold tracking-tight text-foreground lg:block">
+                {pageTitle}
+              </h1>
+            )}
           </div>
 
           <div className="flex items-center gap-1">

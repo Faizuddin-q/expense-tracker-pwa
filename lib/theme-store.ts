@@ -5,9 +5,9 @@ import { useSyncStore } from '@/lib/sync-store';
 interface ThemeStore {
   theme: 'dark' | 'light';
   screenObscured: boolean;
-  /** Plain setter — no cloud push. Used internally by sync-store when applying the account's synced theme. */
+  /** Plain setter - no cloud push. Used internally by sync-store when applying the account's synced theme. */
   setThemeState: (t: 'dark' | 'light') => void;
-  /** Public action — also pushes the theme to the account so it follows across devices. */
+  /** Public action - also pushes the theme to the account so it follows across devices. */
   setTheme: (t: 'dark' | 'light') => void;
   setScreenObscured: (v: boolean) => void;
 }

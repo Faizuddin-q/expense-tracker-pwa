@@ -12,7 +12,7 @@ interface IncomeSetupProps {
   error: string;
 }
 
-/** First-run onboarding for brand-new accounts — income + optional budget. */
+/** First-run onboarding for brand-new accounts - income + optional budget. */
 export const IncomeSetup = ({
   income,
   setIncome,
@@ -31,7 +31,7 @@ export const IncomeSetup = ({
           Set your targets
         </h1>
         <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
-          Income is the baseline Overview measures against. Budget is optional —
+          Income is the baseline Overview measures against. Budget is optional -
           you can change either anytime in Settings.
         </p>
 

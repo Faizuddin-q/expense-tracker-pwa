@@ -26,7 +26,7 @@ interface ChapterAddEntryDialogProps {
   onClose: () => void;
 }
 
-/** Same shell as ExpenseEditDialog, but seeded blank — for logging a new expense in a chapter. */
+/** Same shell as ExpenseEditDialog, but seeded blank - for logging a new expense in a chapter. */
 export const ChapterAddEntryDialog = ({
   categories,
   onSave,

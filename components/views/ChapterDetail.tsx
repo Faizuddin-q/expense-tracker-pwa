@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArchiveRestore, Archive, ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArchiveRestore, Archive, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Chapter, ChapterEntry } from '@/types/chapter';
 import { useChapters } from '@/lib/chapter-store';
 import {
@@ -100,15 +100,6 @@ export const ChapterDetail = ({ chapter }: { chapter: Chapter }) => {
 
   return (
     <section className="mx-auto max-w-3xl lg:max-w-6xl">
-      <button
-        type="button"
-        onClick={() => router.push('/chapters')}
-        className="press mb-3 flex cursor-pointer items-center gap-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="size-3.5" strokeWidth={2} />
-        Chapters
-      </button>
-
       <div className="rounded-xl border border-border bg-card p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -178,7 +169,7 @@ export const ChapterDetail = ({ chapter }: { chapter: Chapter }) => {
         )}
       </div>
 
-      {/* By category — same row shape as MonthlySummary's per-category breakdown */}
+      {/* By category - same row shape as MonthlySummary's per-category breakdown */}
       {sortedByCategory.length > 0 && (
         <div className="mt-4 overflow-hidden rounded-xl border border-border bg-card px-3 py-3 sm:px-4">
           <p className="mb-2.5 text-[11px] font-semibold tracking-[0.04em] text-muted-foreground uppercase">

@@ -73,7 +73,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         set({ userId: '' });
       }
     } catch {
-      // Cloud-only — no local session fallback.
+      // Cloud-only - no local session fallback.
     } finally {
       set({ initializing: false });
     }
@@ -130,7 +130,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (data.passwordIsDefault) {
         toast.success(
           'Signed in',
-          'You used your phone number as a temporary password — set a real one in Settings.'
+          'You used your phone number as a temporary password - set a real one in Settings.'
         );
       } else if (ok) {
         toast.success('Signed in', `Account +91 ${normalized}`);

@@ -76,7 +76,7 @@ const Section = ({
   </section>
 );
 
-/** Segmented control — active state uses primary like Expenses filters */
+/** Segmented control - active state uses primary like Expenses filters */
 const Segment = ({
   options,
   value,
@@ -108,7 +108,7 @@ const Segment = ({
 );
 
 // Fixed days 1-28 (identical every month) plus one "Last day of month"
-// option — stored as 31, which always clamps down to that month's actual
+// option - stored as 31, which always clamps down to that month's actual
 // last day (see lib/cycle.ts effectiveStartDay). Days 29/30 aren't offered
 // as their own options: picking one of those would make the cycle boundary
 // silently slide between e.g. the 28th/29th/30th depending on the month,
@@ -121,7 +121,7 @@ const cycleStartDayLabel = (day: number) => {
   return `Day ${day}`;
 };
 
-/** Native select for the cycle-start-day picker — 31 options don't fit a
+/** Native select for the cycle-start-day picker - 31 options don't fit a
  *  Segment control, and a native select gives keyboard/a11y support for free. */
 const CycleStartDaySelect = ({
   value,
@@ -423,7 +423,7 @@ export const Settings = ({
           </Row>
           <Row
             title="Change password"
-            description="Existing accounts created before passwords were required were defaulted to their phone number — set a real one here."
+            description="Existing accounts created before passwords were required were defaulted to their phone number - set a real one here."
           >
             <ChangePasswordForm onChangePassword={onChangePassword} />
           </Row>
@@ -432,7 +432,7 @@ export const Settings = ({
         <Section title="Targets">
           <Row
             title="Monthly cycle start day"
-            description="Your month runs from this day to the day before it next month — e.g. day 5 means 5 Jul–4 Aug counts as one month. Changes how past expenses are grouped everywhere."
+            description="Your month runs from this day to the day before it next month - e.g. day 5 means 5 Jul–4 Aug counts as one month. Changes how past expenses are grouped everywhere."
           >
             <CycleStartDaySelect value={cycleStartDay} onChange={setCycleStartDay} />
           </Row>
@@ -453,7 +453,7 @@ export const Settings = ({
           </Row>
           <Row
             title="Monthly budget"
-            description="Analytics target only — you can still log past it."
+            description="Analytics target only - you can still log past it."
           >
             <AmountField
               label="Monthly spend budget"
@@ -469,7 +469,7 @@ export const Settings = ({
         </Section>
 
         <Section title="Appearance">
-          <Row title="Theme" description="Synced to your account — follows you to every device.">
+          <Row title="Theme" description="Synced to your account - follows you to every device.">
             <Segment
               value={theme}
               onChange={(v) => setTheme(v as 'dark' | 'light')}

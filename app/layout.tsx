@@ -4,8 +4,8 @@ import { AppInit } from '@/components/AppInit';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Pockett — Spend with clarity',
-  description: 'A calm expense tracker for everyday spending — synced to your account.',
+  title: 'Pockett - Spend with clarity',
+  description: 'A calm expense tracker for everyday spending - synced to your account.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,

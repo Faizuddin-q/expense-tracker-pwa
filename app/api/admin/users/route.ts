@@ -3,7 +3,7 @@ import { clientIp } from '@/lib/rate-limit';
 import { ok } from '@/lib/api/response';
 import { withAdminAuth } from '@/lib/api/handler';
 
-/** GET /api/admin/users — every account, with lightweight totals for the table. */
+/** GET /api/admin/users - every account, with lightweight totals for the table. */
 export const GET = withAdminAuth(
   'admin:users:list',
   async () => {

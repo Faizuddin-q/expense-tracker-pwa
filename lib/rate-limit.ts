@@ -21,13 +21,13 @@ const sweep = (windowMs: number) => {
 
 export interface RateLimitResult {
   allowed: boolean;
-  /** How many seconds until this key can try again — only set when blocked. */
+  /** How many seconds until this key can try again - only set when blocked. */
   retryAfterSeconds?: number;
 }
 
 /**
  * Checks whether `key` is still under its limit and records this attempt if so.
- * `windowMs` is the time window in milliseconds — e.g. pass `15 * 60 * 1000` to mean "15 minutes".
+ * `windowMs` is the time window in milliseconds - e.g. pass `15 * 60 * 1000` to mean "15 minutes".
  */
 export const checkRateLimit = (
   key: string,

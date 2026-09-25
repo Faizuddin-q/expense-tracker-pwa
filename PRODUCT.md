@@ -1,6 +1,6 @@
-# Pockett — Product overview
+# Pockett - Product overview
 
-Pockett is a cloud-synced personal expense tracker. Users log day-to-day spending, categorize it, track it against income/budget, and review it over time — with minimal friction and calm presentation.
+Pockett is a cloud-synced personal expense tracker. Users log day-to-day spending, categorize it, track it against income/budget, and review it over time - with minimal friction and calm presentation.
 
 ## Architecture
 

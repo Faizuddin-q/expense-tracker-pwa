@@ -73,7 +73,7 @@ export const findProfile = async (
 
 let indexesEnsured = false;
 
-/** Idempotent — safe to call on every process start. */
+/** Idempotent - safe to call on every process start. */
 export const ensureUserDataIndexes = async (db: Db) => {
   if (indexesEnsured) return;
   indexesEnsured = true;

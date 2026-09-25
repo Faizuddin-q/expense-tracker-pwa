@@ -9,7 +9,7 @@ import { Money } from '@/components/Money';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { ExpenseDateDisplay } from '@/components/expenses/ExpenseDateDisplay';
 
-/** The fields this table reads — satisfied by both `Expense` and `ChapterEntry`. */
+/** The fields this table reads - satisfied by both `Expense` and `ChapterEntry`. */
 interface ExpenseLike {
   date: string;
   category: string;
@@ -34,9 +34,9 @@ export type SortKey = 'date' | 'category' | 'amount' | 'createdAt' | 'updatedAt'
 export type SortDir = 'asc' | 'desc';
 
 const formatDateTime = (iso?: string) => {
-  if (!iso) return '—';
+  if (!iso) return '-';
   const d = new Date(iso);
-  if (isNaN(d.getTime())) return '—';
+  if (isNaN(d.getTime())) return '-';
   const date = d.toLocaleDateString('en-IN', {
     day: '2-digit',
     month: 'short',
@@ -124,20 +124,20 @@ export const ExpenseTableRow = <T extends ExpenseLike>({
         </span>
       </div>
       <div className="hidden min-w-0 truncate px-3 py-2 text-muted-foreground sm:block">
-        {e.note || <span className="text-faint">—</span>}
+        {e.note || <span className="text-faint">-</span>}
       </div>
       <div className="hidden px-3 py-2 whitespace-nowrap text-muted-foreground md:block">
         {e.paymentMethod ? (
           PAYMENT_LABELS[e.paymentMethod] ?? e.paymentMethod
         ) : (
-          <span className="text-faint">—</span>
+          <span className="text-faint">-</span>
         )}
       </div>
       <div className="font-mono-numbers hidden min-w-0 truncate px-3 py-2 text-[12px] tabular-nums text-faint md:block">
         {formatDateTime(e.createdAt)}
       </div>
       <div className="font-mono-numbers hidden min-w-0 truncate px-3 py-2 text-[12px] tabular-nums text-faint md:block">
-        {e.updatedAt ? formatDateTime(e.updatedAt) : '—'}
+        {e.updatedAt ? formatDateTime(e.updatedAt) : '-'}
       </div>
       <div className="font-mono-numbers px-1 py-2 text-right font-medium whitespace-nowrap tabular-nums text-foreground sm:px-3">
         <Money value={e.amount} precise />

@@ -11,7 +11,7 @@ interface NavButtonProps {
   icon: LucideIcon;
   href: string;
   mobile?: boolean;
-  /** Overrides the pathname-match check — e.g. the "More" tab is active for any page tucked behind it. */
+  /** Overrides the pathname-match check - e.g. the "More" tab is active for any page tucked behind it. */
   forceActive?: boolean;
 }
 

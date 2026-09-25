@@ -14,7 +14,7 @@ import { CategoryIcon } from '@/components/CategoryIcon';
 import { useFocusTrap } from '@/lib/useFocusTrap';
 import { useDialogExit } from '@/lib/useDialogExit';
 
-/** The fields this dialog reads — satisfied by both `Expense` and `ChapterEntry`. */
+/** The fields this dialog reads - satisfied by both `Expense` and `ChapterEntry`. */
 interface ExpenseLike {
   amount: number;
   note?: string;

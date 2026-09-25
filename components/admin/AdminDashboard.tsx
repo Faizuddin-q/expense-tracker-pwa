@@ -156,20 +156,20 @@ export const AdminDashboard = ({ onSignedOut }: AdminDashboardProps) => {
       <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 lg:px-8">
         {/* Platform-wide summary */}
         <div className="grid grid-cols-2 divide-x divide-y divide-border overflow-hidden rounded-xl border border-border bg-card sm:grid-cols-4 sm:divide-y-0">
-          <Stat label="Total users" value={summary?.totalUsers ?? '—'} icon={Users} />
+          <Stat label="Total users" value={summary?.totalUsers ?? '-'} icon={Users} />
           <Stat
             label="Total expenses"
-            value={summary?.totalExpenses ?? '—'}
+            value={summary?.totalExpenses ?? '-'}
             icon={Receipt}
           />
           <Stat
             label="Total spend"
-            value={summary ? moneyExact(summary.totalSpend) : '—'}
+            value={summary ? moneyExact(summary.totalSpend) : '-'}
             icon={Wallet}
           />
           <Stat
             label="Active (30d)"
-            value={summary?.activeLast30Days ?? '—'}
+            value={summary?.activeLast30Days ?? '-'}
             icon={Activity}
           />
         </div>
@@ -193,7 +193,7 @@ export const AdminDashboard = ({ onSignedOut }: AdminDashboardProps) => {
           </span>
         </div>
 
-        {/* Table — summary rows only. The expanded account panel renders as
+        {/* Table - summary rows only. The expanded account panel renders as
             a full-width block below (see AdminUserDetailSection), not inside
             a table cell, so it can reflow correctly on mobile instead of
             being trapped in this table's horizontal-scroll min-width. */}

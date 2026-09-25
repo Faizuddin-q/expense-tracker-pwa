@@ -2,7 +2,7 @@ import { Category, Expense } from '@/types/expense';
 import { Chapter, ChapterEntry } from '@/types/chapter';
 
 /**
- * All fields optional and independent — pass only what actually changed.
+ * All fields optional and independent - pass only what actually changed.
  * `null` (or omitted) means "don't touch this on the server", not "clear it".
  */
 export interface SyncOptions {

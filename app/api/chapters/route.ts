@@ -4,7 +4,7 @@ import { withUserAuth } from '@/lib/api/handler';
 import { listActiveChapters } from '@/lib/chapter-data';
 import { chaptersDeleteSchema, chaptersUpsertSchema } from '@/lib/validation/chapter';
 
-/** GET /api/chapters — pull the caller's active chapters. */
+/** GET /api/chapters - pull the caller's active chapters. */
 export const GET = withUserAuth(
   'chapters:list',
   async ({ userId }) => {
@@ -21,7 +21,7 @@ export const GET = withUserAuth(
   }
 );
 
-/** POST /api/chapters — bulk upsert the caller's chapters. */
+/** POST /api/chapters - bulk upsert the caller's chapters. */
 export const POST = withUserAuth(
   'chapters:upsert',
   async ({ request, userId }) => {
@@ -78,7 +78,7 @@ export const POST = withUserAuth(
   }
 );
 
-/** DELETE /api/chapters — bulk soft-delete by id. */
+/** DELETE /api/chapters - bulk soft-delete by id. */
 export const DELETE = withUserAuth(
   'chapters:delete',
   async ({ request, userId }) => {

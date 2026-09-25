@@ -82,7 +82,7 @@ export const getCategoryIcon = (category: Partial<Category>): LucideIcon => {
   return Plus;
 };
 
-// Chalk-stick palette — dustier, less saturated than screen-native brights,
+// Chalk-stick palette - dustier, less saturated than screen-native brights,
 // Muted, mid-lightness palette tuned to read as one family rather than a
 // rainbow. Every value stays legible as a small dot or bar on both the dark
 // and light surfaces, and none of them compete with the primary action color.
@@ -260,7 +260,7 @@ export const moneyExact = (n: number, hidden = false): string => {
 /** Short k/L amount for tight spaces (e.g. calendar cells). Always 2 decimal places. */
 export const moneyCompact = (n: number, hidden = false): string => {
   if (hidden) return MASKED_MONEY;
-  if (!Number.isFinite(n) || n === 0) return '—';
+  if (!Number.isFinite(n) || n === 0) return '-';
   if (n >= 100_000) return `₹${(n / 100_000).toFixed(2)}L`;
   if (n >= 1_000) return `₹${(n / 1_000).toFixed(2)}k`;
   return `₹${n.toLocaleString('en-IN', {
@@ -269,7 +269,7 @@ export const moneyCompact = (n: number, hidden = false): string => {
   })}`;
 };
 
-/** "3h ago" / "5d ago" style label — used for admin "Last active" columns. */
+/** "3h ago" / "5d ago" style label - used for admin "Last active" columns. */
 export const formatRelativeTime = (iso: string | null | undefined): string => {
   if (!iso) return 'Never';
   const then = new Date(iso).getTime();

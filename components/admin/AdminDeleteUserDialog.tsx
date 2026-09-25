@@ -13,7 +13,7 @@ interface AdminDeleteUserDialogProps {
   onClose: () => void;
 }
 
-/** Irreversible — requires typing the account's phone number before the button unlocks. */
+/** Irreversible - requires typing the account's phone number before the button unlocks. */
 export const AdminDeleteUserDialog = ({
   userId,
   expenseCount,

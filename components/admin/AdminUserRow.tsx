@@ -51,10 +51,10 @@ export const AdminUserRow = ({ user, expanded, onToggle }: AdminUserRowProps) =>
         {moneyExact(user.totalSpend)}
       </td>
       <td className="font-mono-numbers py-2.5 pr-3 text-[13px] text-muted-foreground">
-        {user.monthlyIncome ? moneyExact(user.monthlyIncome) : '—'}
+        {user.monthlyIncome ? moneyExact(user.monthlyIncome) : '-'}
       </td>
       <td className="font-mono-numbers py-2.5 pr-3 text-[13px] text-muted-foreground">
-        {user.monthlyBudget ? moneyExact(user.monthlyBudget) : '—'}
+        {user.monthlyBudget ? moneyExact(user.monthlyBudget) : '-'}
       </td>
       <td className="py-2.5 pr-3 text-[12px] whitespace-nowrap text-muted-foreground sm:pr-4">
         {formatRelativeTime(user.lastActivity)}

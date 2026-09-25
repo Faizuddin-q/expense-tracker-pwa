@@ -1,6 +1,6 @@
 import { CategoryId, Payment } from '@/types/expense';
 
-/** A one-off spend you track outside your regular monthly budget — a trip, a big purchase, anything. */
+/** A one-off spend you track outside your regular monthly budget - a trip, a big purchase, anything. */
 export type Chapter = {
   id: string;
   name: string;
