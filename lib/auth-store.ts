@@ -4,6 +4,8 @@ import { useExpenses } from '@/lib/store';
 import { useSyncStore } from '@/lib/sync-store';
 import { useProfileStore } from '@/lib/profile-store';
 import { useCategoryStore } from '@/lib/category-store';
+import { useChapters } from '@/lib/chapter-store';
+import { useChapterEntries } from '@/lib/chapter-entry-store';
 import { toast } from '@/components/ToastHost';
 import { fetchJson } from '@/lib/api-client';
 
@@ -33,6 +35,8 @@ const clearSessionState = () => {
   useCategoryStore.getState().resetOnLogout();
   useExpenses.getState().hydrate([]);
   useProfileStore.getState().resetOnLogout();
+  useChapters.getState().resetOnLogout();
+  useChapterEntries.getState().resetOnLogout();
 };
 
 /** Sync lock so a double tap on mobile can't fire two sign-ins. */

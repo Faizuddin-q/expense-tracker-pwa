@@ -11,6 +11,8 @@ interface NavButtonProps {
   icon: LucideIcon;
   href: string;
   mobile?: boolean;
+  /** Overrides the pathname-match check — e.g. the "More" tab is active for any page tucked behind it. */
+  forceActive?: boolean;
 }
 
 export const NavButton = ({
@@ -19,9 +21,10 @@ export const NavButton = ({
   icon: Icon,
   href,
   mobile,
+  forceActive,
 }: NavButtonProps) => {
   const pathname = usePathname();
-  const active = pathname === href;
+  const active = forceActive ?? pathname === href;
   const displayLabel = mobile ? (shortLabel ?? label) : label;
 
   if (mobile) {

@@ -2,7 +2,7 @@
 
 import { Moon, Sun } from 'lucide-react';
 import { Brand } from '@/components/Brand';
-import { navItems } from '@/lib/constants';
+import { navItems, mobileNavItems, moreNavItem, secondaryNavItems } from '@/lib/constants';
 import { useThemeStore } from '@/lib/theme-store';
 
 function Bone({ className }: { className?: string }) {
@@ -19,6 +19,9 @@ export const AppSkeleton = ({
 }) => {
   const theme = useThemeStore((s) => s.theme);
   const activeIndex = navItems.findIndex((item) => item.href === pathname);
+  const isMoreSectionActive =
+    pathname === moreNavItem.href ||
+    secondaryNavItems.some((item) => item.href === pathname);
 
   return (
     <div
@@ -120,9 +123,10 @@ export const AppSkeleton = ({
         className="fixed inset-x-0 bottom-0 z-50 px-3 pt-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] lg:hidden"
       >
         <div className="mx-auto flex h-14 max-w-md items-stretch rounded-xl border border-border bg-card/95 px-1 shadow-lg shadow-black/5 backdrop-blur-xl dark:shadow-black/30">
-          {navItems.map((item, index) => {
+          {[...mobileNavItems, moreNavItem].map((item) => {
             const Icon = item.icon;
-            const active = index === activeIndex;
+            const active =
+              item.id === moreNavItem.id ? isMoreSectionActive : item.href === pathname;
             return (
               <div
                 key={item.id}

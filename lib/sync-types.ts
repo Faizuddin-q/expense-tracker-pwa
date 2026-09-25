@@ -1,4 +1,5 @@
 import { Category, Expense } from '@/types/expense';
+import { Chapter, ChapterEntry } from '@/types/chapter';
 
 /**
  * All fields optional and independent — pass only what actually changed.
@@ -20,4 +21,8 @@ export interface SyncOptions {
   cycleStartDay?: number | null;
   /** Login/bootstrap: pull cloud truth without uploading local expense snapshot. */
   pullOnly?: boolean;
+  chapters?: Chapter[] | null;
+  deletedChapterIds?: string[];
+  chapterEntries?: ChapterEntry[] | null;
+  deletedChapterEntryIds?: string[];
 }

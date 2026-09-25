@@ -1,11 +1,14 @@
 import { create } from 'zustand';
 import { Category, Expense } from '@/types/expense';
+import { Chapter, ChapterEntry } from '@/types/chapter';
 import { getCategoryIcon } from '@/lib/utils';
 import { useExpenses } from '@/lib/store';
 import { useAuthStore } from '@/lib/auth-store';
 import { useProfileStore } from '@/lib/profile-store';
 import { useCategoryStore } from '@/lib/category-store';
 import { useThemeStore } from '@/lib/theme-store';
+import { useChapters } from '@/lib/chapter-store';
+import { useChapterEntries } from '@/lib/chapter-entry-store';
 import { toast } from '@/components/ToastHost';
 import type { SyncOptions } from '@/lib/sync-types';
 import { mergeSyncOptions } from '@/lib/sync-merge-options';
@@ -99,13 +102,44 @@ const applyCloudExpenses = (
   useExpenses.getState().hydrate(activeExpenses);
 };
 
+const applyCloudChapters = (
+  cloudChapters: Chapter[],
+  deletedIdSet: Set<string>
+) => {
+  const active: Chapter[] = [];
+  for (const c of cloudChapters) {
+    if (deletedIdSet.has(c.id) || c.deletedAt) continue;
+    active.push(c);
+  }
+  useChapters.getState().hydrate(active);
+};
+
+const applyCloudChapterEntries = (
+  cloudEntries: ChapterEntry[],
+  deletedIdSet: Set<string>
+) => {
+  const active: ChapterEntry[] = [];
+  for (const e of cloudEntries) {
+    const eid = e.localId ?? e.id;
+    if (deletedIdSet.has(eid) || e.deletedAt) continue;
+    active.push({ ...e, id: eid, amount: Number(e.amount) || 0 });
+  }
+  useChapterEntries.getState().hydrate(active);
+};
+
 const applyPulledState = (
   cloudExpenses: Expense[],
   profileData: ProfileResponse,
-  deletedIdSet: Set<string>
+  deletedIdSet: Set<string>,
+  cloudChapters: Chapter[],
+  deletedChapterIdSet: Set<string>,
+  cloudChapterEntries: ChapterEntry[],
+  deletedChapterEntryIdSet: Set<string>
 ) => {
   applyCloudExpenses(cloudExpenses, deletedIdSet);
   applyProfileResponse(profileData, cloudExpenses.length);
+  applyCloudChapters(cloudChapters, deletedChapterIdSet);
+  applyCloudChapterEntries(cloudChapterEntries, deletedChapterEntryIdSet);
 
   if (Array.isArray(profileData.categories) && profileData.categories.length) {
     const cloudCategories: Category[] = (
@@ -130,10 +164,14 @@ async function runSync(
     name = null,
     theme = null,
     cycleStartDay = null,
+    chapters = null,
+    chapterEntries = null,
   } = options;
   const id = options.id ?? useAuthStore.getState().userId;
   const local = options.local ?? useExpenses.getState().expenses;
   const deletedIds = options.deletedIds ?? get().pendingDeletedIds;
+  const deletedChapterIds = options.deletedChapterIds ?? [];
+  const deletedChapterEntryIds = options.deletedChapterEntryIds ?? [];
   if (!id) return false;
   set({ syncing: true });
   useAuthStore.getState().setError('');
@@ -186,6 +224,46 @@ async function runSync(
       );
     }
 
+    if (chapters !== null) {
+      writes.push(
+        fetchJson('/api/chapters', {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify({ chapters }),
+        })
+      );
+    }
+
+    if (deletedChapterIds.length > 0) {
+      writes.push(
+        fetchJson('/api/chapters', {
+          method: 'DELETE',
+          headers: jsonHeaders,
+          body: JSON.stringify({ ids: deletedChapterIds }),
+        })
+      );
+    }
+
+    if (chapterEntries !== null) {
+      writes.push(
+        fetchJson('/api/chapters/entries', {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify({ entries: chapterEntries }),
+        })
+      );
+    }
+
+    if (deletedChapterEntryIds.length > 0) {
+      writes.push(
+        fetchJson('/api/chapters/entries', {
+          method: 'DELETE',
+          headers: jsonHeaders,
+          body: JSON.stringify({ ids: deletedChapterEntryIds }),
+        })
+      );
+    }
+
     const profilePatch: Record<string, unknown> = {};
     if (typeof income === 'number' && income > 0) profilePatch.monthlyIncome = income;
     if (typeof budget === 'number' && budget > 0) profilePatch.monthlyBudget = budget;
@@ -226,10 +304,13 @@ async function runSync(
     const firstFailure = writeResults.find((r) => !r.ok);
     if (firstFailure && !firstFailure.ok) throw new Error(firstFailure.message);
 
-    const [expensesResult, profileResult] = await Promise.all([
-      fetchJson<{ expenses: Expense[] }>('/api/expenses'),
-      fetchJson<ProfileResponse>('/api/profile'),
-    ]);
+    const [expensesResult, profileResult, chaptersResult, chapterEntriesResult] =
+      await Promise.all([
+        fetchJson<{ expenses: Expense[] }>('/api/expenses'),
+        fetchJson<ProfileResponse>('/api/profile'),
+        fetchJson<{ chapters: Chapter[] }>('/api/chapters'),
+        fetchJson<{ entries: ChapterEntry[] }>('/api/chapters/entries'),
+      ]);
 
     if (!expensesResult.ok) {
       if (expensesResult.status === 401 || expensesResult.status === 403) {
@@ -242,8 +323,12 @@ async function runSync(
       throw new Error(expensesResult.message);
     }
     if (!profileResult.ok) throw new Error(profileResult.message);
+    if (!chaptersResult.ok) throw new Error(chaptersResult.message);
+    if (!chapterEntriesResult.ok) throw new Error(chapterEntriesResult.message);
 
     const deletedIdSet = new Set(deletedIds);
+    const deletedChapterIdSet = new Set(deletedChapterIds);
+    const deletedChapterEntryIdSet = new Set(deletedChapterEntryIds);
 
     if (deletedIds.length > 0) {
       get().setPendingDeletedIds((prev) =>
@@ -254,7 +339,11 @@ async function runSync(
     applyPulledState(
       expensesResult.data.expenses,
       profileResult.data,
-      deletedIdSet
+      deletedIdSet,
+      chaptersResult.data.chapters,
+      deletedChapterIdSet,
+      chapterEntriesResult.data.entries,
+      deletedChapterEntryIdSet
     );
 
     return true;

@@ -1,9 +1,11 @@
 import {
+  BookOpen,
   Car,
   CalendarRange,
   Film,
   HeartPulse,
   LayoutDashboard,
+  MoreHorizontal,
   Plus,
   Receipt,
   Settings as SettingsIcon,
@@ -78,6 +80,14 @@ export const navItems = [
     href: '/expenses',
   },
   {
+    // Name may change to "Pockets" later.
+    id: 'chapters',
+    label: 'Chapters',
+    shortLabel: 'Chapters',
+    icon: BookOpen,
+    href: '/chapters',
+  },
+  {
     id: 'settings',
     label: 'Settings',
     shortLabel: 'Settings',
@@ -85,6 +95,26 @@ export const navItems = [
     href: '/settings',
   },
 ] as const;
+
+/** Mobile bottom bar shows only the top 3, plus a "More" tab for the rest. */
+const MOBILE_PRIMARY_IDS = ['home', 'dashboard', 'expenses', 'summary'];
+
+export const mobileNavItems = navItems.filter((item) =>
+  MOBILE_PRIMARY_IDS.includes(item.id)
+);
+
+export const moreNavItem = {
+  id: 'more',
+  label: 'More',
+  shortLabel: 'More',
+  icon: MoreHorizontal,
+  href: '/more',
+} as const;
+
+/** Pages tucked behind the mobile "More" tab (and listed on its page). */
+export const secondaryNavItems = navItems.filter(
+  (item) => !MOBILE_PRIMARY_IDS.includes(item.id)
+);
 
 export const quickRelogItems = [
   {
