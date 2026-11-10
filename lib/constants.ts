@@ -115,24 +115,3 @@ export const moreNavItem = {
 export const secondaryNavItems = navItems.filter(
   (item) => !MOBILE_PRIMARY_IDS.includes(item.id)
 );
-
-export const quickRelogItems = [
-  {
-    label: 'Coffee',
-    amount: 150,
-    category: 'food',
-    Icon: Utensils,
-  },
-  {
-    label: 'Metro',
-    amount: 180,
-    category: 'transport',
-    Icon: Car,
-  },
-  {
-    label: 'Lunch',
-    amount: 420,
-    category: 'food',
-    Icon: Utensils,
-  },
-] as const;

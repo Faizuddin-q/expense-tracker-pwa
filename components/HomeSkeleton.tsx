@@ -110,7 +110,7 @@ export const HomeSkeleton = ({ title = 'Add expense' }: { title?: string }) => {
                 <div className="mt-6">
                   <h2 className="label mb-2.5">Frequent</h2>
                   <div className="flex flex-wrap gap-1.5">
-                    {Array.from({ length: 3 }, (_, i) => (
+                    {Array.from({ length: 4 }, (_, i) => (
                       <div
                         key={i}
                         className="flex h-8 items-center gap-2 rounded-lg border border-border bg-card px-2.5"
@@ -161,9 +161,9 @@ export const HomeSkeleton = ({ title = 'Add expense' }: { title?: string }) => {
         className="fixed inset-x-0 bottom-0 z-50 px-3 pt-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] lg:hidden"
       >
         <div className="mx-auto flex h-14 max-w-md items-stretch rounded-xl border border-border bg-card/95 px-1 shadow-lg shadow-black/5 backdrop-blur-xl dark:shadow-black/30">
-          {navItems.map((item, index) => {
+          {[...mobileNavItems, moreNavItem].map((item) => {
             const Icon = item.icon;
-            const active = index === 0;
+            const active = item.id === 'home';
             return (
               <div
                 key={item.id}

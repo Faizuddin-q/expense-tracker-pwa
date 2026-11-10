@@ -286,7 +286,7 @@ export const Expenses = ({
   return (
     <section className="mx-auto max-w-6xl">
       {/* Toolbar */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="flex items-center gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <div className="field-shell group/search flex h-12 min-h-12 min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-border bg-card px-3 md:h-8 md:min-h-8 md:gap-2 md:px-2.5">
             <Search
@@ -347,9 +347,9 @@ export const Expenses = ({
         <button
           type="button"
           onClick={() => downloadCsv(filtered, categories)}
-          className="press flex h-12 min-h-12 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-[13px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary md:h-8 md:min-h-8 md:text-[12px]"
+          className="press hidden h-8 min-h-8 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-[12px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary sm:flex"
         >
-          <Download className="size-4 md:size-3.5" strokeWidth={2} />
+          <Download className="size-3.5" strokeWidth={2} />
           Export CSV
         </button>
       </div>
@@ -376,62 +376,79 @@ export const Expenses = ({
 
         {(viewMode === 'calendar' || timeRange === 'month') && (
           <div
-            className={`inline-flex items-center gap-1 rounded-lg border border-border bg-card px-1 ${
-              viewMode === 'calendar'
-                ? 'h-10 w-full justify-between sm:h-8 sm:w-auto'
-                : 'h-8'
+            className={`flex min-w-0 items-center gap-2 ${
+              viewMode === 'calendar' ? 'w-full sm:w-auto' : ''
             }`}
           >
-            <button
-              onClick={() =>
-                monthIndex < availableMonths.length - 1 &&
-                setSelectedMonth(availableMonths[monthIndex + 1].key)
-              }
-              disabled={monthIndex >= availableMonths.length - 1}
-              aria-label="Previous month"
-              className="press grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-30 sm:size-6 sm:rounded"
-            >
-              <ChevronLeft className="size-4" strokeWidth={1.9} />
-            </button>
-            <span
-              className={`text-center font-medium text-foreground ${
+            <div
+              className={`inline-flex min-w-0 items-center gap-1 rounded-lg border border-border bg-card px-1 ${
                 viewMode === 'calendar'
-                  ? 'min-w-0 flex-1 truncate px-1 text-[11px] sm:min-w-[112px] sm:flex-none sm:text-[12px]'
-                  : 'min-w-[112px] text-[12px]'
+                  ? 'h-10 flex-1 justify-between sm:h-8 sm:flex-none'
+                  : 'h-8'
               }`}
             >
-              {availableMonths[monthIndex]?.label ?? 'Select month'}
-            </span>
+              <button
+                onClick={() =>
+                  monthIndex < availableMonths.length - 1 &&
+                  setSelectedMonth(availableMonths[monthIndex + 1].key)
+                }
+                disabled={monthIndex >= availableMonths.length - 1}
+                aria-label="Previous month"
+                className="press grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-30 sm:size-6 sm:rounded"
+              >
+                <ChevronLeft className="size-4" strokeWidth={1.9} />
+              </button>
+              <span
+                className={`text-center font-medium text-foreground ${
+                  viewMode === 'calendar'
+                    ? 'min-w-0 flex-1 truncate px-1 text-[11px] sm:min-w-[112px] sm:flex-none sm:text-[12px]'
+                    : 'min-w-[112px] text-[12px]'
+                }`}
+              >
+                {availableMonths[monthIndex]?.label ?? 'Select month'}
+              </span>
+              <button
+                onClick={() =>
+                  monthIndex > 0 &&
+                  setSelectedMonth(availableMonths[monthIndex - 1].key)
+                }
+                disabled={monthIndex <= 0}
+                aria-label="Next month"
+                className="press grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-30 sm:size-6 sm:rounded"
+              >
+                <ChevronRight className="size-4" strokeWidth={1.9} />
+              </button>
+            </div>
+
             <button
-              onClick={() =>
-                monthIndex > 0 &&
-                setSelectedMonth(availableMonths[monthIndex - 1].key)
-              }
-              disabled={monthIndex <= 0}
-              aria-label="Next month"
-              className="press grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-30 sm:size-6 sm:rounded"
+              type="button"
+              onClick={() => downloadCsv(filtered, categories)}
+              className={`press flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-[12px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary sm:hidden ${
+                viewMode === 'calendar' ? 'h-10 min-h-10' : 'h-8 min-h-8'
+              }`}
             >
-              <ChevronRight className="size-4" strokeWidth={1.9} />
+              <Download className="size-3.5" strokeWidth={2} />
+              Export
             </button>
           </div>
         )}
 
         {viewMode === 'list' && timeRange === 'custom' && (
-          <div className="flex items-center gap-1.5">
+          <div className="order-last flex w-full min-w-0 basis-full items-center gap-1.5 sm:order-none sm:w-auto sm:basis-auto">
             <input
               type="date"
               aria-label="From"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="field h-8 cursor-pointer rounded-lg border border-border bg-card px-2 text-[12px] text-foreground"
+              className="field h-8 min-w-0 flex-1 cursor-pointer rounded-lg border border-border bg-card px-2 text-[12px] text-foreground sm:flex-none"
             />
-            <span className="text-[12px] text-faint">to</span>
+            <span className="shrink-0 text-[12px] text-faint">to</span>
             <input
               type="date"
               aria-label="To"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="field h-8 cursor-pointer rounded-lg border border-border bg-card px-2 text-[12px] text-foreground"
+              className="field h-8 min-w-0 flex-1 cursor-pointer rounded-lg border border-border bg-card px-2 text-[12px] text-foreground sm:flex-none"
             />
           </div>
         )}
@@ -445,17 +462,29 @@ export const Expenses = ({
           </button>
         )}
 
-        <span className="ml-auto text-[12px] text-muted-foreground">
-          <span
-            className={`font-mono-numbers ${
-              filtersActive ? 'text-primary' : 'text-foreground'
-            }`}
-          >
-            {filtered.length}
-          </span>{' '}
-          of{' '}
-          <span className="font-mono-numbers">{expenses.length}</span>
-        </span>
+        <div className="ml-auto flex items-center gap-2">
+          {viewMode === 'list' && timeRange !== 'month' && (
+            <button
+              type="button"
+              onClick={() => downloadCsv(filtered, categories)}
+              className="press flex h-8 min-h-8 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-[12px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/[0.06] hover:text-primary sm:hidden"
+            >
+              <Download className="size-3.5" strokeWidth={2} />
+              Export
+            </button>
+          )}
+          <span className="text-[12px] text-muted-foreground">
+            <span
+              className={`font-mono-numbers ${
+                filtersActive ? 'text-primary' : 'text-foreground'
+              }`}
+            >
+              {filtered.length}
+            </span>{' '}
+            of{' '}
+            <span className="font-mono-numbers">{expenses.length}</span>
+          </span>
+        </div>
       </div>
 
       {viewMode === 'calendar' ? (
