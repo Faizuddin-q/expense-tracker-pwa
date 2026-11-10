@@ -1,4 +1,4 @@
-import type { Db } from 'mongodb';
+import type { Collection, Db } from 'mongodb';
 import { toProfileResponse, type ProfileResponse } from '@/lib/profile-map';
 
 export type { ProfileResponse };
@@ -45,13 +45,33 @@ export const toClientExpense = (doc: Record<string, unknown>) => {
   };
 };
 
+/**
+ * Active rows for one user. `{ deletedAt: null }` matches both null and a
+ * missing field, so it is one equality and the compound index can also
+ * satisfy the `updatedAt` sort. `$or` of `$exists` and `null` cannot.
+ * https://www.mongodb.com/docs/manual/tutorial/query-for-null-fields/
+ */
+export const activeUserFilter = (userId: string) => ({
+  userId,
+  deletedAt: null,
+});
+
+export const PROFILE_CLIENT_PROJECTION = {
+  _id: 0,
+  monthlyIncome: 1,
+  monthlyBudget: 1,
+  hideAmounts: 1,
+  onboardingComplete: 1,
+  categories: 1,
+  name: 1,
+  theme: 1,
+  cycleStartDay: 1,
+} as const;
+
 export const listActiveExpenses = async (db: Db, userId: string) => {
   const records = await db
     .collection('expenses')
-    .find({
-      userId,
-      $or: [{ deletedAt: { $exists: false } }, { deletedAt: null }],
-    })
+    .find(activeUserFilter(userId))
     .project(EXPENSE_CLIENT_PROJECTION)
     .sort({ updatedAt: -1 })
     .limit(10000)
@@ -66,27 +86,114 @@ export const findProfile = async (
 ): Promise<ProfileResponse> => {
   const profile = await db.collection('profiles').findOne(
     { userId },
-    { projection: { _id: 0 } }
+    { projection: PROFILE_CLIENT_PROJECTION }
   );
   return toProfileResponse((profile as Record<string, unknown> | null) ?? null);
 };
 
-let indexesEnsured = false;
+let indexesPromise: Promise<void> | null = null;
 
-/** Idempotent - safe to call on every process start. */
-export const ensureUserDataIndexes = async (db: Db) => {
-  if (indexesEnsured) return;
-  indexesEnsured = true;
+const tryIndex = async (label: string, create: () => Promise<unknown>) => {
   try {
-    await Promise.all([
-      db.collection('expenses').createIndex({ userId: 1, updatedAt: -1 }),
-      db.collection('profiles').createIndex({ userId: 1 }, { unique: true }),
-      db.collection('chapters').createIndex({ userId: 1, updatedAt: -1 }),
-      db
-        .collection('chapterEntries')
-        .createIndex({ userId: 1, chapterId: 1, updatedAt: -1 }),
-    ]);
+    await create();
   } catch (error) {
-    console.error('[db] ensure indexes failed', error);
+    console.error(`[db] index ${label} failed`, error);
   }
+};
+
+const dropIfPresent = async (
+  collection: { dropIndex: (name: string) => Promise<unknown> },
+  name: string
+) => {
+  try {
+    await collection.dropIndex(name);
+  } catch {
+    // Already gone, or never created. The replacement index is in place.
+  }
+};
+
+/**
+ * Unique `{ userId, localId }` so an upsert is a point lookup.
+ * A partial index is not used for a plain equality filter, which is what
+ * bulkWrite sends. Recreate the index when an older partial definition
+ * is already present under the same name.
+ */
+const ensureLocalIdIndex = async (collection: Collection, name: string) => {
+  const spec = { userId: 1, localId: 1 } as const;
+  const options = { name, unique: true as const };
+  try {
+    await collection.createIndex(spec, options);
+  } catch (error) {
+    const code =
+      typeof error === 'object' && error && 'code' in error ? error.code : undefined;
+    if (code !== 85 && code !== 86) throw error;
+    await collection.dropIndex(name);
+    await collection.createIndex(spec, options);
+  }
+};
+
+/**
+ * Idempotent. Builds the indexes reads and upserts actually use, then
+ * returns. A failure is logged and retried on the next process, not on
+ * every request. Index work stays off the query await path.
+ *
+ * List indexes follow Equality, Sort, Range: userId + deletedAt, then
+ * updatedAt. Upserts match `{ userId, localId }` and need that index or
+ * each write scans the user.
+ * https://www.mongodb.com/docs/manual/tutorial/equality-sort-range-guideline/
+ */
+export const ensureUserDataIndexes = (db: Db) => {
+  if (indexesPromise) return indexesPromise;
+
+  indexesPromise = (async () => {
+    const expenses = db.collection('expenses');
+    const chapters = db.collection('chapters');
+    const entries = db.collection('chapterEntries');
+
+    await Promise.all([
+      tryIndex('expenses user+active+updated', async () => {
+        await expenses.createIndex(
+          { userId: 1, deletedAt: 1, updatedAt: -1 },
+          { name: 'expenses_user_active_updated' }
+        );
+        await dropIfPresent(expenses, 'userId_1_updatedAt_-1');
+      }),
+      tryIndex('expenses user+localId', () =>
+        ensureLocalIdIndex(expenses, 'expenses_user_localId')
+      ),
+      tryIndex('profiles userId', () =>
+        db.collection('profiles').createIndex({ userId: 1 }, { unique: true })
+      ),
+      tryIndex('users userId', () =>
+        db.collection('users').createIndex({ userId: 1 }, { unique: true })
+      ),
+      tryIndex('chapters user+active+updated', async () => {
+        await chapters.createIndex(
+          { userId: 1, deletedAt: 1, updatedAt: -1 },
+          { name: 'chapters_user_active_updated' }
+        );
+        await dropIfPresent(chapters, 'userId_1_updatedAt_-1');
+      }),
+      tryIndex('chapters user+localId', () =>
+        ensureLocalIdIndex(chapters, 'chapters_user_localId')
+      ),
+      tryIndex('chapterEntries user+active+updated', () =>
+        entries.createIndex(
+          { userId: 1, deletedAt: 1, updatedAt: -1 },
+          { name: 'chapter_entries_user_active_updated' }
+        )
+      ),
+      tryIndex('chapterEntries user+localId', () =>
+        ensureLocalIdIndex(entries, 'chapter_entries_user_localId')
+      ),
+      tryIndex('chapterEntries user+chapter', () =>
+        entries.createIndex({ userId: 1, chapterId: 1, updatedAt: -1 })
+      ),
+    ]);
+  })().catch((error: unknown) => {
+    indexesPromise = null;
+    console.error('[db] ensure indexes failed', error);
+  });
+
+  return indexesPromise;
 };

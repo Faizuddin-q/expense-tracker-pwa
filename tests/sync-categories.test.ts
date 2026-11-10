@@ -64,14 +64,14 @@ describe('ensureDefaultCategories', () => {
 });
 
 describe('mergeSyncOptions', () => {
-  it('coalesces queued syncs so the latest local expense list wins', () => {
+  it('unions queued expense rows and lets the later copy win', () => {
     const first = {
       id: 'user-1',
       local: [{ id: 'a', amount: 10 } as never],
     };
     const second = {
       local: [
-        { id: 'a', amount: 10 } as never,
+        { id: 'a', amount: 12 } as never,
         { id: 'b', amount: 20 } as never,
       ],
     };
@@ -80,5 +80,53 @@ describe('mergeSyncOptions', () => {
 
     assert.equal(merged.local?.length, 2);
     assert.equal(merged.id, 'user-1');
+    assert.equal(
+      merged.local?.find((e) => e.id === 'a') &&
+        (merged.local.find((e) => e.id === 'a') as { amount: number }).amount,
+      12
+    );
+  });
+
+  it('keeps an earlier row when the next sync only sends a new one', () => {
+    const merged = mergeSyncOptions(
+      { local: [{ id: 'a', amount: 10 } as never] },
+      { local: [{ id: 'b', amount: 20 } as never] }
+    );
+
+    assert.deepEqual(
+      merged.local?.map((e) => e.id),
+      ['a', 'b']
+    );
+  });
+
+  it('drops a queued row that a later sync deletes', () => {
+    const merged = mergeSyncOptions(
+      {
+        local: [
+          { id: 'a', amount: 10 } as never,
+          { id: 'b', amount: 20 } as never,
+        ],
+      },
+      { deletedIds: ['a'] }
+    );
+
+    assert.deepEqual(
+      merged.local?.map((e) => e.id),
+      ['b']
+    );
+    assert.deepEqual(merged.deletedIds, ['a']);
+  });
+
+  it('keeps a row a later sync restores', () => {
+    const merged = mergeSyncOptions(
+      { deletedIds: ['a'] },
+      { local: [{ id: 'a', amount: 10 } as never] }
+    );
+
+    assert.deepEqual(
+      merged.local?.map((e) => e.id),
+      ['a']
+    );
+    assert.equal(merged.deletedIds, undefined);
   });
 });

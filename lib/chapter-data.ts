@@ -1,4 +1,5 @@
 import type { Db } from 'mongodb';
+import { activeUserFilter } from '@/lib/user-data';
 
 const CHAPTER_CLIENT_PROJECTION = {
   _id: 0,
@@ -74,10 +75,7 @@ export const toClientChapterEntry = (doc: Record<string, unknown>) => {
 export const listActiveChapters = async (db: Db, userId: string) => {
   const records = await db
     .collection('chapters')
-    .find({
-      userId,
-      $or: [{ deletedAt: { $exists: false } }, { deletedAt: null }],
-    })
+    .find(activeUserFilter(userId))
     .project(CHAPTER_CLIENT_PROJECTION)
     .sort({ updatedAt: -1 })
     .limit(500)
@@ -89,10 +87,7 @@ export const listActiveChapters = async (db: Db, userId: string) => {
 export const listActiveChapterEntries = async (db: Db, userId: string) => {
   const records = await db
     .collection('chapterEntries')
-    .find({
-      userId,
-      $or: [{ deletedAt: { $exists: false } }, { deletedAt: null }],
-    })
+    .find(activeUserFilter(userId))
     .project(CHAPTER_ENTRY_CLIENT_PROJECTION)
     .sort({ updatedAt: -1 })
     .limit(10000)

@@ -16,9 +16,18 @@ export const GET = withAdminAuth<Params>(
       db.collection('profiles').findOne({ userId }),
       db
         .collection('expenses')
-        .find({
-          userId,
-          $or: [{ deletedAt: { $exists: false } }, { deletedAt: null }],
+        .find({ userId, deletedAt: null })
+        .project({
+          _id: 0,
+          localId: 1,
+          id: 1,
+          amount: 1,
+          category: 1,
+          note: 1,
+          paymentMethod: 1,
+          date: 1,
+          createdAt: 1,
+          updatedAt: 1,
         })
         .sort({ date: -1 })
         .limit(5000)
@@ -86,10 +95,11 @@ export const PATCH = withAdminAuth<Params>(
       update.hideAmounts = parsed.data.hideAmounts;
 
     const db = await adminDb();
-    await db
-      .collection('profiles')
-      .updateOne({ userId }, { $set: update }, { upsert: true });
-    const profile = await db.collection('profiles').findOne({ userId });
+    const profile = await db.collection('profiles').findOneAndUpdate(
+      { userId },
+      { $set: update },
+      { upsert: true, returnDocument: 'after' }
+    );
     return ok({
       profile: {
         monthlyIncome: profile?.monthlyIncome ?? 0,

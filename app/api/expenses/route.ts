@@ -1,5 +1,5 @@
 import { getDb } from '@/lib/db';
-import { ok, fail, stampServerTiming } from '@/lib/api/response';
+import { ok, okFor, fail, stampServerTiming } from '@/lib/api/response';
 import { withUserAuth } from '@/lib/api/handler';
 import { listActiveExpenses } from '@/lib/user-data';
 import {
@@ -21,12 +21,12 @@ const pickExpenseFields = (
 /** GET /api/expenses - pull the caller's active expenses. */
 export const GET = withUserAuth(
   'expenses:list',
-  async ({ userId }) => {
+  async ({ request, userId }) => {
     const t0 = performance.now();
     const db = await getDb();
     const tDb = performance.now();
     const expenses = await listActiveExpenses(db, userId);
-    return stampServerTiming(ok({ expenses }), [
+    return stampServerTiming(okFor(request, { expenses }), [
       ['db', tDb - t0],
       ['query', performance.now() - tDb],
     ]);
@@ -83,7 +83,9 @@ export const POST = withUserAuth(
               upsert: true,
             },
           };
-        })
+        }),
+        // Independent upserts. Unordered lets the server run them together.
+        { ordered: false }
       );
     }
 

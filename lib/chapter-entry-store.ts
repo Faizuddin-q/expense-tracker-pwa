@@ -83,7 +83,7 @@ export const useChapterEntries = create<ChapterEntryStore>(
       );
       void useSyncStore.getState().sync({
         id: userId,
-        chapterEntries: getState().entries,
+        chapterEntries: [entry],
       });
     },
 
@@ -115,9 +115,10 @@ export const useChapterEntries = create<ChapterEntryStore>(
           .join(' · ')
       );
 
+      const entry = getState().entries.find((e) => e.id === id);
       void useSyncStore.getState().sync({
         id: userId,
-        chapterEntries: getState().entries,
+        chapterEntries: entry ? [entry] : [],
       });
     },
 
@@ -130,7 +131,6 @@ export const useChapterEntries = create<ChapterEntryStore>(
         .getState()
         .sync({
           id: userId,
-          chapterEntries: getState().entries,
           deletedChapterEntryIds: [id],
         })
         .then((ok) => {

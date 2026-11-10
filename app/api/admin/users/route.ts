@@ -14,9 +14,7 @@ export const GET = withAdminAuth(
         .collection('expenses')
         .aggregate([
           {
-            $match: {
-              $or: [{ deletedAt: { $exists: false } }, { deletedAt: null }],
-            },
+            $match: { deletedAt: null },
           },
           {
             $group: {

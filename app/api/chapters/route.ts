@@ -1,5 +1,5 @@
 import { getDb } from '@/lib/db';
-import { ok, fail } from '@/lib/api/response';
+import { ok, okFor, fail, stampServerTiming } from '@/lib/api/response';
 import { withUserAuth } from '@/lib/api/handler';
 import { listActiveChapters } from '@/lib/chapter-data';
 import { chaptersDeleteSchema, chaptersUpsertSchema } from '@/lib/validation/chapter';
@@ -7,10 +7,15 @@ import { chaptersDeleteSchema, chaptersUpsertSchema } from '@/lib/validation/cha
 /** GET /api/chapters - pull the caller's active chapters. */
 export const GET = withUserAuth(
   'chapters:list',
-  async ({ userId }) => {
+  async ({ request, userId }) => {
+    const t0 = performance.now();
     const db = await getDb();
+    const tDb = performance.now();
     const chapters = await listActiveChapters(db, userId);
-    return ok({ chapters });
+    return stampServerTiming(okFor(request, { chapters }), [
+      ['db', tDb - t0],
+      ['query', performance.now() - tDb],
+    ]);
   },
   {
     rateLimit: {
@@ -63,7 +68,8 @@ export const POST = withUserAuth(
               upsert: true,
             },
           };
-        })
+        }),
+        { ordered: false }
       );
     }
 
@@ -89,18 +95,20 @@ export const DELETE = withUserAuth(
     const { ids } = parsed.data;
     const db = await getDb();
     const now = new Date();
-    await db.collection('chapters').updateMany(
-      {
-        userId,
-        $or: [{ localId: { $in: ids } }, { id: { $in: ids } }],
-      },
-      { $set: { deletedAt: now, updatedAt: now } }
-    );
-    // Cascade: also soft-delete every entry that belonged to the deleted chapter(s).
-    await db.collection('chapterEntries').updateMany(
-      { userId, chapterId: { $in: ids } },
-      { $set: { deletedAt: now, updatedAt: now } }
-    );
+    await Promise.all([
+      db.collection('chapters').updateMany(
+        {
+          userId,
+          $or: [{ localId: { $in: ids } }, { id: { $in: ids } }],
+        },
+        { $set: { deletedAt: now, updatedAt: now } }
+      ),
+      // Cascade: also soft-delete every entry that belonged to the deleted chapter(s).
+      db.collection('chapterEntries').updateMany(
+        { userId, chapterId: { $in: ids } },
+        { $set: { deletedAt: now, updatedAt: now } }
+      ),
+    ]);
 
     return ok({ ok: true });
   },

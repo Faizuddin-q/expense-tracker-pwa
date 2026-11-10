@@ -100,7 +100,7 @@ export const useExpenses = create<Store>((setState, getState) => ({
     );
     void useSyncStore.getState().sync({
       id: userId,
-      local: useExpenses.getState().expenses,
+      local: [expense],
     });
   },
 
@@ -159,8 +159,7 @@ export const useExpenses = create<Store>((setState, getState) => ({
             .getState()
             .sync({
               id: userId,
-              local: useExpenses.getState().expenses,
-              deletedIds: [],
+              local: [restored],
             })
             .then((ok) => {
               if (ok) {
@@ -182,13 +181,10 @@ export const useExpenses = create<Store>((setState, getState) => ({
       },
     });
 
-    void useSyncStore
-      .getState()
-      .sync({
-        id: userId,
-        local: useExpenses.getState().expenses,
-        deletedIds: [],
-      });
+    void useSyncStore.getState().sync({
+      id: userId,
+      local: [next],
+    });
   },
 
   handleDeleteExpense: (id) => {
@@ -201,7 +197,6 @@ export const useExpenses = create<Store>((setState, getState) => ({
     const syncStore = useSyncStore.getState();
     const nextDeleted = Array.from(new Set([...syncStore.pendingDeletedIds, id]));
     syncStore.setPendingDeletedIds(nextDeleted);
-    const updatedExpenses = expenses.filter((e) => e.id !== id);
 
     const userId = useAuthStore.getState().userId;
     const allCategories = getAllCategories();
@@ -216,7 +211,7 @@ export const useExpenses = create<Store>((setState, getState) => ({
 
     void useSyncStore
       .getState()
-      .sync({ id: userId, local: updatedExpenses, deletedIds: nextDeleted })
+      .sync({ id: userId, deletedIds: nextDeleted })
       .then((ok) => {
         if (!ok) return;
         toast.success('Deleted an expense', description, {
@@ -237,8 +232,7 @@ export const useExpenses = create<Store>((setState, getState) => ({
                 .getState()
                 .sync({
                   id: userId,
-                  local: useExpenses.getState().expenses,
-                  deletedIds: [],
+                  local: [restored],
                 })
                 .then((restoredOk) => {
                   if (restoredOk) {
