@@ -7,6 +7,7 @@ import {
   shouldSkipCategoryUpdate,
 } from '@/lib/category-sync-merge';
 import { ensureDefaultCategories } from '@/lib/ensure-default-categories';
+import { activeUserFilter } from '@/lib/user-data';
 
 /** PUT /api/categories - replace/merge the caller's category set. */
 export const PUT = withUserAuth(
@@ -41,49 +42,31 @@ export const PUT = withUserAuth(
       return ok({ categories: profile?.categories ?? [] });
     }
 
-    const existingProfile = await profiles.findOne(
-      { userId },
-      { projection: { categories: 1 } }
-    );
+    const [existingProfile, referencedCategoryIds] = await Promise.all([
+      profiles.findOne({ userId }, { projection: { categories: 1 } }),
+      db.collection('expenses').distinct('category', activeUserFilter(userId)),
+    ]);
     const merged = mergeCategoriesById(
       existingProfile?.categories ?? [],
       cleanedCategories,
       deletedCategoryIds
     );
 
+    // One write, including any default category an active expense still uses.
+    const backfill = ensureDefaultCategories(
+      merged,
+      referencedCategoryIds.filter(
+        (id): id is string => typeof id === 'string' && id.length > 0
+      )
+    );
+
     await profiles.updateOne(
       { userId },
-      { $set: { categories: merged, updatedAt: new Date() } },
+      { $set: { categories: backfill.categories, updatedAt: new Date() } },
       { upsert: true }
     );
 
-    // Additively backfill any default category still referenced by an
-    // active expense but missing from the caller's set.
-    const referencedCategoryIds = await db
-      .collection('expenses')
-      .find({
-        userId,
-        $or: [{ deletedAt: { $exists: false } }, { deletedAt: null }],
-      })
-      .project({ category: 1 })
-      .toArray();
-    const backfill = ensureDefaultCategories(
-      merged,
-      referencedCategoryIds
-        .map((e) => e.category)
-        .filter((id): id is string => typeof id === 'string' && id.length > 0)
-    );
-
-    let responseCategories = merged;
-    if (backfill.added.length > 0) {
-      responseCategories = backfill.categories;
-      await profiles.updateOne(
-        { userId },
-        { $set: { categories: responseCategories, updatedAt: new Date() } }
-      );
-    }
-
-    return ok({ categories: responseCategories });
+    return ok({ categories: backfill.categories });
   },
   {
     rateLimit: {

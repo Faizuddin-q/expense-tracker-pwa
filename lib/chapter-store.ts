@@ -54,7 +54,7 @@ export const useChapters = create<ChapterStore>((setState, getState) => ({
     toast.success('Chapter created', trimmed);
     void useSyncStore.getState().sync({
       id: userId,
-      chapters: getState().chapters,
+      chapters: [chapter],
     });
   },
 
@@ -70,18 +70,20 @@ export const useChapters = create<ChapterStore>((setState, getState) => ({
       deletedAt: null,
     });
     toast.success('Chapter updated', trimmed);
+    const chapter = getState().chapters.find((c) => c.id === id);
     void useSyncStore.getState().sync({
       id: userId,
-      chapters: getState().chapters,
+      chapters: chapter ? [chapter] : [],
     });
   },
 
   archiveChapter: (id, archived) => {
     const userId = useAuthStore.getState().userId;
     getState().update(id, { archived, updatedAt: new Date().toISOString() });
+    const chapter = getState().chapters.find((c) => c.id === id);
     void useSyncStore.getState().sync({
       id: userId,
-      chapters: getState().chapters,
+      chapters: chapter ? [chapter] : [],
     });
   },
 
@@ -94,7 +96,6 @@ export const useChapters = create<ChapterStore>((setState, getState) => ({
       .getState()
       .sync({
         id: userId,
-        chapters: getState().chapters,
         deletedChapterIds: [id],
       })
       .then((ok) => {

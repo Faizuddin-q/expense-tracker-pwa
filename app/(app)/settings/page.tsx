@@ -54,7 +54,7 @@ export default function SettingsPage() {
       expenses={expenses}
       userId={userId}
       sync={async () => {
-        const ok = await sync({ id: userId, local: expenses });
+        const ok = await sync({ id: userId, pullOnly: true });
         if (ok) toast.success('Data synced', 'Expenses refreshed from the cloud');
       }}
       onChangeIdentity={logout}

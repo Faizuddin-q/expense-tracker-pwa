@@ -394,3 +394,66 @@ Sequence, in order, each fully superseding the last:
 **Mechanical approach**: grepped for `—` across matching extensions (`.ts`/`.tsx`/`.md`/`.mjs`/`.css`), previewed a sample of matches to confirm every occurrence was the spaced `" — "` form (none were mid-word), then bulk-replaced via `sed`. Two residual categories needed a second pass after the first bulk replace: (a) em dashes sitting at the end of a line with the sentence continuing on the next line (`sed`'s ` — ` pattern doesn't match when the trailing space is actually a newline) - fixed with a `" —$"` end-of-line pattern; (b) em dashes used as a standalone placeholder glyph for "no value" (e.g. `'—'` returned when a number is missing/zero, in `lib/utils.ts`'s `moneyCompact`, `expense-table.tsx`'s date formatters, admin stat tiles) - these aren't prose at all, but the ask was read literally ("anywhere in this project") and replaced too. Also caught three non-`.ts`/`.md` files the initial extension filter missed (`public/manifest.json` - including the actual app display name shown on an installed home-screen icon, `public/sw.js`, `.github/workflows/bump-version.yml`, `pnpm-workspace.yaml`) via a follow-up grep with no extension filter.
 
 **Verified**: `tsc --noEmit` clean, `next build` clean, `public/manifest.json` re-parsed as valid JSON after the sed pass (a blind global replace risked breaking JSON string escaping, checked explicitly rather than assumed), full test suite green.
+
+---
+
+## D3 - 2026-11-10
+
+### Context
+First open and the post-login GETs felt like ~900 ms. The Mongo scan was not the cause: on the demo account (`1234567890`, 241 active expenses, 12 chapters, 68 chapter entries) a warm expenses query is about 1 ms inside Atlas and about 50 ms including the round trip. The wait was the shape of the load (session, then the lists), a cold IPv6-then-IPv4 socket, index builds stealing pool sockets, and 74 KB of uncompressed JSON.
+
+Signed-in behavior had to stay the same. Two earlier ideas stay rejected, already written in `docs/api-opt.md`: do not add `GET /api/bootstrap`, and do not put money data in `localStorage` or IndexedDB. JSON keys were not renamed and fields were not dropped (`localId`, `deletedAt` stay). Write concern stays `majority`.
+
+### Research that decided the approach
+
+Read against this repo's Next 16.3 docs (`node_modules/next/dist/docs/`, route handlers and `after()`), then the MongoDB and Node sources below. Each one maps to a change that shipped.
+
+* [Integrate Next.js with MongoDB](https://www.mongodb.com/docs/drivers/node-frameworks/next-integration/). Cache `client.connect()` on `globalThis`, not only the client. Parallel cold requests otherwise each pay a TLS handshake. `minPoolSize` stays 0 so a serverless isolate does not hold idle sockets. [Connection pools](https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/connection-pools/) is why `maxConnecting` is 4: the first screen fires four list reads, and the default of 2 serialized their handshakes.
+* [Query for null or missing fields](https://www.mongodb.com/docs/manual/tutorial/query-for-null-fields/). `{ deletedAt: null }` matches both null and a missing field. The old `$or` of `$exists: false` and `null` cannot use one equality index.
+* [ESR guideline](https://www.mongodb.com/docs/manual/tutorial/equality-sort-range-guideline/) and [query optimization](https://www.mongodb.com/docs/manual/core/query-optimization/). List index is `{ userId, deletedAt, updatedAt }` (equality, then the sort). Explain showed IXSCAN, `executionTimeMillis` about 1, docs examined equal to the result count. A covered query was considered and dropped: null equality cannot be covered.
+* [Bulk write](https://www.mongodb.com/docs/drivers/node/current/crud/bulk-write/). Expense, chapter, and entry upserts use `bulkWrite({ ordered: false })` so one bad row does not stall the rest.
+* [Partial / sparse indexes do not serve a plain equality](https://www.mongodb.com/docs/manual/core/index-sparse/) plus a [Community Hub report of sparse-index upsert scans](https://www.mongodb.com/community/forums/t/upsert-by-bulkwrite-performance-issue-with-2-sparse-indexes/249620). A partial unique `{ localId: { $type: 'string' } }` was created during diagnosis and the planner ignored it for `{ userId, localId }` (hint scanned 907 keys). Every row has a `localId`, there are 0 duplicates, and `id` equals `localId` wherever both exist. Replaced with a normal unique `{ userId: 1, localId: 1 }`. Recreate on index error 85 or 86 (`IndexOptionsConflict`) because that partial index was already on the live database. Point lookup after the swap: 1 key, 1 doc, `findOne` median 6.4 ms.
+* Node `autoSelectFamily`. On this machine a new socket waited 500 ms for IPv6 before trying IPv4. Measured cold Atlas connect: default 274 ms, `family: 4` 217 ms, attempt timeout 250 ms was 215 ms. Client options set `family: 4`, `autoSelectFamily: false`, `autoSelectFamilyAttemptTimeout: 250`.
+* MongoDB driver `compressors: ['zlib']` at level 1. zlib ships with Node. It shrinks the Atlas round trip. Level 1 is the CPU tradeoff that was measured as worth it; snappy/zstd were not added because they are extra native deps.
+* Next.js `after()` (`node_modules/next/dist/docs/01-app/03-api-reference/04-functions/after.md`). `createIndex` runs after the response so the first GET does not compete for pool sockets. Route handlers stay dynamic. Caching the list in the framework was rejected: money data must be fresh, and the bundled route-handler docs say GET is uncached unless forced static.
+* gzip of the JSON body. `next.config` compress defaults to true, but the running `next dev` sent expenses with no `content-encoding` (74,034 bytes). `okFor()` gzips level 1 when `Accept-Encoding` contains gzip and the body is at least 1,024 bytes. `fetch` decompresses, so the parsed object is the same. Identity encoding still returns plain JSON. Checked with curl (magic `1f8b`, gunzip once back to 74,034 bytes, 0 field mismatches across all 241 rows). Node `fetch` then `gunzipSync` throws `Z_DATA_ERROR` because fetch already decompressed. That is not double-gzip.
+
+### What actually changed
+
+* `lib/db.ts`. Shared connect promise, pool and IPv4 options, zlib to Atlas, index builds via `after()`.
+* `lib/user-data.ts` and `lib/chapter-data.ts`. `activeUserFilter`, ESR list indexes, non-partial unique `{ userId, localId }` on expenses, chapters, and chapter entries.
+* `lib/api/response.ts` `okFor()`. GET expenses, profile, chapters, and chapter entries use it. Same `{ data }` envelope.
+* `lib/initial-load.ts`. On open, session and the four lists start together. `takeInitialLists` uses them only when the session user matches. A logged-out 401 prefetch is thrown away. Sign-in and register clear it. A logged-in refresh does not, so the prefetch survives `AppInit`'s empty-userId effect.
+* Writes. Profile and admin profile PATCH use one `findOneAndUpdate` with `returnDocument: 'after'`. Categories PUT runs `distinct('category')` beside the profile read and writes the default backfill in that same update. Chapter delete runs its two `updateMany` calls in `Promise.all`.
+* Client sync. A mutation uploads that row only. A delete uploads ids only. Settings "Sync now" is `pullOnly`. A profile-only sync does not re-read the four lists. Failed uploads sit in an in-memory queue and flush before the next pull, so a later pull cannot wipe them. `mergeSyncOptions` unions queued rows by id (later copy wins) and drops ids a later call deletes, unless that later list restores them.
+
+DELETE one expense was left on the `$or` of `localId` and `id` (handler about 83 ms versus POST about 13 ms). Not changed in this pass.
+
+### Before vs after
+
+Same account, `1234567890`. Localhost. This machine cannot reproduce the phone's ~900 ms. The database time was already ~1 ms.
+
+Wire size, measured in the browser on the real sign-in (`transferSize` vs `decodedBodySize`):
+
+| Request | Before | After |
+|---|---:|---:|
+| Expenses | 74,034 B | 16,937 B |
+| Profile | 1,208 B | 834 B |
+| Chapters | 2,171 B | 842 B |
+| Chapter entries | 19,284 B | 3,390 B |
+| All four | 96,697 B | 22,003 B |
+
+77% smaller on the wire. Expenses alone is 4.4× smaller. The parsed JSON is the same 74,034 bytes and the same 241 rows.
+
+Time until session plus the four lists are in the page, three runs each, same signed-in tab:
+
+| | Runs | Median |
+|---|---|---:|
+| Before: wait for session, then the four lists | 102 ms, 88 ms, 85 ms | 88 ms |
+| After: session and the four lists start together | 40 ms, 38 ms, 35 ms | 38 ms |
+
+2.3× faster on this laptop (88 ms to 38 ms). The saved time is one round trip. On a phone that round trip is a large part of the ~900 ms, and the phone also downloads 22 KB instead of 97 KB.
+
+Real UI, not the harness: sign-in was 69 ms, then the four lists started together and the slowest finished in 47 ms. A reload while signed in started session and all four lists in the same millisecond. The slowest (expenses) finished in 72 ms. The Expenses page showed "22 of 241". No test rows were left behind.
+
+`npm test`: 21 passed (cycle calendar, frequent expenses, sync and category merge).

@@ -7,7 +7,7 @@ import { useCategoryStore } from '@/lib/category-store';
 import { useChapters } from '@/lib/chapter-store';
 import { useChapterEntries } from '@/lib/chapter-entry-store';
 import { toast } from '@/components/ToastHost';
-import { fetchJson } from '@/lib/api-client';
+import { clearInitialLoad, startInitialLoad } from '@/lib/initial-load';
 
 interface AuthStore {
   userId: string;
@@ -31,6 +31,7 @@ interface AuthStore {
 }
 
 const clearSessionState = () => {
+  clearInitialLoad();
   useSyncStore.getState().resetOnLogout();
   useCategoryStore.getState().resetOnLogout();
   useExpenses.getState().hydrate([]);
@@ -56,10 +57,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   restoreSession: async () => {
     try {
-      const result = await fetchJson<{
-        authenticated: boolean;
-        userId?: string;
-      }>('/api/auth/session');
+      const result = await startInitialLoad().session;
       if (
         result.ok &&
         result.data.authenticated &&

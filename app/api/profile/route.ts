@@ -1,19 +1,19 @@
 import { getDb } from '@/lib/db';
-import { ok, fail, stampServerTiming } from '@/lib/api/response';
+import { ok, okFor, fail, stampServerTiming } from '@/lib/api/response';
 import { withUserAuth } from '@/lib/api/handler';
 import { toProfileResponse } from '@/lib/profile-map';
-import { findProfile } from '@/lib/user-data';
+import { findProfile, PROFILE_CLIENT_PROJECTION } from '@/lib/user-data';
 import { profileUpdateSchema } from '@/lib/validation/profile';
 
 /** GET /api/profile - the caller's profile. */
 export const GET = withUserAuth(
   'profile:get',
-  async ({ userId }) => {
+  async ({ request, userId }) => {
     const t0 = performance.now();
     const db = await getDb();
     const tDb = performance.now();
     const profile = await findProfile(db, userId);
-    return stampServerTiming(ok(profile), [
+    return stampServerTiming(okFor(request, profile), [
       ['db', tDb - t0],
       ['query', performance.now() - tDb],
     ]);
@@ -41,8 +41,7 @@ export const PATCH = withUserAuth(
     if (name !== undefined) update.name = name.slice(0, 60);
 
     const db = await getDb();
-    const profiles = db.collection('profiles');
-    await profiles.updateOne(
+    const profile = await db.collection('profiles').findOneAndUpdate(
       { userId },
       {
         $set: update,
@@ -50,11 +49,15 @@ export const PATCH = withUserAuth(
         // now store label/tone/icon on the row itself.
         $unset: { categoryOverrides: '', categoryIconOverrides: '' },
       },
-      { upsert: true }
+      {
+        upsert: true,
+        returnDocument: 'after',
+        projection: PROFILE_CLIENT_PROJECTION,
+      }
     );
-
-    const profile = await profiles.findOne({ userId });
-    return ok(toProfileResponse((profile as Record<string, unknown> | null) ?? null));
+    return ok(
+      toProfileResponse((profile as Record<string, unknown> | null) ?? null)
+    );
   },
   {
     rateLimit: {

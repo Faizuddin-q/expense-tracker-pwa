@@ -1,5 +1,5 @@
 import { getDb } from '@/lib/db';
-import { ok, fail } from '@/lib/api/response';
+import { ok, okFor, fail, stampServerTiming } from '@/lib/api/response';
 import { withUserAuth } from '@/lib/api/handler';
 import { listActiveChapterEntries } from '@/lib/chapter-data';
 import {
@@ -21,10 +21,15 @@ const pickEntryFields = (
 /** GET /api/chapters/entries - pull the caller's active chapter entries. */
 export const GET = withUserAuth(
   'chapter-entries:list',
-  async ({ userId }) => {
+  async ({ request, userId }) => {
+    const t0 = performance.now();
     const db = await getDb();
+    const tDb = performance.now();
     const entries = await listActiveChapterEntries(db, userId);
-    return ok({ entries });
+    return stampServerTiming(okFor(request, { entries }), [
+      ['db', tDb - t0],
+      ['query', performance.now() - tDb],
+    ]);
   },
   {
     rateLimit: {
@@ -78,7 +83,8 @@ export const POST = withUserAuth(
               upsert: true,
             },
           };
-        })
+        }),
+        { ordered: false }
       );
     }
 

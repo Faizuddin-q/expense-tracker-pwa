@@ -1,7 +1,29 @@
+import { gzipSync } from 'node:zlib';
 import { NextResponse } from 'next/server';
 
 export const ok = <T>(data: T, init?: ResponseInit): NextResponse =>
   NextResponse.json({ data }, init);
+
+/**
+ * Same `{ data }` JSON as `ok`. When the caller accepts gzip and the body
+ * is large, the bytes on the wire are compressed. `fetch` decompresses
+ * them, so the parsed object does not change.
+ */
+export const okFor = <T>(request: Request, data: T): NextResponse => {
+  const json = JSON.stringify({ data });
+  const accept = request.headers.get('accept-encoding') ?? '';
+  if (json.length < 1024 || !/\bgzip\b/i.test(accept)) return ok(data);
+
+  const gzipped = gzipSync(json, { level: 1 });
+  return new NextResponse(gzipped, {
+    status: 200,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'content-encoding': 'gzip',
+      vary: 'accept-encoding',
+    },
+  });
+};
 
 export const fail = (
   message: string,

@@ -15,6 +15,11 @@ const FILTER = {
   $or: [{ deletedAt: { $exists: false } }, { deletedAt: null }],
 };
 
+const INDEXED_FILTER = {
+  userId: USER_ID,
+  deletedAt: null,
+};
+
 const PROJECTION = {
   _id: 0,
   localId: 1,
@@ -81,11 +86,19 @@ if (!uri) {
   process.exit(1);
 }
 
-const client = new MongoClient(uri);
+const client = new MongoClient(uri, {
+  compressors: ['zlib'],
+  zlibCompressionLevel: 1,
+});
 await client.connect();
 const db = client.db('pocket');
 const expenses = db.collection('expenses');
 const profiles = db.collection('profiles');
+
+await expenses.createIndex(
+  { userId: 1, deletedAt: 1, updatedAt: -1 },
+  { name: 'expenses_user_active_updated' }
+);
 
 const oldExpenses = async () => {
   const records = await expenses
@@ -109,6 +122,16 @@ const newExpenses = async () => {
 const oldProfile = async () => {
   const profile = await profiles.findOne({ userId: USER_ID });
   return profile;
+};
+
+const indexedExpenses = async () => {
+  const records = await expenses
+    .find(INDEXED_FILTER)
+    .project(PROJECTION)
+    .sort({ updatedAt: -1 })
+    .limit(10000)
+    .toArray();
+  return { expenses: records.map(toClientExpense) };
 };
 
 const newProfile = async () => {
@@ -137,12 +160,14 @@ const newProfile = async () => {
 for (let i = 0; i < WARMUP; i++) {
   await oldExpenses();
   await newExpenses();
+  await indexedExpenses();
   await oldProfile();
   await newProfile();
 }
 
 const oldExpMs = [];
 const newExpMs = [];
+const indexedExpMs = [];
 const oldProfMs = [];
 const newProfMs = [];
 let oldExpPayload;
@@ -150,16 +175,19 @@ let newExpPayload;
 let oldProfPayload;
 let newProfPayload;
 let expenseCount = 0;
+let indexedCount = 0;
 let sampleOld;
 let sampleNew;
 
 for (let i = 0; i < RUNS; i++) {
   const oldE = await timed(oldExpenses);
   const newE = await timed(newExpenses);
+  const indexedE = await timed(indexedExpenses);
   const oldP = await timed(oldProfile);
   const newP = await timed(newProfile);
   oldExpMs.push(oldE.ms);
   newExpMs.push(newE.ms);
+  indexedExpMs.push(indexedE.ms);
   oldProfMs.push(oldP.ms);
   newProfMs.push(newP.ms);
   if (i === RUNS - 1) {
@@ -168,6 +196,7 @@ for (let i = 0; i < RUNS; i++) {
     oldProfPayload = jsonBytes(oldP.result);
     newProfPayload = jsonBytes(newP.result);
     expenseCount = newE.result.expenses.length;
+    indexedCount = indexedE.result.expenses.length;
     sampleOld = oldE.result.expenses[0];
     sampleNew = newE.result.expenses[0];
   }
@@ -184,11 +213,24 @@ const newExplain = await expenses
   .sort({ updatedAt: -1 })
   .limit(10000)
   .explain('executionStats');
+const indexedExplain = await expenses
+  .find(INDEXED_FILTER)
+  .project(PROJECTION)
+  .sort({ updatedAt: -1 })
+  .limit(10000)
+  .explain('executionStats');
 
-const winningPlan = (explain) =>
-  explain?.queryPlanner?.winningPlan?.inputStage?.indexName ||
-  explain?.queryPlanner?.winningPlan?.stage ||
-  JSON.stringify(explain?.queryPlanner?.winningPlan ?? {}).slice(0, 120);
+const winningPlan = (explain) => {
+  const stack = [explain?.queryPlanner?.winningPlan];
+  while (stack.length) {
+    const node = stack.pop();
+    if (!node || typeof node !== 'object') continue;
+    if (node.indexName) return node.indexName;
+    if (node.inputStage) stack.push(node.inputStage);
+    if (Array.isArray(node.inputStages)) stack.push(...node.inputStages);
+  }
+  return explain?.queryPlanner?.winningPlan?.stage ?? 'unknown';
+};
 
 const kb = (n) => `${(n / 1024).toFixed(1)} KB`;
 
@@ -200,6 +242,7 @@ console.log(
     {
       account: '+91 12345 67890',
       expenseCount,
+      indexedCount,
       mongoQuery: {
         previous: {
           expensesAvgMs: stats(oldExpMs).avg,
@@ -215,12 +258,20 @@ console.log(
           profilePayload: kb(newProfPayload),
           expensesKeys: sampleKeys(sampleNew),
         },
+        indexedNullFilter: {
+          expensesAvgMs: stats(indexedExpMs).avg,
+          plan: winningPlan(indexedExplain),
+          docsExamined: indexedExplain?.executionStats?.totalDocsExamined,
+          executionTimeMillis: indexedExplain?.executionStats?.executionTimeMillis,
+        },
       },
       index: {
         previousWinningPlan: winningPlan(oldExplain),
         optimizedWinningPlan: winningPlan(newExplain),
+        indexedWinningPlan: winningPlan(indexedExplain),
         docsExaminedOld: oldExplain?.executionStats?.totalDocsExamined,
         docsExaminedNew: newExplain?.executionStats?.totalDocsExamined,
+        docsExaminedIndexed: indexedExplain?.executionStats?.totalDocsExamined,
       },
     },
     null,
