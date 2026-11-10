@@ -31,6 +31,7 @@ export default function HomePage() {
       parseAmount={parseAmount}
       addExpense={addExpense}
       updateExpense={updateExpense}
+      expenses={expenses}
       displayed={showAll ? expenses : today}
       showAll={showAll}
       setShowAll={setShowAll}

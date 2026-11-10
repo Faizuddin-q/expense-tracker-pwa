@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Category, CategoryId, Expense, Payment } from '@/types/expense';
-import { builtInCategories, PAYMENT_METHODS, quickRelogItems } from '@/lib/constants';
+import { builtInCategories, PAYMENT_METHODS } from '@/lib/constants';
 import { useProfileStore } from '@/lib/profile-store';
+import { getFrequentRelogItems } from '@/lib/frequent-expenses';
 import { Money } from '@/components/Money';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { ExpenseRow } from '@/components/ExpenseRow';
@@ -27,6 +28,7 @@ interface HomeProps {
       paymentMethod?: Payment;
     }
   ) => void;
+  expenses: Expense[];
   displayed: Expense[];
   showAll: boolean;
   setShowAll: (v: boolean) => void;
@@ -44,6 +46,7 @@ export const Home = ({
   parseAmount,
   addExpense,
   updateExpense,
+  expenses,
   displayed,
   showAll,
   setShowAll,
@@ -55,6 +58,7 @@ export const Home = ({
 }: HomeProps) => {
   const hideAmounts = useProfileStore((s) => s.hideAmounts);
   const name = useProfileStore((s) => s.name);
+  const cycleStartDay = useProfileStore((s) => s.cycleStartDay);
   const [editing, setEditing] = useState<Expense | null>(null);
   const [deleting, setDeleting] = useState<Expense | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<Payment>('upi');
@@ -63,6 +67,11 @@ export const Home = ({
     0
   );
   const hasAmount = Number(amount.replace(/,/g, '')) > 0;
+
+  const frequentItems = useMemo(
+    () => getFrequentRelogItems(expenses, cycleStartDay, { limit: 4 }),
+    [expenses, cycleStartDay]
+  );
 
   const handleAddExpense = (
     category: CategoryId,
@@ -203,40 +212,43 @@ export const Home = ({
             </div>
           </div>
 
-          {/* Quick re-log */}
-          <div className="mt-6">
-            <h2 className="label mb-2.5">Frequent</h2>
-            <div className="flex flex-wrap gap-1.5">
-              {quickRelogItems.map((item) => {
-                const cat =
-                  categories.find((c) => c.id === item.category) ??
-                  builtInCategories.find((c) => c.id === item.category);
-                const color = getCategoryColor(cat?.tone ?? 'gray');
-                const Icon = getCategoryIcon(cat ?? { iconName: 'plus' });
-                return (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() =>
-                      handleAddExpense(item.category, {
-                        amount: item.amount,
-                        note: item.label,
-                      })
-                    }
-                    className="flex h-8 cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-2.5 text-[12px] transition-colors hover:border-primary/50 hover:bg-primary/[0.06]"
-                  >
-                    <CategoryIcon color={color} icon={Icon} size="xs" />
-                    <span className="font-medium text-foreground">
-                      {item.label}
-                    </span>
-                    <span className="font-mono-numbers text-muted-foreground">
-                      <Money value={item.amount} />
-                    </span>
-                  </button>
-                );
-              })}
+          {/* Quick re-log from this cycle's most common expenses */}
+          {frequentItems.length > 0 && (
+            <div className="mt-6">
+              <h2 className="label mb-2.5">Frequent</h2>
+              <div className="flex flex-wrap gap-1.5">
+                {frequentItems.map((item) => {
+                  const cat =
+                    categories.find((c) => c.id === item.category) ??
+                    builtInCategories.find((c) => c.id === item.category);
+                  const color = getCategoryColor(cat?.tone ?? 'gray');
+                  const Icon = getCategoryIcon(cat ?? { iconName: 'plus' });
+                  const label = item.label || cat?.label || 'Expense';
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() =>
+                        handleAddExpense(item.category, {
+                          amount: item.amount,
+                          note: item.label || undefined,
+                        })
+                      }
+                      className="flex h-8 cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-2.5 text-[12px] transition-colors hover:border-primary/50 hover:bg-primary/[0.06]"
+                    >
+                      <CategoryIcon color={color} icon={Icon} size="xs" />
+                      <span className="font-medium text-foreground">
+                        {label}
+                      </span>
+                      <span className="font-mono-numbers text-muted-foreground">
+                        <Money value={item.amount} />
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Recent activity */}

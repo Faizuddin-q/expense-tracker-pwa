@@ -1,5 +1,6 @@
 /**
  * Seed (or re-seed) the demo account: phone 1234567890 / password 1234567890.
+ * Profile cycle starts on the 25th. Expenses span Jun – Oct 2026.
  *
  *   node --env-file=.env scripts/seed-demo-account.mjs
  */
@@ -10,7 +11,10 @@ import { MongoClient } from 'mongodb';
 const scryptAsync = promisify(scrypt);
 const USER_ID = '1234567890';
 const PASSWORD = '1234567890';
-const EXPENSE_COUNT = 150;
+const CYCLE_START_DAY = 25;
+const SEED_YEAR = 2026;
+/** Enough volume to look lived-in across ~5 months / several cycles. */
+const EXPENSE_COUNT = 240;
 
 const hashPassword = async (password) => {
   const salt = randomBytes(16);
@@ -120,9 +124,12 @@ const customTemplates = {
   ],
 };
 
-/** More recent months are denser, so Home/Dashboard look lived-in. */
+const atLocal = (year, month0, day, hour = 12, minute = 0) =>
+  new Date(year, month0, day, hour, minute, randInt(0, 59), 0);
+
 const randomDateInRange = (start, end) => {
-  const t = start.getTime() + Math.random() ** 0.55 * (end.getTime() - start.getTime());
+  const span = Math.max(0, end.getTime() - start.getTime());
+  const t = start.getTime() + Math.random() ** 0.55 * span;
   const d = new Date(t);
   d.setHours(randInt(8, 22), randInt(0, 59), randInt(0, 59), 0);
   return d;
@@ -163,18 +170,34 @@ const profiles = db.collection('profiles');
 const expenses = db.collection('expenses');
 
 const now = new Date();
-const rangeStart = new Date(now.getFullYear(), now.getMonth() - 4, 1);
+// Inclusive window: 1 Jun → 31 Oct 2026.
+const rangeStart = atLocal(SEED_YEAR, 5, 1, 8, 0);
+const rangeEnd = atLocal(SEED_YEAR, 9, 31, 21, 30);
 
 const monthlyFixed = [];
-for (let m = -4; m <= 0; m++) {
-  const month = new Date(now.getFullYear(), now.getMonth() + m, randInt(1, 4), 10, 12, 0);
-  monthlyFixed.push(makeExpense(rentCat.id, customTemplates[rentCat.id][0], month));
+// Rent + EMI on each cycle start day from Jun–Oct.
+for (const month0 of [5, 6, 7, 8, 9]) {
+  const rentDay = atLocal(SEED_YEAR, month0, CYCLE_START_DAY, 10, 12);
+  if (rentDay < rangeStart || rentDay > rangeEnd) continue;
   monthlyFixed.push(
-    makeExpense(emiCat.id, pick(customTemplates[emiCat.id]), new Date(month.getTime() + 86400000))
+    makeExpense(rentCat.id, customTemplates[rentCat.id][0], rentDay)
+  );
+  monthlyFixed.push(
+    makeExpense(
+      emiCat.id,
+      pick(customTemplates[emiCat.id]),
+      new Date(rentDay.getTime() + 86400000)
+    )
   );
 }
 
 const remaining = EXPENSE_COUNT - monthlyFixed.length;
+if (remaining < 0) {
+  throw new Error(
+    `Fixed expenses (${monthlyFixed.length}) exceed EXPENSE_COUNT (${EXPENSE_COUNT})`
+  );
+}
+
 const weightedCats = [
   ...Array(38).fill('food'),
   ...Array(22).fill('transport'),
@@ -191,7 +214,8 @@ const rest = [];
 for (let i = 0; i < remaining; i++) {
   const cat = pick(weightedCats);
   const templates = TEMPLATES[cat] ?? customTemplates[cat];
-  const when = randomDateInRange(rangeStart, now);
+  // Slight bias toward recent months so Overview/Home feel current.
+  const when = randomDateInRange(rangeStart, rangeEnd);
   rest.push(makeExpense(cat, pick(templates), when));
 }
 
@@ -211,7 +235,7 @@ await users.updateOne(
       userId: USER_ID,
       passwordHash,
       passwordIsDefault: false,
-      createdAt: new Date(now.getTime() - 120 * 86400000),
+      createdAt: new Date(rangeStart.getTime() - 30 * 86400000),
       updatedAt: now,
     },
   },
@@ -228,7 +252,7 @@ await profiles.updateOne(
       hideAmounts: false,
       onboardingComplete: true,
       theme: 'light',
-      cycleStartDay: 1,
+      cycleStartDay: CYCLE_START_DAY,
       categories,
       updatedAt: now,
     },
@@ -240,9 +264,14 @@ await expenses.insertMany(allExpenses);
 
 const byCat = {};
 let total = 0;
+let minDate = null;
+let maxDate = null;
 for (const e of allExpenses) {
   byCat[e.category] = (byCat[e.category] ?? 0) + 1;
   total += e.amount;
+  const d = new Date(e.date);
+  if (!minDate || d < minDate) minDate = d;
+  if (!maxDate || d > maxDate) maxDate = d;
 }
 
 console.log(
@@ -253,6 +282,15 @@ console.log(
       name: 'Aarav Shah',
       monthlyIncome: 92000,
       monthlyBudget: 48000,
+      cycleStartDay: CYCLE_START_DAY,
+      range: {
+        start: `${SEED_YEAR}-06-01`,
+        end: `${SEED_YEAR}-10-31`,
+      },
+      actualDateSpan: {
+        min: minDate?.toISOString().slice(0, 10),
+        max: maxDate?.toISOString().slice(0, 10),
+      },
       categoryCount: categories.length,
       customCategories: customCategories.map((c) => c.label),
       expenseCount: allExpenses.length,
