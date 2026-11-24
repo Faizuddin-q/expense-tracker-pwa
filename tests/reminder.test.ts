@@ -5,6 +5,7 @@ import {
   isReminderDue,
   localDateKey,
   normalizeReminder,
+  snapTimeLocalToStep,
   zonedParts,
 } from '../lib/reminder.ts';
 
@@ -33,47 +34,57 @@ describe('normalizeReminder', () => {
   });
 });
 
+describe('snapTimeLocalToStep', () => {
+  it('snaps to 15-minute steps', () => {
+    assert.equal(snapTimeLocalToStep('22:10'), '22:00');
+    assert.equal(snapTimeLocalToStep('22:15'), '22:15');
+    assert.equal(snapTimeLocalToStep('22:29'), '22:15');
+    assert.equal(snapTimeLocalToStep('22:45'), '22:45');
+  });
+});
+
 describe('isReminderDue', () => {
-  it('matches daily at the preferred local hour by default', () => {
-    // 21:00 IST = 15:30 UTC
+  it('matches daily at the preferred 15-minute slot', () => {
+    // 22:15 IST = 16:45 UTC
     const due = isReminderDue(
       {
         ...DEFAULT_REMINDER,
         enabled: true,
         frequency: 'daily',
-        timeLocal: '21:00',
+        timeLocal: '22:15',
         timeZone: 'Asia/Kolkata',
       },
-      new Date('2026-11-24T15:30:00.000Z')
+      new Date('2026-11-24T16:45:00.000Z')
     );
     assert.equal(due, true);
   });
 
-  it('skips when local hour does not match (unless matchHour false)', () => {
-    const now = new Date('2026-11-24T06:00:00.000Z'); // 11:30 IST
-    const wrongHour = isReminderDue(
+  it('skips when 15-minute slot does not match (unless matchTime false)', () => {
+    // 22:00 IST slot vs 22:15 preference
+    const now = new Date('2026-11-24T16:30:00.000Z'); // 22:00 IST
+    const wrongSlot = isReminderDue(
       {
         ...DEFAULT_REMINDER,
         enabled: true,
         frequency: 'daily',
-        timeLocal: '21:00',
+        timeLocal: '22:15',
         timeZone: 'Asia/Kolkata',
       },
       now
     );
-    const ignoredHour = isReminderDue(
+    const ignored = isReminderDue(
       {
         ...DEFAULT_REMINDER,
         enabled: true,
         frequency: 'daily',
-        timeLocal: '21:00',
+        timeLocal: '22:15',
         timeZone: 'Asia/Kolkata',
       },
       now,
-      { matchHour: false }
+      { matchTime: false }
     );
-    assert.equal(wrongHour, false);
-    assert.equal(ignoredHour, true);
+    assert.equal(wrongSlot, false);
+    assert.equal(ignored, true);
   });
 
   it('skips daily if already sent the same local day', () => {

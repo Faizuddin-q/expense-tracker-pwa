@@ -25,6 +25,25 @@ export const DEFAULT_REMINDER: ReminderPrefs = {
   updatedAt: null,
 };
 
+/** Allowed clock times: every 15 minutes. */
+export const TIME_LOCAL_OPTIONS: string[] = Array.from({ length: 24 * 4 }, (_, i) => {
+  const hour = Math.floor(i / 4);
+  const minute = (i % 4) * 15;
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+});
+
+export const isValidTimeLocal = (value: string): boolean =>
+  TIME_LOCAL_OPTIONS.includes(value);
+
+/** Snap any HH:mm to the nearest earlier 15-minute step (e.g. 21:10 → 21:00). */
+export const snapTimeLocalToStep = (value: string): string => {
+  const m = value.match(/^([01]\d|2[0-3]):([0-5]\d)$/);
+  if (!m) return DEFAULT_REMINDER.timeLocal;
+  const hour = Number(m[1]);
+  const minute = Math.floor(Number(m[2]) / 15) * 15;
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+};
+
 /** Labels indexed by JS weekday (0 = Sunday … 6 = Saturday). */
 export const WEEKDAY_LABELS = [
   'Sunday',
@@ -47,9 +66,6 @@ export const WEEKDAY_OPTIONS = [
   { value: 0, label: 'Sunday' },
 ] as const;
 
-export const isValidTimeLocal = (value: string): boolean =>
-  /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
-
 export const normalizeReminder = (raw: unknown): ReminderPrefs => {
   if (!raw || typeof raw !== 'object') return { ...DEFAULT_REMINDER };
   const r = raw as Record<string, unknown>;
@@ -58,8 +74,8 @@ export const normalizeReminder = (raw: unknown): ReminderPrefs => {
       ? r.frequency
       : DEFAULT_REMINDER.frequency;
   const timeLocal =
-    typeof r.timeLocal === 'string' && isValidTimeLocal(r.timeLocal)
-      ? r.timeLocal
+    typeof r.timeLocal === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(r.timeLocal)
+      ? snapTimeLocalToStep(r.timeLocal)
       : DEFAULT_REMINDER.timeLocal;
   const weekday =
     typeof r.weekday === 'number' &&
@@ -166,25 +182,28 @@ export const reminderCopy = (
 /**
  * True when the cron should fire for these prefs at `now`.
  *
- * Matches the preferred local hour by default (Hobby uses 24 once-daily
- * UTC-hour crons so each local hour is covered). Pass `matchHour: false`
- * or set `REMINDER_MATCH_HOUR=0` to ignore the clock. Uses lastSentAt to
- * avoid duplicates for the same local day / week / month.
+ * Matches preferred local time on a 15-minute grid (HH:00 / :15 / :30 / :45)
+ * by default. Pass `matchTime: false` or set `REMINDER_MATCH_HOUR=0` to
+ * ignore the clock. Uses lastSentAt to avoid duplicates for the same local
+ * day / week / month.
  */
 export const isReminderDue = (
   prefs: ReminderPrefs,
   now: Date = new Date(),
-  opts?: { matchHour?: boolean }
+  opts?: { matchTime?: boolean; matchHour?: boolean }
 ): boolean => {
   if (!prefs.enabled) return false;
   const local = zonedParts(now, prefs.timeZone);
-  const matchHour =
+  const matchTime =
+    opts?.matchTime !== false &&
     opts?.matchHour !== false &&
     process.env.REMINDER_MATCH_HOUR !== '0' &&
     process.env.REMINDER_MATCH_HOUR !== 'false';
-  if (matchHour) {
-    const [prefHour] = prefs.timeLocal.split(':').map(Number);
-    if (local.hour !== prefHour) return false;
+  if (matchTime) {
+    const preferred = snapTimeLocalToStep(prefs.timeLocal);
+    const [prefHour, prefMinute] = preferred.split(':').map(Number);
+    const localMinute = Math.floor(local.minute / 15) * 15;
+    if (local.hour !== prefHour || localMinute !== prefMinute) return false;
   }
 
   if (prefs.frequency === 'weekly' && local.weekday !== prefs.weekday) {

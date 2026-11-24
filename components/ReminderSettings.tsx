@@ -5,6 +5,7 @@ import { Bell, BellOff } from 'lucide-react';
 import { fetchJson } from '@/lib/api-client';
 import {
   DEFAULT_REMINDER,
+  TIME_LOCAL_OPTIONS,
   WEEKDAY_OPTIONS,
   type ReminderFrequency,
   type ReminderPrefs,
@@ -200,23 +201,27 @@ export const ReminderSettings = () => {
         <div className="min-w-0">
           <p className="text-[13px] font-medium text-foreground">Time</p>
           <p className="mt-0.5 text-[12px] leading-relaxed text-muted-foreground">
-            Local time of day. Delivery lands in that hour (Hobby may be up to
-            ~59 minutes late within the hour).
+            Local time in 15-minute steps (10:00, 10:15, 10:30…).
           </p>
         </div>
         <FieldShell>
-          <input
+          <select
             aria-label="Reminder time"
-            type="time"
-            value={draft.timeLocal}
+            value={
+              TIME_LOCAL_OPTIONS.includes(draft.timeLocal)
+                ? draft.timeLocal
+                : '21:00'
+            }
             disabled={saving}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (!value) return;
-              void updateField({ timeLocal: value.slice(0, 5) });
-            }}
+            onChange={(e) => void updateField({ timeLocal: e.target.value })}
             className="w-full min-w-0 cursor-pointer appearance-none bg-transparent px-1.5 text-[13px] text-foreground outline-none disabled:opacity-50 sm:w-auto"
-          />
+          >
+            {TIME_LOCAL_OPTIONS.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
         </FieldShell>
       </div>
 

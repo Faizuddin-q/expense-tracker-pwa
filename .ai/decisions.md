@@ -471,7 +471,7 @@ User asked for expense-logging reminders on the Android Chrome “Add to Home Sc
 
 **One cadence at a time (daily | weekly | monthly), not multiple overlapping schedules.** Keeps Settings simple and matches the ask. Defaults: daily off until enabled, time `21:00`, weekly day Monday (UI lists Monday first; storage stays JS `getDay()` 0=Sunday…6=Saturday), monthly day `1` (range 1–28 to avoid Feb/short-month slides).
 
-**Hobby cron vs preferred time (amended twice same day).** First ship used `0 * * * *` (hourly) → Hobby deploy failed. Then a single daily `0 15 * * *` with hour matching off → product-wrong (10 PM setting ignored). Final free workaround: **24 once-daily crons** (`0 0`…`0 23 * * *`) all hitting `/api/cron/reminders` (Hobby allows 100 jobs, each once/day), and **hour matching on by default** again. Exact minute still not guaranteed (Hobby fires anytime within the UTC hour). Alternatives considered and not required: external cron-job.org, GitHub Actions hourly (private-repo minutes), Cloudflare free (only 5 cron triggers).
+**Hobby cron vs preferred time (amended thrice same day).** First ship used `0 * * * *` (hourly) → Hobby deploy failed. Then a single daily `0 15 * * *` with hour matching off → product-wrong (10 PM setting ignored). Then **24 once-daily hour crons** → hour-only, no `:15`/`:30`. For ~5 users wanting **15-minute steps** (`10:00`/`10:15`/`10:30`/`10:45`), **GitHub Actions `*/15 * * * *`** curls `/api/cron/reminders` (free; secrets `CRON_SECRET` + `CRON_APP_URL`). Vercel crons removed from `vercel.json` to avoid Hobby errors and double-fires. UI/Zod only allow those four minutes per hour; `isReminderDue` matches the local 15-minute bucket.
 
 **Reminder prefs on `profiles.reminder`; subscriptions in `pushSubscriptions`.** Prefs follow the account across devices via existing profile GET/map. Subscriptions are per-endpoint (unique index) because each browser install has its own push endpoint. Enabling on device A does not notify device B until B also opts in.
 
@@ -487,11 +487,10 @@ User asked for expense-logging reminders on the Android Chrome “Add to Home Sc
 
 - Local `Notification` + `setTimeout` / in-app alarms only.
 - Multiple simultaneous reminder schedules.
-- Minute-precise scheduling without infra changes.
+- Arbitrary-minute times (e.g. `10:10`) — 15-minute grid only.
 - Shipping an “send 50 test pushes” loop from the agent during debugging (user asked for manual test steps instead).
 
 ### Follow-ups (not in this ship)
 
 - iOS Safari Home Screen push verification.
 - Richer notification actions (snooze).
-- Tighter than hourly delivery if product needs it.

@@ -24,7 +24,7 @@ const authorizeCron = (request: Request): boolean => {
 
 /**
  * GET/POST /api/cron/reminders
- * Invoked once per UTC hour via 24 Hobby-safe daily crons in vercel.json.
+ * Invoked every 15 minutes by GitHub Actions (see .github/workflows/reminders-cron.yml).
  */
 const run = async (request: Request) => {
   if (!authorizeCron(request)) {

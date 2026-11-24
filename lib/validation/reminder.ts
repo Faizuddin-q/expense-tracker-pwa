@@ -5,7 +5,10 @@ export const reminderPrefsSchema = z.object({
   frequency: z.enum(['daily', 'weekly', 'monthly']),
   timeLocal: z
     .string()
-    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Use HH:mm (24-hour)'),
+    .regex(
+      /^([01]\d|2[0-3]):(00|15|30|45)$/,
+      'Use HH:mm in 15-minute steps (e.g. 22:00, 22:15)'
+    ),
   weekday: z.number().int().min(0).max(6),
   monthDay: z.number().int().min(1).max(28),
   timeZone: z.string().trim().min(1).max(64),
