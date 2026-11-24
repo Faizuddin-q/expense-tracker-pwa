@@ -24,7 +24,7 @@ const authorizeCron = (request: Request): boolean => {
 
 /**
  * GET/POST /api/cron/reminders
- * Daily Vercel cron (Hobby-compatible): send due expense-reminder Web Push.
+ * Invoked once per UTC hour via 24 Hobby-safe daily crons in vercel.json.
  */
 const run = async (request: Request) => {
   if (!authorizeCron(request)) {

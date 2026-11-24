@@ -34,9 +34,8 @@ describe('normalizeReminder', () => {
 });
 
 describe('isReminderDue', () => {
-  it('matches daily without hour check (Hobby daily cron)', () => {
-    // Midday IST - still due when matchHour is off
-    const now = new Date('2026-11-24T06:00:00.000Z');
+  it('matches daily at the preferred local hour by default', () => {
+    // 21:00 IST = 15:30 UTC
     const due = isReminderDue(
       {
         ...DEFAULT_REMINDER,
@@ -45,12 +44,12 @@ describe('isReminderDue', () => {
         timeLocal: '21:00',
         timeZone: 'Asia/Kolkata',
       },
-      now
+      new Date('2026-11-24T15:30:00.000Z')
     );
     assert.equal(due, true);
   });
 
-  it('respects preferred hour when matchHour is on', () => {
+  it('skips when local hour does not match (unless matchHour false)', () => {
     const now = new Date('2026-11-24T06:00:00.000Z'); // 11:30 IST
     const wrongHour = isReminderDue(
       {
@@ -60,10 +59,9 @@ describe('isReminderDue', () => {
         timeLocal: '21:00',
         timeZone: 'Asia/Kolkata',
       },
-      now,
-      { matchHour: true }
+      now
     );
-    const rightHour = isReminderDue(
+    const ignoredHour = isReminderDue(
       {
         ...DEFAULT_REMINDER,
         enabled: true,
@@ -71,11 +69,11 @@ describe('isReminderDue', () => {
         timeLocal: '21:00',
         timeZone: 'Asia/Kolkata',
       },
-      new Date('2026-11-24T15:30:00.000Z'),
-      { matchHour: true }
+      now,
+      { matchHour: false }
     );
     assert.equal(wrongHour, false);
-    assert.equal(rightHour, true);
+    assert.equal(ignoredHour, true);
   });
 
   it('skips daily if already sent the same local day', () => {
