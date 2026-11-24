@@ -475,7 +475,7 @@ User asked for expense-logging reminders on the Android Chrome “Add to Home Sc
 
 **Reminder prefs on `profiles.reminder`; subscriptions in `pushSubscriptions`.** Prefs follow the account across devices via existing profile GET/map. Subscriptions are per-endpoint (unique index) because each browser install has its own push endpoint. Enabling on device A does not notify device B until B also opts in.
 
-**Daily skip if an expense exists that local day.** Cheap UX win: do not nag after they already logged. Uses timezone-aware `localDateKey` against recent expenses, then sets `lastSentAt` so the hour window does not retry. Weekly/monthly use `lastSentAt` windows (~6 days / same calendar month) to avoid double-sends from repeated cron ticks.
+**Daily skip if an expense exists that local day — disabled for testing (2026-11-24).** Originally a UX win (don’t nag after logging). Removed temporarily so end-to-end push tests still fire after expenses exist that day. Re-enable later if product wants it. Weekly/monthly still use `lastSentAt` windows (~6 days / same calendar month) to avoid double-sends from repeated cron ticks.
 
 **Permission only on user tap; copy is device-agnostic.** WebAPKs do not get notification permission at install. Settings toggle is the gesture. UI/error copy says phone/tablet/desktop, not “Android only,” after the user corrected the first draft.
 

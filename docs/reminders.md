@@ -13,7 +13,9 @@ Pockett can nudge users to log expenses on a **daily**, **weekly**, or **monthly
 | Day of month | `1` | `1`–`28`. |
 | Time zone | Device IANA | Fallback `Asia/Kolkata`. |
 
-**Example:** Daily at **10:15 PM IST** → store `22:15` + `Asia/Kolkata`. When the scheduler runs in that 15-minute window, the user is nudged (unless they already logged an expense that day).
+**Example:** Daily at **10:15 PM IST** → store `22:15` + `Asia/Kolkata`. When the scheduler runs in that 15-minute window, the user is nudged.
+
+> Testing note: the old “skip daily if an expense was already logged today” gate is **off** for now so reminders still fire after you’ve logged.
 
 ## Why GitHub Actions (free) for timing
 
@@ -42,7 +44,6 @@ Settings → permission → PushManager.subscribe → POST /api/push/subscribe
 Every 15 min (GitHub Actions)
   → GET /api/cron/reminders  (Bearer CRON_SECRET)
   → isReminderDue (frequency + 15-min local slot + lastSentAt)
-  → skip daily if expense already logged today
   → web-push → service worker showNotification
 ```
 
