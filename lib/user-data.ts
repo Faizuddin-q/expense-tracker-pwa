@@ -66,6 +66,7 @@ export const PROFILE_CLIENT_PROJECTION = {
   name: 1,
   theme: 1,
   cycleStartDay: 1,
+  reminder: 1,
 } as const;
 
 export const listActiveExpenses = async (db: Db, userId: string) => {
@@ -188,6 +189,17 @@ export const ensureUserDataIndexes = (db: Db) => {
       ),
       tryIndex('chapterEntries user+chapter', () =>
         entries.createIndex({ userId: 1, chapterId: 1, updatedAt: -1 })
+      ),
+      tryIndex('pushSubscriptions endpoint', () =>
+        db
+          .collection('pushSubscriptions')
+          .createIndex({ endpoint: 1 }, { unique: true })
+      ),
+      tryIndex('pushSubscriptions userId', () =>
+        db.collection('pushSubscriptions').createIndex({ userId: 1 })
+      ),
+      tryIndex('profiles reminder.enabled', () =>
+        db.collection('profiles').createIndex({ 'reminder.enabled': 1 })
       ),
     ]);
   })().catch((error: unknown) => {

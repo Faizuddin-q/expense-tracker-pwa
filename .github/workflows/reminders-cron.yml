@@ -1,0 +1,35 @@
+# Free 15-minute reminder scheduler for Vercel Hobby.
+# Hobby cannot run cron more than once per day per job, so GitHub Actions
+# calls the production cron route every 15 minutes instead.
+#
+# Repo secrets (Settings → Secrets and variables → Actions):
+#   CRON_SECRET     - same value as Vercel CRON_SECRET
+#   CRON_APP_URL    - production origin, e.g. https://your-app.vercel.app
+name: Reminders cron
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger reminder cron
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          CRON_APP_URL: ${{ secrets.CRON_APP_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ] || [ -z "${CRON_APP_URL:-}" ]; then
+            echo "Missing CRON_SECRET or CRON_APP_URL secrets; skip."
+            exit 0
+          fi
+          url="${CRON_APP_URL%/}/api/cron/reminders"
+          code=$(curl -sS -o /tmp/cron-body.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "$url")
+          echo "HTTP $code"
+          cat /tmp/cron-body.json || true
+          test "$code" = "200"
