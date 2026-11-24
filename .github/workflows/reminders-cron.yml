@@ -4,7 +4,8 @@
 #
 # Repo secrets (Settings → Secrets and variables → Actions):
 #   CRON_SECRET     - same value as Vercel CRON_SECRET
-#   CRON_APP_URL    - production origin, e.g. https://your-app.vercel.app
+#   CRON_APP_URL    - production origin only, no quotes/path
+#                     e.g. https://expense-tracker-personal-lemon.vercel.app
 name: Reminders cron
 
 on:
@@ -22,14 +23,41 @@ jobs:
           CRON_APP_URL: ${{ secrets.CRON_APP_URL }}
         run: |
           set -euo pipefail
-          if [ -z "${CRON_SECRET:-}" ] || [ -z "${CRON_APP_URL:-}" ]; then
-            echo "Missing CRON_SECRET or CRON_APP_URL secrets; skip."
-            exit 0
+
+          # Trim whitespace / accidental wrapping quotes from secret values
+          CRON_SECRET="$(printf '%s' "${CRON_SECRET:-}" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")"
+          CRON_APP_URL="$(printf '%s' "${CRON_APP_URL:-}" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")"
+
+          if [ -z "${CRON_SECRET}" ] || [ -z "${CRON_APP_URL}" ]; then
+            echo "::error::Missing CRON_SECRET or CRON_APP_URL. Add both under Settings → Secrets → Actions."
+            exit 1
           fi
-          url="${CRON_APP_URL%/}/api/cron/reminders"
-          code=$(curl -sS -o /tmp/cron-body.json -w "%{http_code}" \
+
+          # Origin only (strip trailing slash / accidental path)
+          origin="${CRON_APP_URL%/}"
+          origin="${origin%/api/cron/reminders}"
+          origin="${origin%/api/cron/reminders/}"
+
+          case "$origin" in
+            https://*|http://*) ;;
+            *)
+              echo "::error::CRON_APP_URL must start with https:// (got length ${#CRON_APP_URL}). Example: https://expense-tracker-personal-lemon.vercel.app"
+              exit 1
+              ;;
+          esac
+
+          url="${origin}/api/cron/reminders"
+          echo "Calling host: $(printf '%s' "$origin" | sed -E 's#https?://##')"
+
+          code=$(curl -sS --fail-with-body -o /tmp/cron-body.json -w "%{http_code}" \
             -H "Authorization: Bearer ${CRON_SECRET}" \
-            "$url")
-          echo "HTTP $code"
-          cat /tmp/cron-body.json || true
-          test "$code" = "200"
+            "$url" || true)
+
+          echo "HTTP ${code:-000}"
+          cat /tmp/cron-body.json 2>/dev/null || true
+          echo
+
+          if [ "${code:-}" != "200" ]; then
+            echo "::error::Cron endpoint did not return 200. Check CRON_SECRET matches Vercel and the app is deployed."
+            exit 1
+          fi
