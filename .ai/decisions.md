@@ -457,3 +457,41 @@ Time until session plus the four lists are in the page, three runs each, same si
 Real UI, not the harness: sign-in was 69 ms, then the four lists started together and the slowest finished in 47 ms. A reload while signed in started session and all four lists in the same millisecond. The slowest (expenses) finished in 72 ms. The Expenses page showed "22 of 241". No test rows were left behind.
 
 `npm test`: 21 passed (cycle calendar, frequent expenses, sync and category merge).
+
+---
+
+## D4 - 2026-11-24
+
+### Context
+User asked for expense-logging reminders on the Android Chrome “Add to Home Screen” PWA, then clarified they want the same on desktop/tablet - not Android-only. Local-only timers were rejected because they are unreliable once Chrome is killed. Feature shipped as Web Push + Settings UI + hourly Vercel cron. Full how-to lives in `docs/reminders.md`.
+
+### Decisions
+
+**Web Push over local notifications / Periodic Background Sync.** Android/desktop Chrome support Push + Notifications for installed and tab contexts. Periodic Background Sync is not reliable enough for “remind me daily at 9pm,” and in-page timers die with the process. Server-side Web Push is the only approach that matches “nudge me when the app is closed.”
+
+**One cadence at a time (daily | weekly | monthly), not multiple overlapping schedules.** Keeps Settings simple and matches the ask. Defaults: daily off until enabled, time `21:00`, weekly day Monday (UI lists Monday first; storage stays JS `getDay()` 0=Sunday…6=Saturday), monthly day `1` (range 1–28 to avoid Feb/short-month slides).
+
+**Hourly cron, match by local hour only.** `vercel.json` schedules `0 * * * *` → `/api/cron/reminders`. Preferring minute-accurate delivery would need a paid always-on worker or queue; hour granularity is acceptable for expense nudges. `timeLocal` still stores `HH:mm` for future tighter scheduling.
+
+**Reminder prefs on `profiles.reminder`; subscriptions in `pushSubscriptions`.** Prefs follow the account across devices via existing profile GET/map. Subscriptions are per-endpoint (unique index) because each browser install has its own push endpoint. Enabling on device A does not notify device B until B also opts in.
+
+**Daily skip if an expense exists that local day.** Cheap UX win: do not nag after they already logged. Uses timezone-aware `localDateKey` against recent expenses, then sets `lastSentAt` so the hour window does not retry. Weekly/monthly use `lastSentAt` windows (~6 days / same calendar month) to avoid double-sends from repeated cron ticks.
+
+**Permission only on user tap; copy is device-agnostic.** WebAPKs do not get notification permission at install. Settings toggle is the gesture. UI/error copy says phone/tablet/desktop, not “Android only,” after the user corrected the first draft.
+
+**Service worker stays non-caching.** Only `install`/`activate`/`push`/`notificationclick` were added to `public/sw.js`. No `fetch` handler - preserves the D1 decision that this app is not offline-first and must not intercept network.
+
+**Secrets via env, not code.** `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `CRON_SECRET`. Documented in `.env.example` and `docs/reminders.md`. Cron rejects requests without `Authorization: Bearer <CRON_SECRET>` (or `x-cron-secret`).
+
+### Alternatives rejected
+
+- Local `Notification` + `setTimeout` / in-app alarms only.
+- Multiple simultaneous reminder schedules.
+- Minute-precise scheduling without infra changes.
+- Shipping an “send 50 test pushes” loop from the agent during debugging (user asked for manual test steps instead).
+
+### Follow-ups (not in this ship)
+
+- iOS Safari Home Screen push verification.
+- Richer notification actions (snooze).
+- Tighter than hourly delivery if product needs it.
