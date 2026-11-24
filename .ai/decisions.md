@@ -471,7 +471,7 @@ User asked for expense-logging reminders on the Android Chrome “Add to Home Sc
 
 **One cadence at a time (daily | weekly | monthly), not multiple overlapping schedules.** Keeps Settings simple and matches the ask. Defaults: daily off until enabled, time `21:00`, weekly day Monday (UI lists Monday first; storage stays JS `getDay()` 0=Sunday…6=Saturday), monthly day `1` (range 1–28 to avoid Feb/short-month slides).
 
-**Hourly cron, match by local hour only.** `vercel.json` schedules `0 * * * *` → `/api/cron/reminders`. Preferring minute-accurate delivery would need a paid always-on worker or queue; hour granularity is acceptable for expense nudges. `timeLocal` still stores `HH:mm` for future tighter scheduling.
+**Daily cron for Vercel Hobby (amended same day).** First ship used `0 * * * *` (hourly); Vercel Hobby rejected the deploy (“limited to daily cron jobs”). Switched to `0 15 * * *` (15:00 UTC ≈ 20:30 IST). `isReminderDue` no longer requires local-hour match by default; set `REMINDER_MATCH_HOUR=1` when on Pro/hourly. `timeLocal` stays stored for that upgrade path. Settings copy explains Hobby delivers once daily.
 
 **Reminder prefs on `profiles.reminder`; subscriptions in `pushSubscriptions`.** Prefs follow the account across devices via existing profile GET/map. Subscriptions are per-endpoint (unique index) because each browser install has its own push endpoint. Enabling on device A does not notify device B until B also opts in.
 

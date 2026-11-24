@@ -198,9 +198,10 @@ export const ReminderSettings = () => {
 
       <div className="flex flex-col gap-2.5 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-4 sm:py-3.5">
         <div className="min-w-0">
-          <p className="text-[13px] font-medium text-foreground">Time</p>
+          <p className="text-[13px] font-medium text-foreground">Preferred time</p>
           <p className="mt-0.5 text-[12px] leading-relaxed text-muted-foreground">
-            Local time (within about an hour on the free hourly cron).
+            Saved for later. On the current Vercel Hobby plan, reminders go out
+            once daily around 8:30 PM IST (hourly cron needs Pro).
           </p>
         </div>
         <FieldShell>

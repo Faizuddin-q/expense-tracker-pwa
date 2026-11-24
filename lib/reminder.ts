@@ -164,18 +164,28 @@ export const reminderCopy = (
 };
 
 /**
- * True when the hourly cron should fire for these prefs at `now`.
- * Matches the preferred local hour; uses lastSentAt to avoid duplicates
- * in the same local calendar day (daily), week (weekly), or month (monthly).
+ * True when the cron should fire for these prefs at `now`.
+ *
+ * Hour matching is opt-in (`opts.matchHour` or env `REMINDER_MATCH_HOUR=1`).
+ * Vercel Hobby only allows one cron run per day, so production skips the
+ * hour check and sends on the daily job (15:00 UTC / ~20:30 IST). Uses
+ * lastSentAt to avoid duplicates for the same local day / week / month.
  */
 export const isReminderDue = (
   prefs: ReminderPrefs,
-  now: Date = new Date()
+  now: Date = new Date(),
+  opts?: { matchHour?: boolean }
 ): boolean => {
   if (!prefs.enabled) return false;
   const local = zonedParts(now, prefs.timeZone);
-  const [prefHour] = prefs.timeLocal.split(':').map(Number);
-  if (local.hour !== prefHour) return false;
+  const matchHour =
+    opts?.matchHour === true ||
+    process.env.REMINDER_MATCH_HOUR === '1' ||
+    process.env.REMINDER_MATCH_HOUR === 'true';
+  if (matchHour) {
+    const [prefHour] = prefs.timeLocal.split(':').map(Number);
+    if (local.hour !== prefHour) return false;
+  }
 
   if (prefs.frequency === 'weekly' && local.weekday !== prefs.weekday) {
     return false;
