@@ -8,6 +8,7 @@ import {
 } from '@/lib/utils';
 import { toast } from '@/components/ToastHost';
 import { formatFetchMs } from '@/lib/api-client';
+import { ReminderSettings } from '@/components/ReminderSettings';
 
 interface SettingsProps {
   nameDraft: string;
@@ -467,6 +468,11 @@ export const Settings = ({
             />
           </Row>
         </Section>
+
+        <section className="mt-5">
+          <h2 className="label mb-2 px-1">Reminders</h2>
+          <ReminderSettings />
+        </section>
 
         <Section title="Appearance">
           <Row title="Theme" description="Synced to your account - follows you to every device.">

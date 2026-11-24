@@ -121,6 +121,10 @@ const applyProfileResponse = (
   ) {
     profile.setCycleStartDayState(profileData.cycleStartDay);
   }
+
+  if (profileData.reminder) {
+    profile.setReminderState(profileData.reminder);
+  }
 };
 
 const applyCloudExpenses = (

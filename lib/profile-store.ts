@@ -3,6 +3,10 @@ import { money } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth-store';
 import { useSyncStore } from '@/lib/sync-store';
 import { toast } from '@/components/ToastHost';
+import {
+  DEFAULT_REMINDER,
+  type ReminderPrefs,
+} from '@/lib/reminder';
 
 interface ProfileStore {
   income: number;
@@ -14,6 +18,7 @@ interface ProfileStore {
   name: string;
   nameDraft: string;
   cycleStartDay: number;
+  reminder: ReminderPrefs;
 
   setIncome: (v: number) => void;
   setIncomeDraft: (v: string) => void;
@@ -24,6 +29,7 @@ interface ProfileStore {
   setNameState: (v: string) => void;
   setNameDraft: (v: string) => void;
   setCycleStartDayState: (v: number) => void;
+  setReminderState: (v: ReminderPrefs) => void;
 
   setHideAmounts: (v: boolean) => void;
   setCycleStartDay: (v: number) => void;
@@ -45,6 +51,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   name: '',
   nameDraft: '',
   cycleStartDay: 1,
+  reminder: { ...DEFAULT_REMINDER },
 
   setIncome: (v) => set({ income: v }),
   setIncomeDraft: (v) => set({ incomeDraft: v }),
@@ -55,6 +62,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   setNameState: (v) => set({ name: v, nameDraft: v }),
   setNameDraft: (v) => set({ nameDraft: v }),
   setCycleStartDayState: (v) => set({ cycleStartDay: v }),
+  setReminderState: (v) => set({ reminder: v }),
 
   setCycleStartDay: (v) => {
     set({ cycleStartDay: v });
@@ -203,6 +211,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       name: '',
       nameDraft: '',
       cycleStartDay: 1,
+      reminder: { ...DEFAULT_REMINDER },
     });
   },
 }));

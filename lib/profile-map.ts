@@ -1,3 +1,5 @@
+import { normalizeReminder, type ReminderPrefs } from '@/lib/reminder';
+
 export type ProfileResponse = {
   monthlyIncome: number | null;
   monthlyBudget: number | null;
@@ -7,6 +9,7 @@ export type ProfileResponse = {
   name: string | null;
   theme: 'dark' | 'light' | null;
   cycleStartDay: number | null;
+  reminder: ReminderPrefs;
 };
 
 export const toProfileResponse = (
@@ -31,4 +34,5 @@ export const toProfileResponse = (
     profile.cycleStartDay <= 31
       ? profile.cycleStartDay
       : null,
+  reminder: normalizeReminder(profile?.reminder),
 });
